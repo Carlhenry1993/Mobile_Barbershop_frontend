@@ -169,8 +169,9 @@ const Login = ({ onLogin }) => {
         });
         const data = await response.json();
         if (response.ok) {
-          const userRole = isLogin ? data.role : role;
-          const userId = data.userId || null;
+          // Assuming the server returns: { message, token, user: { id, username, role } }
+          const userRole = isLogin ? data.user.role : role;
+          const userId = data.user.id || null;
           const userToken = data.token;
           localStorage.setItem('token', userToken);
           setToken(userToken);
