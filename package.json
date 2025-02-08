@@ -41,8 +41,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
+    "postinstall": "npm install --legacy-peer-deps"
   },
-  "proxy": "http://localhost:5000",
+  "proxy": "https://mobile-barbershop-backend.onrender.com/",
   "eslintConfig": {
     "extends": [
       "react-app",
