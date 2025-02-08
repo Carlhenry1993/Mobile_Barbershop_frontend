@@ -1,0 +1,317 @@
+/* Bulle de chat */
+.chat-bubble-icon {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;             /* Chosen dimension; adjust if needed */
+  height: 60px;
+  background: #007bff;
+  color: white;
+  border: none;            /* Combined from second definition */
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;         /* Chosen font size */
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+  z-index: 9999;
+}
+
+.chat-bubble-icon:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  background-color: #0056b3; /* Darker shade on hover */
+}
+
+.chat-bubble-icon:focus {
+  outline: 2px solid #0056b3;
+  outline-offset: 3px;
+}
+
+/* Badge for unread messages */
+.unread-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #ff4d4f; /* Red color for visibility */
+  color: white;
+  border-radius: 50%;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: bold;
+  animation: pulse 1.5s infinite; /* Add a subtle pulse animation */
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Conteneur principal */
+.chat-container {
+  position: fixed;
+  bottom: 0;
+  right: 20px;
+  width: 90vw;
+  max-width: 320px;
+  border: 1px solid #ccc;
+  border-radius: 10px 10px 0 0;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.3s ease-out;
+  z-index: 9998;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* En-tête du chat */
+.chat-header {
+  background: #007bff;
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 10px 10px 0 0;
+}
+
+/* Conteneur des contrôles */
+.chat-controls {
+  display: flex;
+  gap: 10px; /* Espacement entre les boutons */
+  align-items: center; /* Aligner verticalement les boutons */
+}
+
+/* Boutons Minimiser et Fermer */
+.minimize-button, .close-button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px; /* Taille du texte pour être uniforme */
+  cursor: pointer;
+  height: 30px; /* Hauteur uniforme pour aligner les boutons */
+  width: 30px;  /* Largeur uniforme pour les boutons */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: color 0.3s ease;
+}
+
+.minimize-button:hover, .close-button:hover {
+  color: #ff4d4f;
+}
+
+/* Zone des messages */
+.chat-messages {
+  flex: 1;
+  max-height: 300px;
+  overflow-y: auto;
+  background: #f9f9f9;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background-color: #aaa;
+}
+
+/* Style des messages */
+.message {
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
+  margin-bottom: 10px;
+}
+
+.message.sender {
+  background: #007bff; /* Blue for sender messages */
+  color: white;
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+.message.receiver {
+  background: #e1f5fe; /* Light blue for receiver messages */
+  align-self: flex-start;
+  margin-right: auto;
+}
+
+/* Zone de saisie */
+.chat-input {
+  display: flex;
+  padding: 10px;
+  background: #fff;
+  border-top: 1px solid #ccc;
+  gap: 10px; /* Spacing between textarea and button */
+}
+
+.chat-input textarea {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  resize: none;
+  font-size: 14px;
+}
+
+.chat-input textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.chat-input button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.chat-input button:hover {
+  background-color: #0056b3;
+}
+
+.chat-input button:focus {
+  outline: 2px solid #0056b3;
+  outline-offset: 2px;
+}
+
+/* Liste des clients */
+.client-selector {
+  width: 100%;
+  padding: 8px;
+  margin: 10px 0;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background: #fff;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.client-selector:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 5px rgba(113, 130, 148, 0.5);
+}
+
+/* Minimized state */
+.chat-container.minimized {
+  height: 40px; /* Hauteur réduite */
+  overflow: hidden;
+  animation: none;
+  display: flex; /* S'assurer que le conteneur reste visible */
+  align-items: center; /* Aligner les éléments au centre verticalement */
+  justify-content: space-between; /* Répartir les boutons et le titre */
+  padding: 0 10px; /* Espacement horizontal */
+  background: #007bff; /* Même couleur que l'en-tête */
+  color: white; /* Texte blanc pour contraste */
+  border-radius: 10px; /* Arrondi du conteneur */
+}
+
+.chat-container.minimized .minimize-button:hover,
+.chat-container.minimized .close-button:hover {
+  color: #ff4d4f; /* Couleur au survol */
+}
+
+.chat-container.minimized h4 {
+  font-size: 16px; /* Taille réduite du titre */
+  margin: 0; /* Supprimer les marges */
+  flex-grow: 1; /* Permet au titre de prendre l'espace restant */
+  text-align: center; /* Centrer le titre */
+}
+
+.chat-container.minimized .chat-header {
+  border-radius: 10px; /* Rounded corners when minimized */
+}
+
+/* Chat info (small info bubble) */
+.chat-info {
+  position: fixed;
+  bottom: 70px;
+  right: 20px;
+  background: #007bff;
+  color: white;
+  padding: 2px 6px; /* Réduction de l'espace intérieur */
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: bold;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  max-width: 130px; /* Réduction de la largeur */
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap; /* Empêche le texte de passer à la ligne */
+}
+
+.chat-info::after {
+  content: "⬇";
+  font-size: 20px; /* Taille de la flèche */
+  font-weight: bold;
+}
+
+/* Responsive adjustments for small screens */
+@media (max-width: 480px) {
+  .chat-info {
+    bottom: 70px;
+    right: 10px;
+    font-size: 10px;
+    padding: 2px 6px;
+    max-width: 120px;
+  }
+
+  .chat-info::after {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 320px) {
+  .chat-info {
+    bottom: 70px;
+    right: 5px;
+    font-size: 10px;
+    padding: 4px 6px;
+    max-width: 110px;
+  }
+
+  .chat-info::after {
+    font-size: 20px;
+  }
+}

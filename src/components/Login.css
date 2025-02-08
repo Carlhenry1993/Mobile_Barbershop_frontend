@@ -1,0 +1,142 @@
+/* 🌟 CSS Variables */
+:root {
+  --primary-color: #007bff;
+  --primary-hover: #0056b3;
+  --gradient-start: #f0f4f8;  /* Couleur de début du dégradé (bleu très pâle) */
+  --gradient-middle: #ffffff; /* Couleur centrale : blanc */
+  --gradient-end: #f8fafc;    /* Couleur de fin du dégradé (très léger) */
+  --input-border: #ccc;       /* Bordure plus discrète pour les champs */
+  --error-color: #d9534f;     /* Rouge plus doux pour les messages d’erreur */
+}
+
+/* 🌟 Global Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* 🌟 Full Page Layout Background */
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* Contenu en haut */
+  min-height: 120vh; /* Page allongée */
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-middle), var(--gradient-end));
+  padding-top: 100px; /* Décalage vers le bas */
+  padding-bottom: 50px; /* Espace en bas */
+  text-align: center;
+}
+
+/* 📝 Welcome Message */
+.welcome-message {
+  font-size: 1.75rem; /* ~28px */
+  font-weight: 700;
+  color: #333; /* Texte en couleur sombre pour le contraste sur fond clair */
+  margin-bottom: 1.875rem; /* ~30px */
+  text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1); /* Ombre légère */
+}
+
+/* 🏗️ Login Form */
+.login-form {
+  padding: 2.188rem; /* ~35px */
+  background: #fff;
+  border-radius: 0.875rem; /* ~14px */
+  box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.1); /* Ombre adoucie */
+  width: 100%;
+  max-width: 26.25rem; /* ~420px */
+  transition: transform 0.3s ease-out, box-shadow 0.3s ease-in-out;
+  margin-bottom: 3.125rem; /* ~50px */
+}
+
+.login-form:hover {
+  transform: translateY(-0.3125rem); /* ~5px */
+  box-shadow: 0 0.875rem 1.75rem rgba(0, 0, 0, 0.15); /* Ombre légèrement accentuée */
+}
+
+.login-form h1 {
+  margin-bottom: 1.25rem; /* ~20px */
+  text-align: center;
+  font-size: 1.625rem; /* ~26px */
+  color: #333;
+  font-weight: 600;
+}
+
+/* ✍️ Input Fields */
+.login-form input {
+  width: 100%;
+  padding: 0.75rem; /* ~12px */
+  margin-bottom: 0.938rem; /* ~15px */
+  border: 0.125rem solid var(--input-border);
+  border-radius: 0.5rem; /* ~8px */
+  font-size: 1rem; /* 16px */
+  transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.login-form input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0.5rem rgba(0, 123, 255, 0.3);
+}
+
+/* 🔘 Buttons */
+.login-form button {
+  width: 100%;
+  padding: 0.75rem;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+  color: #fff;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 500;
+  transition: transform 0.2s ease-in-out, background 0.3s ease-in-out;
+}
+
+.login-form button:hover {
+  background: linear-gradient(90deg, var(--primary-hover), #004099);
+  transform: scale(1.03);
+}
+
+.login-form button:active {
+  transform: scale(0.98);
+}
+
+/* ⚠️ Error Message */
+.error {
+  color: var(--error-color);
+  text-align: center;
+  font-size: 0.875rem; /* ~14px */
+  margin-top: 0.938rem; /* ~15px */
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 📱 Responsive Design */
+@media (max-width: 768px) {
+  .login-container {
+    min-height: 140vh; /* Hauteur supplémentaire sur mobile */
+    padding-top: 120px;
+  }
+  
+  .login-form h1 {
+    font-size: 1.375rem; /* ~22px */
+  }
+}
+
+/* 🎬 Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(1.25rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-0.938rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
