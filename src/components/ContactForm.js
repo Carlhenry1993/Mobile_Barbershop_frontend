@@ -23,7 +23,7 @@ const ContactForm = () => {
     setLoading(true); // Show loading state
 
     try {
-      const response = await fetch("http://localhost:5000/api/contact", {
+      const response = await fetch("https://mobile-barbershop-backend.onrender.com/api/contact", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -21,7 +21,7 @@ const AppointmentForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch('http://localhost:5000/api/appointments/create', {
+    const response = await fetch('https://mobile-barbershop-backend.onrender.com/api/appointments/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

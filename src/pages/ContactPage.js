@@ -7,7 +7,7 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 // L'endpoint est défini via une variable d'environnement pour une flexibilité maximale
-const CONTACT_ENDPOINT = process.env.REACT_APP_CONTACT_ENDPOINT || "http://localhost:5000/api/contact";
+const CONTACT_ENDPOINT = process.env.REACT_APP_CONTACT_ENDPOINT || "https://mobile-barbershop-backend.onrender.com/api/contact";
 
 const ContactPage = () => {
   // Scroll to the top on component mount

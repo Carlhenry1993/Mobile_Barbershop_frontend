@@ -11,7 +11,7 @@ const AdminReviews = () => {
   }, []);
 
   const fetchReviews = async () => {
-    const response = await fetch("http://localhost:5000/api/reviews");
+    const response = await fetch("https://mobile-barbershop-backend.onrender.com/api/reviews");
     const data = await response.json();
     setReviews(data);
   };
@@ -20,8 +20,8 @@ const AdminReviews = () => {
     e.preventDefault();
     const method = editMode ? "PUT" : "POST";
     const url = editMode
-      ? `http://localhost:5000/api/reviews/${currentId}`
-      : "http://localhost:5000/api/reviews";
+      ? `https://mobile-barbershop-backend.onrender.com/api/reviews/${currentId}`
+      : "https://mobile-barbershop-backend.onrender.com/api/reviews";
 
     await fetch(url, {
       method,
@@ -35,7 +35,7 @@ const AdminReviews = () => {
   };
 
   const handleDeleteReview = async (id) => {
-    await fetch(`http://localhost:5000/api/reviews/${id}`, {
+    await fetch(`https://mobile-barbershop-backend.onrender.com/api/reviews/${id}`, {
       method: "DELETE",
     });
     fetchReviews();

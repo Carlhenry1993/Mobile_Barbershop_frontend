@@ -7,7 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 // Notification sonore courte
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 
-const SOCKET_SERVER_URL = "http://localhost:5000";
+const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
   const [message, setMessage] = useState("");
