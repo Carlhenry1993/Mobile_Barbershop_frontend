@@ -131,7 +131,7 @@ const Login = ({ onLogin }) => {
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(false);
 
-  // Vérification et décodage du token dès son changement
+  // Verify and decode the token whenever it changes
   useEffect(() => {
     if (token) {
       try {
@@ -201,7 +201,7 @@ const Login = ({ onLogin }) => {
       className="min-h-screen flex flex-col relative login-bg"
       style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}
     >
-      {/* Superposition sombre pour améliorer le contraste */}
+      {/* Dark overlay to enhance contrast */}
       <div className="absolute inset-0 bg-black opacity-50"></div>
       <div className="relative flex flex-col z-10">
         <Header />
