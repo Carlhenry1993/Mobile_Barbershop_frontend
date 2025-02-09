@@ -1,5 +1,5 @@
 // Login.js
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardHeader, CardContent } from "./Card";
 import { Input } from "./Input";
 import Button from "./Button";
@@ -10,7 +10,7 @@ import "./Login.css";
 import Header from "./Header";
 import Footer from "./Footer";
 
-const WelcomeMessage = () => (
+const WelcomeMessage = ({ scrollToForm }) => (
   <motion.div
     className="welcome-message text-center px-4 py-8"
     initial={{ opacity: 0, y: -20 }}
@@ -34,9 +34,7 @@ const WelcomeMessage = () => (
     </p>
     <Button
       className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-full shadow-lg"
-      onClick={() =>
-        document.getElementById("login-form")?.scrollIntoView({ behavior: "smooth" })
-      }
+      onClick={scrollToForm}
     >
       Rejoignez-nous dès maintenant
     </Button>
@@ -55,8 +53,10 @@ const LoginForm = ({
   setRole,
   setIsLogin,
   loading,
+  formRef,
 }) => (
   <motion.div
+    ref={formRef}
     id="login-form"
     initial={{ scale: 0.95, opacity: 0 }}
     animate={{ scale: 1, opacity: 1 }}
@@ -138,6 +138,11 @@ const Login = ({ onLogin }) => {
   const [errorMessage, setErrorMessage] = useState("");
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(false);
+  const formRef = useRef(null);
+
+  // Set the backend API URL – use the env variable if available.
+  const API_URL =
+    process.env.REACT_APP_API_URL || "https://mobile-barbershop-backend.onrender.com";
 
   // Verify and decode the token whenever it changes
   useEffect(() => {
@@ -147,6 +152,7 @@ const Login = ({ onLogin }) => {
         const decodedToken = JSON.parse(atob(payload));
         const userRole = decodedToken.role;
         const userId = decodedToken.id;
+        setRole(userRole);
         onLogin(userRole, userId, token);
       } catch (error) {
         console.error("Erreur lors du décodage du token :", error);
@@ -168,24 +174,22 @@ const Login = ({ onLogin }) => {
       const body = isLogin
         ? { username, password }
         : { username, password, role };
-  
+
       try {
-        const response = await fetch(`/api/auth${endpoint}`, {
+        const response = await fetch(`${API_URL}/api/auth${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-  
+
         if (!response.ok) {
-          // Handle HTTP errors
           const errorText = await response.text();
           throw new Error(
             `HTTP error! Status: ${response.status}, Message: ${errorText}`
           );
         }
-  
+
         const data = await response.json();
-        // Process data
         const userRole = isLogin ? data.user.role : role;
         const userId = data.user.id || null;
         const userToken = data.token;
@@ -195,22 +199,25 @@ const Login = ({ onLogin }) => {
         setErrorMessage("");
       } catch (error) {
         console.error("Erreur lors de la requête:", error);
-        setErrorMessage(
-          error.message || "Erreur lors de la connexion."
-        );
+        setErrorMessage(error.message || "Erreur lors de la connexion.");
       } finally {
         setLoading(false);
       }
     },
-    [isLogin, username, password, role, onLogin]
+    [isLogin, username, password, role, onLogin, API_URL]
   );
-  
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
     setToken(null);
     onLogin(null, null, null);
   }, [onLogin]);
+
+  const scrollToForm = () => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   return (
     <div
@@ -245,7 +252,7 @@ const Login = ({ onLogin }) => {
             </motion.div>
           ) : (
             <>
-              <WelcomeMessage />
+              <WelcomeMessage scrollToForm={scrollToForm} />
               <LoginForm
                 isLogin={isLogin}
                 username={username}
@@ -258,6 +265,7 @@ const Login = ({ onLogin }) => {
                 setRole={setRole}
                 setIsLogin={setIsLogin}
                 loading={loading}
+                formRef={formRef}
               />
             </>
           )}
