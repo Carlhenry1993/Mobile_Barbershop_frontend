@@ -14,8 +14,8 @@ import AnnoncePage from "./pages/AnnoncePage";
 import Login from "./components/Login";
 import ChatApp from "./components/ChatApp";
 
-// Use named import for jwt-decode
-import { jwtDecode } from "jwt-decode";
+// Import jwt-decode as a default import rather than a named import.
+import jwtDecode from "jwt-decode";
 
 // ScrollToTop component: listens to location changes and scrolls to the top
 const ScrollToTop = () => {
@@ -42,7 +42,7 @@ const App = () => {
   useEffect(() => {
     if (token) {
       try {
-        // Decode token safely using the named export jwtDecode
+        // Decode token using jwtDecode (default import)
         const decodedToken = jwtDecode(token);
         setRole(decodedToken.role);
         if (decodedToken.role === "client") {
