@@ -168,35 +168,43 @@ const Login = ({ onLogin }) => {
       const body = isLogin
         ? { username, password }
         : { username, password, role };
-
+  
       try {
         const response = await fetch(`/api/auth${endpoint}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        const data = await response.json();
-        if (response.ok) {
-          // Assuming the server returns: { user: { id, username, role }, token }
-          const userRole = isLogin ? data.user.role : role;
-          const userId = data.user.id || null;
-          const userToken = data.token;
-          localStorage.setItem("token", userToken);
-          setToken(userToken);
-          onLogin(userRole, userId, userToken);
-          setErrorMessage("");
-        } else {
-          setErrorMessage(data.message || "Erreur lors de la connexion.");
+  
+        if (!response.ok) {
+          // Handle HTTP errors
+          const errorText = await response.text();
+          throw new Error(
+            `HTTP error! Status: ${response.status}, Message: ${errorText}`
+          );
         }
+  
+        const data = await response.json();
+        // Process data
+        const userRole = isLogin ? data.user.role : role;
+        const userId = data.user.id || null;
+        const userToken = data.token;
+        localStorage.setItem("token", userToken);
+        setToken(userToken);
+        onLogin(userRole, userId, userToken);
+        setErrorMessage("");
       } catch (error) {
-        console.error("Erreur serveur:", error);
-        setErrorMessage("Erreur serveur.");
+        console.error("Erreur lors de la requête:", error);
+        setErrorMessage(
+          error.message || "Erreur lors de la connexion."
+        );
       } finally {
         setLoading(false);
       }
     },
     [isLogin, username, password, role, onLogin]
   );
+  
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem("token");
