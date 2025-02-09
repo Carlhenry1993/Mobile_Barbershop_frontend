@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { GiHamburgerMenu } from "react-icons/gi"; // Icône hamburger
 import { VscClose } from "react-icons/vsc"; // Icône fermer
@@ -16,7 +16,8 @@ const Header = () => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  const navLinks = [
+  // Utilise useMemo pour recalculer navLinks uniquement lorsque le rôle change
+  const navLinks = useMemo(() => [
     { path: "/", label: "Accueil" },
     { path: "/services", label: "Nos Services" },
     { path: "/booking", label: "Réservez" },
@@ -25,7 +26,7 @@ const Header = () => {
     { path: "/contact", label: "Contact" },
     // Ajoute le lien Admin uniquement pour les administrateurs
     ...(role === "admin" ? [{ path: "/admin", label: "Espace Admin" }] : []),
-  ];
+  ], [role]);
 
   const renderLinks = (onClick) =>
     navLinks.map((link) => (
@@ -59,7 +60,7 @@ const Header = () => {
           </span>
         </Link>
 
-        {/* Bouton de menu mobile avec label à gauche */}
+        {/* Bouton de menu mobile */}
         <button
           className="lg:hidden flex items-center text-3xl focus:outline-none focus:ring-2 focus:ring-blue-500"
           onClick={toggleMenu}

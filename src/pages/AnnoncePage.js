@@ -15,6 +15,7 @@ const AnnouncementPage = () => {
   const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
+  // Fix the Authorization header by using template literals
   axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
 
   useEffect(() => {
@@ -38,7 +39,16 @@ const AnnouncementPage = () => {
       setLoadingAnnouncements(true);
       try {
         const response = await axios.get('/api/announcements');
-        setAnnouncements(response.data);
+        const data = response.data;
+        // Check if the response is directly an array or nested inside an object
+        if (Array.isArray(data)) {
+          setAnnouncements(data);
+        } else if (data && Array.isArray(data.announcements)) {
+          setAnnouncements(data.announcements);
+        } else {
+          console.error("Unexpected API response structure:", data);
+          setError("Impossible de charger les annonces pour le moment.");
+        }
       } catch (err) {
         console.error("Erreur lors de la récupération des annonces :", err);
         setError("Impossible de charger les annonces pour le moment.");
@@ -198,7 +208,7 @@ const AnnouncementPage = () => {
           </div>
         ) : (
           <div id="announcements-section" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
-            {announcements.map((announcement) => (
+            {Array.isArray(announcements) && announcements.map((announcement) => (
               <div
                 key={announcement.id}
                 className="bg-white p-4 sm:p-6 rounded-xl shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300"
