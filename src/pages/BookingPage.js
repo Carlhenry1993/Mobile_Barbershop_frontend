@@ -68,7 +68,7 @@ const BookingPage = () => {
   };
 
   // Use the REACT_APP_API_URL environment variable if available, or fallback to the production URL.
-  const API_URL = process.env.REACT_APP_API_URL || "https://mobile-barbershop-backend.onrender.com";
+  const API_URL = process.env.REACT_APP_API_URL || "https://mobile-barbershop-frontend.vercel.app";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
