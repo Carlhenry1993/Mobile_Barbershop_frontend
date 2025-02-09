@@ -76,7 +76,7 @@ const HomePage = () => {
           <div
             className="absolute inset-0 bg-cover bg-center"
             style={{
-              backgroundImage: "url('/Photos/Rasage12.jpg')",
+              backgroundImage: "url('/Photos/rasage12.jpg')",
               filter: "brightness(100%)"
             }}
             aria-label="Image de fond du Barbershop"
