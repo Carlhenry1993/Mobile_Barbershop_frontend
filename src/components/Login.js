@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Card, CardHeader, CardContent } from './Card';
-import { Input } from './Input';
-import Button from './Button';
-import { RadioGroup, RadioGroupItem } from './RadioGroup';
-import { Alert } from './Alert';
-import { motion } from 'framer-motion';
-import './Login.css';
-import Header from './Header';
-import Footer from './Footer';
+// Login.js
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, CardHeader, CardContent } from "./Card";
+import { Input } from "./Input";
+import Button from "./Button";
+import { RadioGroup, RadioGroupItem } from "./RadioGroup";
+import { Alert } from "./Alert";
+import { motion } from "framer-motion";
+import "./Login.css";
+import Header from "./Header";
+import Footer from "./Footer";
 
 const WelcomeMessage = () => (
   <motion.div
@@ -26,11 +27,16 @@ const WelcomeMessage = () => (
       className="text-white text-xl mb-6 sm:text-base"
       style={{ textShadow: "1px 1px 3px rgba(0,0,0,0.7)" }}
     >
-      Redécouvrez l'excellence de la coiffure à domicile ! Nos barbiers experts vous offrent des coupes sur-mesure, alliant élégance et modernité pour sublimer votre style. Créez votre compte dès aujourd'hui et offrez-vous une expérience personnalisée et luxueuse, directement chez vous.
+      Redécouvrez l'excellence de la coiffure à domicile ! Nos barbiers experts vous
+      offrent des coupes sur-mesure, alliant élégance et modernité pour sublimer votre
+      style. Créez votre compte dès aujourd'hui et offrez-vous une expérience personnalisée
+      et luxueuse, directement chez vous.
     </p>
     <Button
       className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-full shadow-lg"
-      onClick={() => document.getElementById('login-form')?.scrollIntoView({ behavior: 'smooth' })}
+      onClick={() =>
+        document.getElementById("login-form")?.scrollIntoView({ behavior: "smooth" })
+      }
     >
       Rejoignez-nous dès maintenant
     </Button>
@@ -60,7 +66,7 @@ const LoginForm = ({
     <Card className="login-form bg-white rounded-lg shadow-xl">
       <CardHeader className="text-center border-b pb-4">
         <h1 className="text-2xl font-bold mb-2 sm:text-xl">
-          {isLogin ? 'Connexion' : 'Créer un compte'}
+          {isLogin ? "Connexion" : "Créer un compte"}
         </h1>
       </CardHeader>
       <CardContent className="px-6 py-4">
@@ -87,7 +93,9 @@ const LoginForm = ({
             >
               <div className="flex flex-col items-center">
                 <RadioGroupItem value="client" id="client" />
-                <label htmlFor="client" className="mt-1 text-sm">Client</label>
+                <label htmlFor="client" className="mt-1 text-sm">
+                  Client
+                </label>
               </div>
             </RadioGroup>
           )}
@@ -96,7 +104,7 @@ const LoginForm = ({
             className="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded"
             disabled={loading}
           >
-            {isLogin ? 'Se connecter' : "S’inscrire"}
+            {isLogin ? "Se connecter" : "S’inscrire"}
           </Button>
           <div className="text-center mt-4">
             <p className="text-gray-700 text-sm">
@@ -108,7 +116,7 @@ const LoginForm = ({
               onClick={() => setIsLogin((prev) => !prev)}
               className="text-blue-700 font-semibold"
             >
-              {isLogin ? 'Créer un compte' : 'Se connecter'}
+              {isLogin ? "Créer un compte" : "Se connecter"}
             </Button>
           </div>
           {errorMessage && (
@@ -124,25 +132,25 @@ const LoginForm = ({
 
 const Login = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState('client');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState("client");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(false);
 
   // Verify and decode the token whenever it changes
   useEffect(() => {
     if (token) {
       try {
-        const [, payload] = token.split('.');
+        const [, payload] = token.split(".");
         const decodedToken = JSON.parse(atob(payload));
         const userRole = decodedToken.role;
         const userId = decodedToken.id;
         onLogin(userRole, userId, token);
       } catch (error) {
-        console.error('Erreur lors du décodage du token :', error);
-        localStorage.removeItem('token');
+        console.error("Erreur lors du décodage du token :", error);
+        localStorage.removeItem("token");
         setToken(null);
       }
     }
@@ -152,37 +160,37 @@ const Login = ({ onLogin }) => {
     async (e) => {
       e.preventDefault();
       if (!username || !password) {
-        setErrorMessage('Veuillez remplir tous les champs.');
+        setErrorMessage("Veuillez remplir tous les champs.");
         return;
       }
       setLoading(true);
-      const endpoint = isLogin ? '/login' : '/register';
+      const endpoint = isLogin ? "/login" : "/register";
       const body = isLogin
         ? { username, password }
         : { username, password, role };
 
       try {
         const response = await fetch(`/api/auth${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
         const data = await response.json();
         if (response.ok) {
-          // Assuming the server returns: { message, token, user: { id, username, role } }
+          // Assuming the server returns: { user: { id, username, role }, token }
           const userRole = isLogin ? data.user.role : role;
           const userId = data.user.id || null;
           const userToken = data.token;
-          localStorage.setItem('token', userToken);
+          localStorage.setItem("token", userToken);
           setToken(userToken);
           onLogin(userRole, userId, userToken);
-          setErrorMessage('');
+          setErrorMessage("");
         } else {
-          setErrorMessage(data.message || 'Erreur lors de la connexion.');
+          setErrorMessage(data.message || "Erreur lors de la connexion.");
         }
       } catch (error) {
-        console.error('Erreur serveur:', error);
-        setErrorMessage('Erreur serveur.');
+        console.error("Erreur serveur:", error);
+        setErrorMessage("Erreur serveur.");
       } finally {
         setLoading(false);
       }
@@ -191,7 +199,7 @@ const Login = ({ onLogin }) => {
   );
 
   const handleLogout = useCallback(() => {
-    localStorage.removeItem('token');
+    localStorage.removeItem("token");
     setToken(null);
     onLogin(null, null, null);
   }, [onLogin]);
@@ -201,7 +209,7 @@ const Login = ({ onLogin }) => {
       className="min-h-screen flex flex-col relative login-bg"
       style={{ background: "linear-gradient(135deg, #667eea, #764ba2)" }}
     >
-      {/* Dark overlay to enhance contrast */}
+      {/* Dark overlay */}
       <div className="absolute inset-0 bg-black opacity-50"></div>
       <div className="relative flex flex-col z-10">
         <Header />
@@ -222,8 +230,8 @@ const Login = ({ onLogin }) => {
                 Se déconnecter
               </Button>
               <div className="mt-4 text-white text-lg">
-                {role === 'client'
-                  ? 'Accédez à votre espace client pour un service personnalisé.'
+                {role === "client"
+                  ? "Accédez à votre espace client pour un service personnalisé."
                   : "Accédez à l'espace admin."}
               </div>
             </motion.div>

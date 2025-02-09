@@ -1,6 +1,13 @@
+// App.js
 import React, { useState, useEffect, useCallback } from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
-import 'animate.css';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+import "animate.css";
 
 // Import pages
 import HomePage from "./pages/HomePage";
@@ -14,24 +21,21 @@ import AnnoncePage from "./pages/AnnoncePage";
 import Login from "./components/Login";
 import ChatApp from "./components/ChatApp";
 
-// Use named import for jwt-decode
-import { jwtDecode } from "jwt-decode";
-
-// ScrollToTop component: listens to location changes and scrolls to the top
+// ScrollToTop component: scrolls to the top on route change
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [pathname]);
   return null;
 };
 
 const App = () => {
-  const [role, setRole] = useState(null);       // User role: "client" or "admin"
-  const [clientId, setClientId] = useState(null); // Client ID (for clients)
+  const [role, setRole] = useState(null); // "client" or "admin"
+  const [clientId, setClientId] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
 
-  // Logout handler
+  // Logout handler: clears state and localStorage
   const handleLogout = useCallback(() => {
     setRole(null);
     setToken(null);
@@ -39,11 +43,12 @@ const App = () => {
     localStorage.removeItem("token");
   }, []);
 
+  // When token changes, decode it manually using atob
   useEffect(() => {
     if (token) {
       try {
-        // Decode token safely using the named export jwtDecode
-        const decodedToken = jwtDecode(token);
+        const [, payload] = token.split(".");
+        const decodedToken = JSON.parse(atob(payload));
         setRole(decodedToken.role);
         if (decodedToken.role === "client") {
           setClientId(decodedToken.id);
@@ -95,13 +100,10 @@ const App = () => {
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/booking" element={<BookingPage />} />
-
-            {/* Annonce Page: Read-only for clients */}
             <Route
               path="/annonces"
               element={<AnnoncePage readOnly={role === "client"} />}
             />
-
             {/* Fallback Redirection */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
