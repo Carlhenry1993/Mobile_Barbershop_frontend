@@ -4,8 +4,11 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Notification sonore courte
+// Audio de notification pour les messages
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
+// Audio pour la sonnerie des appels entrants (remplacez l'URL par celle d'une sonnerie adaptée)
+const ringtoneAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3872/3872-preview.mp3");
+
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
@@ -31,6 +34,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
   const [socket, setSocket] = useState(null);
+
+  // Fonction pour arrêter la sonnerie
+  const stopRingtone = () => {
+    ringtoneAudio.pause();
+    ringtoneAudio.currentTime = 0;
+  };
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -82,6 +91,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
 
     // Gestion des événements de signalisation WebRTC
+
     newSocket.on("call_offer", async (data) => {
       console.log("Offre d'appel reçue :", data);
       if (inCall) {
@@ -89,6 +99,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
         return;
       }
       setIncomingCall({ from: data.from, callType: data.callType, offer: data.offer });
+      // Démarrer la sonnerie pour signaler l'appel entrant
+      ringtoneAudio.loop = true;
+      ringtoneAudio.play().catch((error) => console.error("Erreur de sonnerie :", error));
     });
 
     newSocket.on("call_answer", async (data) => {
@@ -116,11 +129,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
     newSocket.on("call_reject", (data) => {
       console.log("Appel rejeté :", data);
       alert("L'appel a été rejeté par le destinataire.");
+      stopRingtone();
       endCall();
     });
 
     newSocket.on("call_end", (data) => {
       console.log("Appel terminé :", data);
+      stopRingtone();
       endCall();
     });
 
@@ -128,7 +143,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
     if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
-    return () => { newSocket.disconnect(); };
+    return () => {
+      newSocket.disconnect();
+    };
   }, [isAdmin, inCall, isChatOpen, isMinimized]);
 
   const getCallPartnerId = () => (isAdmin ? selectedClientId : "admin");
@@ -154,6 +171,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     pc.onconnectionstatechange = () => {
       console.log("État de la connexion :", pc.connectionState);
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
+        stopRingtone();
         endCall();
       }
     };
@@ -188,6 +206,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
+    stopRingtone();
     try {
       const stream = await navigator.mediaDevices.getUserMedia(getMediaConstraints(incomingCall.callType));
       setLocalStream(stream);
@@ -214,6 +233,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const handleRejectCall = () => {
     if (incomingCall) {
       socket.emit("call_reject", { to: incomingCall.from });
+      stopRingtone();
       setIncomingCall(null);
     }
   };
@@ -233,6 +253,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
     setInCall(false);
     setCallType(null);
+    stopRingtone();
     if (socket) {
       socket.emit("call_end", { to: getCallPartnerId() });
     }
