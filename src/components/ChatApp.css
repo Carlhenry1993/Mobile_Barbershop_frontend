@@ -50,7 +50,7 @@
   100% { transform: scale(1); }
 }
 
-/* --- Conteneur principal --- */
+/* --- Conteneur principal du chat --- */
 .chat-container {
   position: fixed;
   bottom: 0;
@@ -83,7 +83,7 @@
   border-radius: 10px 10px 0 0;
 }
 
-/* --- Conteneur des contrôles --- */
+/* --- Contrôles (minimiser / fermer) --- */
 .chat-controls {
   display: flex;
   gap: 10px;
@@ -303,7 +303,7 @@
   }
 }
 
-/* --- CSS pour l'interface d'appel --- */
+/* --- Interface d'appel --- */
 /* Conteneur d'appel actif */
 .call-container {
   position: fixed;
@@ -371,7 +371,7 @@
   color: #333;
 }
 
-/* --- Boutons d'appel --- */
+/* --- Boutons d'appel (dans le chat ou la barre dédiée) --- */
 .call-buttons {
   display: flex;
   justify-content: center;
@@ -405,7 +405,7 @@
   border-bottom: 1px solid #ccc;
 }
 
-/* Sur mobile, la barre d'appel est fixée en haut */
+/* Sur mobile, la barre d'appel est fixée en haut et on ajoute une marge au chat */
 @media (max-width: 480px) {
   .client-call-bar {
     position: fixed;
@@ -414,7 +414,6 @@
     right: 0;
     z-index: 10000;
   }
-  /* On ajoute une marge en haut du conteneur du chat pour éviter le recouvrement */
   .chat-container {
     margin-top: 60px;
   }
