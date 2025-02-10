@@ -6,8 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Audio de notification pour les messages
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
-// Utilisation d'une source audio compatible (ici au format OGG)
-// Vous pouvez aussi héberger votre propre fichier audio dans le dossier public et utiliser "/ringtone.mp3"
+// Pour la sonnerie, on utilise ici une URL en OGG (souvent bien supporté)
+// Vous pouvez aussi placer le fichier dans "public" et utiliser "/ringtone.mp3"
 const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
@@ -36,10 +36,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const pcRef = useRef(null);
   const [socket, setSocket] = useState(null);
 
-  // Permettre l'activation de l'audio via une interaction utilisateur
+  // Activation de l'audio par interaction utilisateur
   useEffect(() => {
     const enableAudio = () => {
-      // Tente de jouer puis d'arrêter la sonnerie pour débloquer l'audio
       ringtoneAudio.play()
         .then(() => {
           ringtoneAudio.pause();
@@ -74,12 +73,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
     newSocket.on("new_message", (data) => {
       console.log("Nouveau message reçu :", data);
+      // Si l'utilisateur est client et que le message provient de lui-même, on ignore l'écho
+      if (!isAdmin && data.senderId === clientId) return;
       setMessages((prev) => [
         ...prev,
-        { sender: data.sender === "admin" ? "admin" : "client", message: data.message },
+        { sender: data.sender, message: data.message },
       ]);
       notificationAudio.play().catch((error) => console.error("Erreur audio :", error));
-
       if (Notification.permission === "granted") {
         new Notification(`Message de ${data.sender}`, { body: data.message });
       } else if (Notification.permission !== "denied") {
@@ -109,7 +109,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
         return;
       }
       setIncomingCall({ from: data.from, callType: data.callType, offer: data.offer });
-      // Démarrage de la sonnerie en boucle
       ringtoneAudio.loop = true;
       ringtoneAudio.play().catch((error) => console.error("Erreur de sonnerie :", error));
     });
@@ -213,7 +212,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
-    // Arrêter la sonnerie dès l'acceptation
     ringtoneAudio.pause();
     ringtoneAudio.currentTime = 0;
     try {
@@ -308,6 +306,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     } else {
       socket.emit("send_message_to_admin", { message });
     }
+    // Ajout local du message (afin d'avoir un affichage instantané)
     setMessages((prev) => [...prev, { sender: isAdmin ? "admin" : "client", message }]);
     setMessage("");
   }, [message, socket, isAdmin, selectedClientId]);
@@ -320,7 +319,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       ) : (
         clients.map((client) => (
           <option key={client.id} value={client.id}>
-            {client.name || `Client ${client.id}`}
+            {client.name}
           </option>
         ))
       )}
@@ -400,7 +399,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
         </div>
       )}
 
-      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };
