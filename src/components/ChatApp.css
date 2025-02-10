@@ -1,4 +1,4 @@
-/* Bulle de chat */
+/* --- Bulle de chat --- */
 .chat-bubble-icon {
   position: fixed;
   bottom: 20px;
@@ -30,7 +30,7 @@
   outline-offset: 3px;
 }
 
-/* Badge for unread messages */
+/* --- Badge pour messages non lus --- */
 .unread-count {
   position: absolute;
   top: -5px;
@@ -45,18 +45,12 @@
 }
 
 @keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 
-/* Main container */
+/* --- Conteneur principal --- */
 .chat-container {
   position: fixed;
   bottom: 0;
@@ -74,17 +68,11 @@
 }
 
 @keyframes slideIn {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-/* Chat header */
+/* --- En-tête du chat --- */
 .chat-header {
   background: #007bff;
   color: white;
@@ -95,14 +83,13 @@
   border-radius: 10px 10px 0 0;
 }
 
-/* Controls container */
+/* --- Conteneur des contrôles --- */
 .chat-controls {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-/* Minimize and Close buttons */
 .minimize-button,
 .close-button {
   background: none;
@@ -123,7 +110,7 @@
   color: #ff4d4f;
 }
 
-/* Chat messages area */
+/* --- Zone des messages --- */
 .chat-messages {
   flex: 1;
   max-height: 300px;
@@ -148,7 +135,7 @@
   background-color: #aaa;
 }
 
-/* Message styles */
+/* --- Style des messages --- */
 .message {
   padding: 8px 12px;
   border-radius: 8px;
@@ -170,7 +157,7 @@
   margin-right: auto;
 }
 
-/* Input area */
+/* --- Zone de saisie --- */
 .chat-input {
   display: flex;
   padding: 10px;
@@ -214,7 +201,7 @@
   outline-offset: 2px;
 }
 
-/* Client list selector */
+/* --- Sélecteur de clients --- */
 .client-selector {
   width: 100%;
   padding: 8px;
@@ -232,7 +219,7 @@
   box-shadow: 0 0 5px rgba(113, 130, 148, 0.5);
 }
 
-/* Minimized chat */
+/* --- Chat minimisé --- */
 .chat-container.minimized {
   height: 40px;
   overflow: hidden;
@@ -262,7 +249,7 @@
   border-radius: 10px;
 }
 
-/* Chat info bubble */
+/* --- Bulle d'info du chat --- */
 .chat-info {
   position: fixed;
   bottom: 70px;
@@ -289,7 +276,7 @@
   font-weight: bold;
 }
 
-/* Responsive adjustments */
+/* --- Responsive pour la bulle d'info --- */
 @media (max-width: 480px) {
   .chat-info {
     bottom: 70px;
@@ -316,9 +303,8 @@
   }
 }
 
-/* --- Additional CSS for Call UI --- */
-
-/* Container for an active call */
+/* --- CSS pour l'interface d'appel --- */
+/* Conteneur d'appel actif */
 .call-container {
   position: fixed;
   top: 50%;
@@ -333,7 +319,7 @@
   text-align: center;
 }
 
-/* Video container for video calls */
+/* Conteneur vidéo pour appel vidéo */
 .video-container {
   display: flex;
   justify-content: center;
@@ -342,7 +328,7 @@
   margin: 10px 0;
 }
 
-/* Video elements */
+/* Vidéos */
 .remote-video,
 .local-video {
   width: 160px;
@@ -352,7 +338,7 @@
   object-fit: cover;
 }
 
-/* Incoming call modal */
+/* Modal appel entrant */
 .incoming-call-modal {
   position: fixed;
   top: 20%;
@@ -385,7 +371,7 @@
   color: #333;
 }
 
-/* --- Additional CSS for Call Buttons --- */
+/* --- Boutons d'appel --- */
 .call-buttons {
   display: flex;
   justify-content: center;
@@ -409,8 +395,7 @@
   background-color: #0056b3;
 }
 
-
-/* --- Additional CSS for Call Buttons and Client Call Bar --- */
+/* --- Barre dédiée aux boutons d'appel pour client --- */
 .client-call-bar {
   display: flex;
   justify-content: center;
@@ -420,25 +405,17 @@
   border-bottom: 1px solid #ccc;
 }
 
-.call-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 0;
-}
-
-.call-button {
-  background-color: #007bff;
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.call-button:hover {
-  background-color: #0056b3;
+/* Sur mobile, la barre d'appel est fixée en haut */
+@media (max-width: 480px) {
+  .client-call-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10000;
+  }
+  /* On ajoute une marge en haut du conteneur du chat pour éviter le recouvrement */
+  .chat-container {
+    margin-top: 60px;
+  }
 }
