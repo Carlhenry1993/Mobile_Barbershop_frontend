@@ -3,16 +3,16 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  width: 60px;             /* Chosen dimension; adjust if needed */
+  width: 60px;
   height: 60px;
   background: #007bff;
   color: white;
-  border: none;            /* Combined from second definition */
+  border: none;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 28px;         /* Chosen font size */
+  font-size: 28px;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
@@ -22,7 +22,7 @@
 .chat-bubble-icon:hover {
   transform: scale(1.1);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
-  background-color: #0056b3; /* Darker shade on hover */
+  background-color: #0056b3;
 }
 
 .chat-bubble-icon:focus {
@@ -35,13 +35,13 @@
   position: absolute;
   top: -5px;
   right: -5px;
-  background: #ff4d4f; /* Red color for visibility */
+  background: #ff4d4f;
   color: white;
   border-radius: 50%;
   padding: 5px 10px;
   font-size: 12px;
   font-weight: bold;
-  animation: pulse 1.5s infinite; /* Add a subtle pulse animation */
+  animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
@@ -56,7 +56,7 @@
   }
 }
 
-/* Conteneur principal */
+/* Main container */
 .chat-container {
   position: fixed;
   bottom: 0;
@@ -84,7 +84,7 @@
   }
 }
 
-/* En-tête du chat */
+/* Chat header */
 .chat-header {
   background: #007bff;
   color: white;
@@ -95,33 +95,35 @@
   border-radius: 10px 10px 0 0;
 }
 
-/* Conteneur des contrôles */
+/* Controls container */
 .chat-controls {
   display: flex;
-  gap: 10px; /* Espacement entre les boutons */
-  align-items: center; /* Aligner verticalement les boutons */
+  gap: 10px;
+  align-items: center;
 }
 
-/* Boutons Minimiser et Fermer */
-.minimize-button, .close-button {
+/* Minimize and Close buttons */
+.minimize-button,
+.close-button {
   background: none;
   border: none;
   color: white;
-  font-size: 24px; /* Taille du texte pour être uniforme */
+  font-size: 24px;
   cursor: pointer;
-  height: 30px; /* Hauteur uniforme pour aligner les boutons */
-  width: 30px;  /* Largeur uniforme pour les boutons */
+  height: 30px;
+  width: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
   transition: color 0.3s ease;
 }
 
-.minimize-button:hover, .close-button:hover {
+.minimize-button:hover,
+.close-button:hover {
   color: #ff4d4f;
 }
 
-/* Zone des messages */
+/* Chat messages area */
 .chat-messages {
   flex: 1;
   max-height: 300px;
@@ -146,7 +148,7 @@
   background-color: #aaa;
 }
 
-/* Style des messages */
+/* Message styles */
 .message {
   padding: 8px 12px;
   border-radius: 8px;
@@ -156,25 +158,25 @@
 }
 
 .message.sender {
-  background: #007bff; /* Blue for sender messages */
+  background: #007bff;
   color: white;
   align-self: flex-end;
   margin-left: auto;
 }
 
 .message.receiver {
-  background: #e1f5fe; /* Light blue for receiver messages */
+  background: #e1f5fe;
   align-self: flex-start;
   margin-right: auto;
 }
 
-/* Zone de saisie */
+/* Input area */
 .chat-input {
   display: flex;
   padding: 10px;
   background: #fff;
   border-top: 1px solid #ccc;
-  gap: 10px; /* Spacing between textarea and button */
+  gap: 10px;
 }
 
 .chat-input textarea {
@@ -212,7 +214,7 @@
   outline-offset: 2px;
 }
 
-/* Liste des clients */
+/* Client list selector */
 .client-selector {
   width: 100%;
   padding: 8px;
@@ -230,64 +232,64 @@
   box-shadow: 0 0 5px rgba(113, 130, 148, 0.5);
 }
 
-/* Minimized state */
+/* Minimized chat */
 .chat-container.minimized {
-  height: 40px; /* Hauteur réduite */
+  height: 40px;
   overflow: hidden;
   animation: none;
-  display: flex; /* S'assurer que le conteneur reste visible */
-  align-items: center; /* Aligner les éléments au centre verticalement */
-  justify-content: space-between; /* Répartir les boutons et le titre */
-  padding: 0 10px; /* Espacement horizontal */
-  background: #007bff; /* Même couleur que l'en-tête */
-  color: white; /* Texte blanc pour contraste */
-  border-radius: 10px; /* Arrondi du conteneur */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  background: #007bff;
+  color: white;
+  border-radius: 10px;
 }
 
 .chat-container.minimized .minimize-button:hover,
 .chat-container.minimized .close-button:hover {
-  color: #ff4d4f; /* Couleur au survol */
+  color: #ff4d4f;
 }
 
 .chat-container.minimized h4 {
-  font-size: 16px; /* Taille réduite du titre */
-  margin: 0; /* Supprimer les marges */
-  flex-grow: 1; /* Permet au titre de prendre l'espace restant */
-  text-align: center; /* Centrer le titre */
+  font-size: 16px;
+  margin: 0;
+  flex-grow: 1;
+  text-align: center;
 }
 
 .chat-container.minimized .chat-header {
-  border-radius: 10px; /* Rounded corners when minimized */
+  border-radius: 10px;
 }
 
-/* Chat info (small info bubble) */
+/* Chat info bubble */
 .chat-info {
   position: fixed;
   bottom: 70px;
   right: 20px;
   background: #007bff;
   color: white;
-  padding: 2px 6px; /* Réduction de l'espace intérieur */
+  padding: 2px 6px;
   border-radius: 6px;
   font-size: 10px;
   font-weight: bold;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 9999;
-  max-width: 130px; /* Réduction de la largeur */
+  max-width: 130px;
   text-align: center;
   display: flex;
   align-items: center;
   gap: 5px;
-  white-space: nowrap; /* Empêche le texte de passer à la ligne */
+  white-space: nowrap;
 }
 
 .chat-info::after {
   content: "⬇";
-  font-size: 20px; /* Taille de la flèche */
+  font-size: 20px;
   font-weight: bold;
 }
 
-/* Responsive adjustments for small screens */
+/* Responsive adjustments */
 @media (max-width: 480px) {
   .chat-info {
     bottom: 70px;
@@ -296,7 +298,6 @@
     padding: 2px 6px;
     max-width: 120px;
   }
-
   .chat-info::after {
     font-size: 22px;
   }
@@ -310,8 +311,76 @@
     padding: 4px 6px;
     max-width: 110px;
   }
-
   .chat-info::after {
     font-size: 20px;
   }
+}
+
+/* --- Additional CSS for Call UI --- */
+
+/* Container for an active call */
+.call-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  z-index: 10000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+/* Video container for video calls */
+.video-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+/* Video elements */
+.remote-video,
+.local-video {
+  width: 160px;
+  height: 120px;
+  background: #000;
+  border-radius: 5px;
+  object-fit: cover;
+}
+
+/* Incoming call modal */
+.incoming-call-modal {
+  position: fixed;
+  top: 20%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 20px;
+  z-index: 10000;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.incoming-call-modal button {
+  margin: 0 10px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.incoming-call-modal button:first-of-type {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.incoming-call-modal button:last-of-type {
+  background-color: #ccc;
+  color: #333;
 }
