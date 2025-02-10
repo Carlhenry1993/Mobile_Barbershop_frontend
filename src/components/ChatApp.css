@@ -245,10 +245,6 @@
   text-align: center;
 }
 
-.chat-container.minimized .chat-header {
-  border-radius: 10px;
-}
-
 /* --- Bulle d'info du chat --- */
 .chat-info {
   position: fixed;
@@ -304,7 +300,6 @@
 }
 
 /* --- Interface d'appel --- */
-/* Conteneur d'appel actif */
 .call-container {
   position: fixed;
   top: 50%;
@@ -319,7 +314,6 @@
   text-align: center;
 }
 
-/* Conteneur vidéo pour appel vidéo */
 .video-container {
   display: flex;
   justify-content: center;
@@ -328,7 +322,6 @@
   margin: 10px 0;
 }
 
-/* Vidéos */
 .remote-video,
 .local-video {
   width: 160px;
@@ -338,7 +331,6 @@
   object-fit: cover;
 }
 
-/* Modal appel entrant */
 .incoming-call-modal {
   position: fixed;
   top: 20%;
@@ -371,21 +363,24 @@
   color: #333;
 }
 
-/* --- Boutons d'appel (dans le chat ou la barre dédiée) --- */
-.call-buttons {
+/* --- Boutons d'appel intégrés dans l'interface --- */
+.call-buttons-container {
   display: flex;
   justify-content: center;
-  gap: 10px;
+  gap: 20px;
   padding: 10px 0;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f7f7f7;
 }
 
 .call-button {
   background-color: #007bff;
   border: none;
   border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
   color: white;
   cursor: pointer;
   transition: background-color 0.3s ease;
@@ -393,28 +388,4 @@
 
 .call-button:hover {
   background-color: #0056b3;
-}
-
-/* --- Barre dédiée aux boutons d'appel pour client --- */
-.client-call-bar {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px 0;
-  background-color: #f1f1f1;
-  border-bottom: 1px solid #ccc;
-}
-
-/* Sur mobile, la barre d'appel est fixée en haut et on ajoute une marge au chat */
-@media (max-width: 480px) {
-  .client-call-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 10000;
-  }
-  .chat-container {
-    margin-top: 60px;
-  }
 }
