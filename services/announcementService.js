@@ -1,8 +1,9 @@
+// src/api/announcementAPI.js
 import axios from "axios";
 
-const API_URL = "/api/announcements";
+// URL complète de l'API sur votre backend hébergé sur Render
+const API_URL = "https://mobile-barbershop-backend.onrender.com/api/announcements";
 
-// Fonction générique pour effectuer les requêtes HTTP
 const makeRequest = async (method, url, data = null) => {
   try {
     const response = await axios({
@@ -13,7 +14,7 @@ const makeRequest = async (method, url, data = null) => {
     return response.data;
   } catch (error) {
     console.error(`Erreur lors de la requête ${method} ${url}:`, error);
-    throw error; // Lancer l'erreur pour être gérée au niveau supérieur
+    throw error;
   }
 };
 
