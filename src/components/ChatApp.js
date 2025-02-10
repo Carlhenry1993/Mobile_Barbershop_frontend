@@ -55,7 +55,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       console.log("Connected to WebSocket server.");
     });
 
-    // Handle incoming text messages
+    // Incoming text messages
     newSocket.on("new_message", (data) => {
       console.log("New message received:", data);
       setMessages((prev) => [
@@ -86,7 +86,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     });
 
-    // For admin, update client list
+    // For admin, update the client list
     if (isAdmin) {
       newSocket.on("update_client_list", (clients) => {
         console.log("Client list updated:", clients);
@@ -148,17 +148,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [isAdmin, inCall, isChatOpen, isMinimized]);
 
-  // Helper: Determine call partner
+  // Helper: Determine the call partner ID
   const getCallPartnerId = () => {
     return isAdmin ? selectedClientId : "admin";
   };
 
-  // Return media constraints
+  // Return media constraints based on call type
   const getMediaConstraints = (type) => {
     return type === "audio" ? { audio: true, video: false } : { audio: true, video: true };
   };
 
-  // Create RTCPeerConnection and configure events
+  // Create and configure a new RTCPeerConnection
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -190,7 +190,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return pc;
   };
 
-  // Initiate a call (works for both admin and client)
+  // Initiate a call (audio or video)
   const initiateCall = async (type) => {
     if (isAdmin && !selectedClientId) {
       alert("Veuillez sélectionner un client pour appeler.");
@@ -213,7 +213,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setInCall(true);
     } catch (error) {
       console.error("Erreur lors de l'initiation de l'appel :", error);
-      alert("Erreur lors de l'initiation de l'appel. Vérifiez vos autorisations de caméra/microphone et réessayez.");
+      alert("Erreur lors de l'initiation de l'appel. Vérifiez vos autorisations de caméra/microphone et assurez-vous d'utiliser HTTPS.");
     }
   };
 
@@ -272,7 +272,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Mark messages as read (or call an API)
+  // Mark messages as read (or use an API)
   const markMessagesAsRead = useCallback(async () => {
     try {
       await fetch("/api/messages/markAsRead", {
@@ -293,7 +293,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     markMessagesAsRead();
   }, [markMessagesAsRead]);
 
-  // Toggle minimization of chat
+  // Toggle chat minimization
   const handleMinimizeToggle = useCallback(() => {
     setIsMinimized((prev) => !prev);
     if (!isMinimized) {
@@ -301,7 +301,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [isMinimized]);
 
-  // Send text message
+  // Send a text message
   const handleSendMessage = useCallback(() => {
     if (!message.trim()) {
       alert("Le message est vide !");
@@ -352,58 +352,70 @@ const ChatApp = ({ clientId, isAdmin }) => {
           </button>
         </>
       ) : (
-        <div className={`chat-container ${isMinimized ? "minimized" : ""}`}>
-          <div className="chat-header">
-            <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
-            <div className="chat-controls">
-              <button className="minimize-button" onClick={handleMinimizeToggle}>
-                {isMinimized ? "🗖" : "__"}
+        <>
+          {/* For client users, display a dedicated call bar above the chat container */}
+          {!isAdmin && (
+            <div className="client-call-bar">
+              <button className="call-button audio" onClick={() => initiateCall("audio")}>
+                📞
               </button>
-              <button className="close-button" onClick={handleChatToggle}>
-                X
+              <button className="call-button video" onClick={() => initiateCall("video")}>
+                📹
               </button>
             </div>
-          </div>
-          {!isMinimized && (
-            <>
-              {/* For admin, optionally show client selector */}
-              {isAdmin && renderClientList()}
-
-              {/* Call Buttons (always visible for admin and client) */}
-              <div className="call-buttons">
-                <button className="call-button audio" onClick={() => initiateCall("audio")}>
-                  📞
-                </button>
-                <button className="call-button video" onClick={() => initiateCall("video")}>
-                  📹
-                </button>
-              </div>
-
-              <div className="chat-messages">
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`message ${
-                      msg.sender === (isAdmin ? "admin" : "client") ? "sender" : "receiver"
-                    }`}
-                  >
-                    <span className="sender">{msg.sender} :</span>
-                    <p>{msg.message}</p>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
-              <div className="chat-input">
-                <textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tapez votre message..."
-                />
-                <button onClick={handleSendMessage}>Envoyer</button>
-              </div>
-            </>
           )}
-        </div>
+          <div className={`chat-container ${isMinimized ? "minimized" : ""}`}>
+            <div className="chat-header">
+              <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
+              <div className="chat-controls">
+                <button className="minimize-button" onClick={handleMinimizeToggle}>
+                  {isMinimized ? "🗖" : "__"}
+                </button>
+                <button className="close-button" onClick={handleChatToggle}>
+                  X
+                </button>
+              </div>
+            </div>
+            {!isMinimized && (
+              <>
+                {isAdmin && renderClientList()}
+                {/* For admin, call buttons remain inside the chat area */}
+                {isAdmin && (
+                  <div className="call-buttons">
+                    <button className="call-button audio" onClick={() => initiateCall("audio")}>
+                      📞
+                    </button>
+                    <button className="call-button video" onClick={() => initiateCall("video")}>
+                      📹
+                    </button>
+                  </div>
+                )}
+                <div className="chat-messages">
+                  {messages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`message ${
+                        msg.sender === (isAdmin ? "admin" : "client") ? "sender" : "receiver"
+                      }`}
+                    >
+                      <span className="sender">{msg.sender} :</span>
+                      <p>{msg.message}</p>
+                    </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+                <div className="chat-input">
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Tapez votre message..."
+                  />
+                  <button onClick={handleSendMessage}>Envoyer</button>
+                </div>
+              </>
+            )}
+          </div>
+        </>
       )}
 
       {/* Active Call UI */}

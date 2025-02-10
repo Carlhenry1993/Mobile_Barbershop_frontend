@@ -408,3 +408,37 @@
 .call-button:hover {
   background-color: #0056b3;
 }
+
+
+/* --- Additional CSS for Call Buttons and Client Call Bar --- */
+.client-call-bar {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0;
+  background-color: #f1f1f1;
+  border-bottom: 1px solid #ccc;
+}
+
+.call-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.call-button {
+  background-color: #007bff;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  font-size: 20px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.call-button:hover {
+  background-color: #0056b3;
+}
