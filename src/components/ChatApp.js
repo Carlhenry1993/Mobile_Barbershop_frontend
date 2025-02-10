@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Audio de notification pour les messages
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
-// Audio pour la sonnerie des appels entrants (remplacez l'URL par celle d'une sonnerie adaptée)
+// Audio pour la sonnerie des appels entrants (vérifiez que l'URL est en HTTPS)
 const ringtoneAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3872/3872-preview.mp3");
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
@@ -35,11 +35,20 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const pcRef = useRef(null);
   const [socket, setSocket] = useState(null);
 
-  // Fonction pour arrêter la sonnerie
-  const stopRingtone = () => {
-    ringtoneAudio.pause();
-    ringtoneAudio.currentTime = 0;
-  };
+  // Pour activer l'audio (auto-play) via une interaction utilisateur
+  useEffect(() => {
+    const enableAudio = () => {
+      ringtoneAudio.play().then(() => {
+        ringtoneAudio.pause();
+        ringtoneAudio.currentTime = 0;
+        document.removeEventListener("click", enableAudio);
+      }).catch(err => console.log("Audio non autorisé encore", err));
+    };
+    document.addEventListener("click", enableAudio);
+    return () => {
+      document.removeEventListener("click", enableAudio);
+    };
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
@@ -67,16 +76,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
       ]);
       notificationAudio.play().catch((error) => console.error("Erreur audio :", error));
 
-      if (typeof Notification !== "undefined") {
-        if (Notification.permission === "granted") {
-          new Notification(`Message de ${data.sender}`, { body: data.message });
-        } else if (Notification.permission !== "denied") {
-          Notification.requestPermission().then((permission) => {
-            if (permission === "granted") {
-              new Notification(`Message de ${data.sender}`, { body: data.message });
-            }
-          });
-        }
+      if (Notification.permission === "granted") {
+        new Notification(`Message de ${data.sender}`, { body: data.message });
+      } else if (Notification.permission !== "denied") {
+        Notification.requestPermission().then((permission) => {
+          if (permission === "granted") {
+            new Notification(`Message de ${data.sender}`, { body: data.message });
+          }
+        });
       } else {
         toast.info(`Nouveau message de ${data.sender}: ${data.message}`);
       }
@@ -91,7 +98,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
 
     // Gestion des événements de signalisation WebRTC
-
     newSocket.on("call_offer", async (data) => {
       console.log("Offre d'appel reçue :", data);
       if (inCall) {
@@ -99,7 +105,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         return;
       }
       setIncomingCall({ from: data.from, callType: data.callType, offer: data.offer });
-      // Démarrer la sonnerie pour signaler l'appel entrant
+      // Démarrage de la sonnerie en boucle
       ringtoneAudio.loop = true;
       ringtoneAudio.play().catch((error) => console.error("Erreur de sonnerie :", error));
     });
@@ -129,18 +135,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
     newSocket.on("call_reject", (data) => {
       console.log("Appel rejeté :", data);
       alert("L'appel a été rejeté par le destinataire.");
-      stopRingtone();
       endCall();
     });
 
     newSocket.on("call_end", (data) => {
       console.log("Appel terminé :", data);
-      stopRingtone();
       endCall();
     });
 
     setSocket(newSocket);
-    if (typeof Notification !== "undefined" && Notification.permission !== "granted") {
+    if (Notification.permission !== "granted") {
       Notification.requestPermission();
     }
     return () => {
@@ -171,7 +175,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     pc.onconnectionstatechange = () => {
       console.log("État de la connexion :", pc.connectionState);
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
-        stopRingtone();
         endCall();
       }
     };
@@ -206,7 +209,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
-    stopRingtone();
+    // Arrêter la sonnerie dès l'acceptation
+    ringtoneAudio.pause();
+    ringtoneAudio.currentTime = 0;
     try {
       const stream = await navigator.mediaDevices.getUserMedia(getMediaConstraints(incomingCall.callType));
       setLocalStream(stream);
@@ -233,7 +238,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const handleRejectCall = () => {
     if (incomingCall) {
       socket.emit("call_reject", { to: incomingCall.from });
-      stopRingtone();
+      ringtoneAudio.pause();
+      ringtoneAudio.currentTime = 0;
       setIncomingCall(null);
     }
   };
@@ -253,7 +259,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
     setInCall(false);
     setCallType(null);
-    stopRingtone();
+    ringtoneAudio.pause();
+    ringtoneAudio.currentTime = 0;
     if (socket) {
       socket.emit("call_end", { to: getCallPartnerId() });
     }
@@ -353,7 +360,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
                 <div ref={messagesEndRef} />
               </div>
               <div className="chat-input">
-                <textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Tapez votre message..." />
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Tapez votre message..."
+                />
                 <button onClick={handleSendMessage}>Envoyer</button>
               </div>
             </>
@@ -378,8 +389,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       {incomingCall && (
         <div className="incoming-call-modal">
           <p>
-            Appel entrant de {incomingCall.from} (
-            {incomingCall.callType === "audio" ? "Vocal" : "Vidéo"})
+            Appel entrant de {incomingCall.from} ({incomingCall.callType === "audio" ? "Vocal" : "Vidéo"})
           </p>
           <button onClick={handleAcceptCall}>Accepter</button>
           <button onClick={handleRejectCall}>Refuser</button>
