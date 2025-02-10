@@ -6,8 +6,9 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Audio de notification pour les messages
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
-// Audio pour la sonnerie des appels entrants (vérifiez que l'URL est en HTTPS)
-const ringtoneAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3872/3872-preview.mp3");
+// Utilisation d'une source audio compatible (ici au format OGG)
+// Vous pouvez aussi héberger votre propre fichier audio dans le dossier public et utiliser "/ringtone.mp3"
+const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
@@ -35,14 +36,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const pcRef = useRef(null);
   const [socket, setSocket] = useState(null);
 
-  // Pour activer l'audio (auto-play) via une interaction utilisateur
+  // Permettre l'activation de l'audio via une interaction utilisateur
   useEffect(() => {
     const enableAudio = () => {
-      ringtoneAudio.play().then(() => {
-        ringtoneAudio.pause();
-        ringtoneAudio.currentTime = 0;
-        document.removeEventListener("click", enableAudio);
-      }).catch(err => console.log("Audio non autorisé encore", err));
+      // Tente de jouer puis d'arrêter la sonnerie pour débloquer l'audio
+      ringtoneAudio.play()
+        .then(() => {
+          ringtoneAudio.pause();
+          ringtoneAudio.currentTime = 0;
+          document.removeEventListener("click", enableAudio);
+        })
+        .catch((err) => console.log("Audio non autorisé encore", err));
     };
     document.addEventListener("click", enableAudio);
     return () => {
