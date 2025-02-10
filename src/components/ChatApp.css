@@ -72,18 +72,51 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-/* --- En-tête du chat --- */
+/* --- En-tête du chat avec boutons intégrés --- */
 .chat-header {
-  background: #007bff;
-  color: white;
-  padding: 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #007bff;
+  color: white;
+  padding: 10px;
   border-radius: 10px 10px 0 0;
 }
 
-/* --- Contrôles (minimiser / fermer) --- */
+.chat-header h4 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Boutons d'appel intégrés dans l'en-tête */
+.call-buttons-container {
+  display: flex;
+  gap: 10px;
+}
+
+.call-button {
+  background-color: #007bff;
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 24px;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.call-button:hover {
+  background-color: #0056b3;
+}
+
+/* Boutons de contrôle (minimiser / fermer) */
 .chat-controls {
   display: flex;
   gap: 10px;
@@ -97,8 +130,8 @@
   color: white;
   font-size: 24px;
   cursor: pointer;
-  height: 30px;
   width: 30px;
+  height: 30px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -361,31 +394,4 @@
 .incoming-call-modal button:last-of-type {
   background-color: #ccc;
   color: #333;
-}
-
-/* --- Boutons d'appel intégrés dans l'interface --- */
-.call-buttons-container {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  padding: 10px 0;
-  border-top: 1px solid #e0e0e0;
-  border-bottom: 1px solid #e0e0e0;
-  background-color: #f7f7f7;
-}
-
-.call-button {
-  background-color: #007bff;
-  border: none;
-  border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  font-size: 24px;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.call-button:hover {
-  background-color: #0056b3;
 }
