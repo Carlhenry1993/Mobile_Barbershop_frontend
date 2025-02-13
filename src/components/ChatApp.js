@@ -4,16 +4,12 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Audio de notification pour les messages
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
-// Pour la sonnerie, on utilise ici une URL en OGG (souvent bien supporté)
-// Vous pouvez aussi placer le fichier dans "public" et utiliser "/ringtone.mp3"
 const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
-  // États du chat
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
@@ -21,22 +17,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-
-  // États d'appel
   const [inCall, setInCall] = useState(false);
-  const [callType, setCallType] = useState(null); // "audio" ou "video"
+  const [callType, setCallType] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
 
-  // Références
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
   const [socket, setSocket] = useState(null);
 
-  // Activation de l'audio par interaction utilisateur
   useEffect(() => {
     const enableAudio = () => {
       ringtoneAudio.play()
@@ -72,8 +64,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     newSocket.on("new_message", (data) => {
-      console.log("Nouveau message reçu :", data);
-      // Si l'utilisateur est client et que le message provient de lui-même, on ignore l'écho
       if (!isAdmin && data.senderId === clientId) return;
       setMessages((prev) => [
         ...prev,
@@ -96,14 +86,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
     if (isAdmin) {
       newSocket.on("update_client_list", (clients) => {
-        console.log("Liste clients mise à jour :", clients);
         setClients(clients);
       });
     }
 
-    // Gestion des événements de signalisation WebRTC
     newSocket.on("call_offer", async (data) => {
-      console.log("Offre d'appel reçue :", data);
       if (inCall) {
         newSocket.emit("call_reject", { to: data.from });
         return;
@@ -114,7 +101,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     newSocket.on("call_answer", async (data) => {
-      console.log("Réponse d'appel reçue :", data);
       if (pcRef.current) {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
@@ -125,7 +111,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     newSocket.on("call_candidate", async (data) => {
-      console.log("ICE candidate reçue :", data);
       if (pcRef.current && data.candidate) {
         try {
           await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
@@ -136,13 +121,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     newSocket.on("call_reject", (data) => {
-      console.log("Appel rejeté :", data);
       alert("L'appel a été rejeté par le destinataire.");
       endCall();
     });
 
     newSocket.on("call_end", (data) => {
-      console.log("Appel terminé :", data);
       endCall();
     });
 
@@ -167,7 +150,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     };
     pc.ontrack = (event) => {
-      console.log("Piste distante reçue :", event);
       if (event.streams && event.streams[0]) {
         setRemoteStream(event.streams[0]);
         if (remoteVideoRef.current && callType === "video") {
@@ -176,7 +158,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     };
     pc.onconnectionstatechange = () => {
-      console.log("État de la connexion :", pc.connectionState);
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
         endCall();
       }
@@ -306,7 +287,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     } else {
       socket.emit("send_message_to_admin", { message });
     }
-    // Ajout local du message (afin d'avoir un affichage instantané)
     setMessages((prev) => [...prev, { sender: isAdmin ? "admin" : "client", message }]);
     setMessage("");
   }, [message, socket, isAdmin, selectedClientId]);
