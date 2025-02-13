@@ -4,12 +4,14 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// Audio for notifications
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
+  // Chat states
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
@@ -17,18 +19,22 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Call states
   const [inCall, setInCall] = useState(false);
-  const [callType, setCallType] = useState(null);
+  const [callType, setCallType] = useState(null); // "audio" or "video"
   const [incomingCall, setIncomingCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
 
+  // Refs
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
   const [socket, setSocket] = useState(null);
 
+  // Enable audio on user interaction
   useEffect(() => {
     const enableAudio = () => {
       ringtoneAudio.play()
@@ -37,7 +43,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           ringtoneAudio.currentTime = 0;
           document.removeEventListener("click", enableAudio);
         })
-        .catch((err) => console.log("Audio non autorisé encore", err));
+        .catch((err) => console.log("Audio not allowed yet", err));
     };
     document.addEventListener("click", enableAudio);
     return () => {
@@ -45,6 +51,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, []);
 
+  // Scroll to bottom of chat
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -55,12 +62,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Socket.IO connection and event handlers
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL, {
       auth: { token: localStorage.getItem("token") },
     });
     newSocket.on("connect", () => {
-      console.log("Connecté au serveur WebSocket.");
+      console.log("Connected to WebSocket server.");
     });
 
     newSocket.on("new_message", (data) => {
@@ -69,17 +77,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
         ...prev,
         { sender: data.sender, message: data.message },
       ]);
-      notificationAudio.play().catch((error) => console.error("Erreur audio :", error));
+      notificationAudio.play().catch((error) => console.error("Audio error:", error));
       if (Notification.permission === "granted") {
-        new Notification(`Message de ${data.sender}`, { body: data.message });
+        new Notification(`Message from ${data.sender}`, { body: data.message });
       } else if (Notification.permission !== "denied") {
         Notification.requestPermission().then((permission) => {
           if (permission === "granted") {
-            new Notification(`Message de ${data.sender}`, { body: data.message });
+            new Notification(`Message from ${data.sender}`, { body: data.message });
           }
         });
       } else {
-        toast.info(`Nouveau message de ${data.sender}: ${data.message}`);
+        toast.info(`New message from ${data.sender}: ${data.message}`);
       }
       if (!isChatOpen || isMinimized) setUnreadCount((prev) => prev + 1);
     });
@@ -90,6 +98,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       });
     }
 
+    // WebRTC signaling events
     newSocket.on("call_offer", async (data) => {
       if (inCall) {
         newSocket.emit("call_reject", { to: data.from });
@@ -97,7 +106,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
       setIncomingCall({ from: data.from, callType: data.callType, offer: data.offer });
       ringtoneAudio.loop = true;
-      ringtoneAudio.play().catch((error) => console.error("Erreur de sonnerie :", error));
+      ringtoneAudio.play().catch((error) => console.error("Ringtone error:", error));
     });
 
     newSocket.on("call_answer", async (data) => {
@@ -105,7 +114,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
         } catch (error) {
-          console.error("Erreur lors de la définition de la description distante :", error);
+          console.error("Error setting remote description:", error);
         }
       }
     });
@@ -115,13 +124,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
         try {
           await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
         } catch (error) {
-          console.error("Erreur lors de l'ajout de l'ICE candidate :", error);
+          console.error("Error adding ICE candidate:", error);
         }
       }
     });
 
     newSocket.on("call_reject", (data) => {
-      alert("L'appel a été rejeté par le destinataire.");
+      alert("Call rejected by the recipient.");
       endCall();
     });
 
@@ -138,10 +147,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [isAdmin, inCall, isChatOpen, isMinimized]);
 
+  // Helper functions
   const getCallPartnerId = () => (isAdmin ? selectedClientId : "admin");
   const getMediaConstraints = (type) =>
     type === "audio" ? { audio: true, video: false } : { audio: true, video: true };
 
+  // Create a new RTCPeerConnection
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
     pc.onicecandidate = (event) => {
@@ -165,13 +176,22 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return pc;
   };
 
+  // Initiate a call
   const initiateCall = async (type) => {
     if (isAdmin && !selectedClientId) {
-      alert("Veuillez sélectionner un client pour appeler.");
+      alert("Please select a client to call.");
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia(getMediaConstraints(type));
+      const constraints = { audio: true, video: type === "video" };
+      console.log("Requesting media with constraints:", constraints);
+      const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(async (error) => {
+        if (type === "video" && error.name === "NotFoundError") {
+          console.warn("Camera not found, falling back to audio-only call.");
+          return navigator.mediaDevices.getUserMedia({ audio: true });
+        }
+        throw error;
+      });
       setLocalStream(stream);
       if (localVideoRef.current && type === "video") {
         localVideoRef.current.srcObject = stream;
@@ -186,11 +206,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setCallType(type);
       setInCall(true);
     } catch (error) {
-      console.error("Erreur lors de l'initiation de l'appel :", error);
-      alert("Erreur lors de l'initiation de l'appel. Vérifiez vos autorisations (HTTPS requis).");
+      console.error("Error initiating call:", error);
+      if (error.name === "NotFoundError") {
+        alert("No microphone or camera found. Please check your devices.");
+      } else if (error.name === "NotAllowedError") {
+        alert("Permission denied for microphone or camera access.");
+      } else {
+        alert("Error initiating call. Please check your permissions (HTTPS required).");
+      }
     }
   };
 
+  // Accept an incoming call
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
     ringtoneAudio.pause();
@@ -213,11 +240,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setInCall(true);
       setIncomingCall(null);
     } catch (error) {
-      console.error("Erreur lors de l'acceptation de l'appel :", error);
-      alert("Erreur lors de l'acceptation de l'appel.");
+      console.error("Error accepting call:", error);
+      alert("Error accepting call.");
     }
   };
 
+  // Reject an incoming call
   const handleRejectCall = () => {
     if (incomingCall) {
       socket.emit("call_reject", { to: incomingCall.from });
@@ -227,6 +255,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
+  // End the current call
   const endCall = () => {
     if (pcRef.current) {
       pcRef.current.close();
@@ -249,6 +278,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
+  // Mark messages as read
   const markMessagesAsRead = useCallback(async () => {
     try {
       await fetch("/api/messages/markAsRead", {
@@ -257,10 +287,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
         headers: { "Content-Type": "application/json" },
       });
     } catch (error) {
-      console.error("Erreur lors du marquage des messages :", error);
+      console.error("Error marking messages as read:", error);
     }
   }, [clientId, isAdmin, selectedClientId]);
 
+  // Toggle chat window
   const handleChatToggle = useCallback(() => {
     setIsChatOpen((prev) => !prev);
     setIsMinimized(false);
@@ -268,19 +299,21 @@ const ChatApp = ({ clientId, isAdmin }) => {
     markMessagesAsRead();
   }, [markMessagesAsRead]);
 
+  // Toggle minimize chat
   const handleMinimizeToggle = useCallback(() => {
     setIsMinimized((prev) => !prev);
     if (!isMinimized) setUnreadCount(0);
   }, [isMinimized]);
 
+  // Send a message
   const handleSendMessage = useCallback(() => {
     if (!message.trim()) {
-      alert("Le message est vide !");
+      alert("Message is empty!");
       return;
     }
     if (isAdmin) {
       if (!selectedClientId) {
-        alert("Aucun client sélectionné.");
+        alert("No client selected.");
         return;
       }
       socket.emit("send_message_to_client", { clientId: selectedClientId, message });
@@ -291,11 +324,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setMessage("");
   }, [message, socket, isAdmin, selectedClientId]);
 
+  // Render client list (admin only)
   const renderClientList = () => (
     <select onChange={(e) => setSelectedClientId(e.target.value)} value={selectedClientId || ""} className="client-selector">
-      <option value="">Sélectionnez un client</option>
+      <option value="">Select a client</option>
       {clients.length === 0 ? (
-        <option disabled>Aucun client connecté</option>
+        <option disabled>No clients connected</option>
       ) : (
         clients.map((client) => (
           <option key={client.id} value={client.id}>
@@ -310,7 +344,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     <div className="chat-app">
       {!isChatOpen ? (
         <>
-          <p className="chat-info">Chatter avec nous !</p>
+          <p className="chat-info">Chat with us!</p>
           <button className="chat-bubble-icon" onClick={handleChatToggle}>
             💬 {unreadCount > 0 && <span className="unread-count">{unreadCount}</span>}
           </button>
@@ -346,9 +380,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tapez votre message..."
+                  placeholder="Type your message..."
                 />
-                <button onClick={handleSendMessage}>Envoyer</button>
+                <button onClick={handleSendMessage}>Send</button>
               </div>
             </>
           )}
@@ -357,25 +391,25 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
       {inCall && (
         <div className="call-container">
-          <h4>Appel en cours ({callType === "audio" ? "Vocal" : "Vidéo"})</h4>
+          <h4>Ongoing Call ({callType === "audio" ? "Audio" : "Video"})</h4>
           {callType === "video" && (
             <div className="video-container">
               <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
               <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
             </div>
           )}
-          {callType === "audio" && <p>Appel vocal en cours...</p>}
-          <button onClick={endCall}>Terminer l'appel</button>
+          {callType === "audio" && <p>Audio call in progress...</p>}
+          <button onClick={endCall}>End Call</button>
         </div>
       )}
 
       {incomingCall && (
         <div className="incoming-call-modal">
           <p>
-            Appel entrant de {incomingCall.from} ({incomingCall.callType === "audio" ? "Vocal" : "Vidéo"})
+            Incoming call from {incomingCall.from} ({incomingCall.callType === "audio" ? "Audio" : "Video"})
           </p>
-          <button onClick={handleAcceptCall}>Accepter</button>
-          <button onClick={handleRejectCall}>Refuser</button>
+          <button onClick={handleAcceptCall}>Accept</button>
+          <button onClick={handleRejectCall}>Reject</button>
         </div>
       )}
 
