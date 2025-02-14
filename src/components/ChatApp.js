@@ -62,6 +62,32 @@ const ChatApp = ({ clientId, isAdmin }) => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Helper function to get call partner ID
+  const getCallPartnerId = useCallback(() => (isAdmin ? selectedClientId : "admin"), [isAdmin, selectedClientId]);
+
+  // End the current call
+  const endCall = useCallback(() => {
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop());
+      setLocalStream(null);
+    }
+    if (remoteStream) {
+      remoteStream.getTracks().forEach((track) => track.stop());
+      setRemoteStream(null);
+    }
+    setInCall(false);
+    setCallType(null);
+    ringtoneAudio.pause();
+    ringtoneAudio.currentTime = 0;
+    if (socket) {
+      socket.emit("call_end", { to: getCallPartnerId() });
+    }
+  }, [localStream, remoteStream, socket, getCallPartnerId]);
+
   // Socket.IO connection and event handlers
   useEffect(() => {
     const newSocket = io(SOCKET_SERVER_URL, {
@@ -145,10 +171,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return () => {
       newSocket.disconnect();
     };
-  }, [isAdmin, inCall, isChatOpen, isMinimized]);
+  }, [isAdmin, inCall, isChatOpen, isMinimized, clientId, endCall]);
 
   // Helper functions
-  const getCallPartnerId = () => (isAdmin ? selectedClientId : "admin");
   const getMediaConstraints = (type) =>
     type === "audio" ? { audio: true, video: false } : { audio: true, video: true };
 
@@ -252,29 +277,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       ringtoneAudio.pause();
       ringtoneAudio.currentTime = 0;
       setIncomingCall(null);
-    }
-  };
-
-  // End the current call
-  const endCall = () => {
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
-    if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-      setLocalStream(null);
-    }
-    if (remoteStream) {
-      remoteStream.getTracks().forEach((track) => track.stop());
-      setRemoteStream(null);
-    }
-    setInCall(false);
-    setCallType(null);
-    ringtoneAudio.pause();
-    ringtoneAudio.currentTime = 0;
-    if (socket) {
-      socket.emit("call_end", { to: getCallPartnerId() });
     }
   };
 
