@@ -22,24 +22,28 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Call state
   const [inCall, setInCall] = useState(false);
+  const [callConnected, setCallConnected] = useState(false);
   const [callType, setCallType] = useState(null); // "audio" or "video"
   const [incomingCall, setIncomingCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
   const [remoteStream, setRemoteStream] = useState(null);
+  const [callDuration, setCallDuration] = useState(0);
 
   // Refs for DOM and persistent values
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Refs to mirror state for use in socket callbacks
+  // Mirror state values into refs for socket callbacks
   const inCallRef = useRef(inCall);
   const selectedClientIdRef = useRef(selectedClientId);
-
+  const callTypeRef = useRef(callType);
   useEffect(() => { inCallRef.current = inCall; }, [inCall]);
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
+  useEffect(() => { callTypeRef.current = callType; }, [callType]);
 
   // Helper: Determines the call partner ID (for clients it is always "admin")
   const getCallPartnerId = useCallback(() => {
@@ -67,7 +71,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
     // New message: play sound and trigger a browser notification
     socket.on("new_message", (data) => {
-      // For admins: show all messages; for clients: ignore self-sent messages.
       if (isAdmin || data.senderId !== clientId) {
         setMessages((prev) => [...prev, { sender: data.sender, message: data.message }]);
         notificationAudio.play().catch(() => {});
@@ -86,7 +89,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     });
 
-    // Admin: update the list of connected clients.
+    // For admin: update the list of connected clients.
     if (isAdmin) {
       socket.on("update_client_list", (clientList) => {
         setClients(clientList);
@@ -99,10 +102,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socket.emit("call_reject", { to: data.from });
         return;
       }
-      // If admin and no client is selected, auto-select the caller.
-      if (isAdmin && !selectedClientIdRef.current) {
-        setSelectedClientId(data.from);
-      }
+      // Always show incoming call modal regardless of selected client
       setIncomingCall(data);
       ringtoneAudio.loop = true;
       ringtoneAudio.play().catch(() => {});
@@ -137,17 +137,38 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
-    // Request notification permission once on mount
+    // Request notification permission on mount
     if (Notification.permission !== "granted") {
       Notification.requestPermission();
     }
 
     return () => {
-      // Cleanup socket on unmount
       socket.disconnect();
     };
-    // Empty dependency array: we want this to run only once.
   }, [isAdmin, clientId, getCallPartnerId]);
+
+  // Timer for call duration (starts only after call is connected)
+  const callTimerRef = useRef(null);
+  useEffect(() => {
+    if (inCall && callConnected) {
+      callTimerRef.current = setInterval(() => {
+        setCallDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setCallDuration(0);
+      if (callTimerRef.current) clearInterval(callTimerRef.current);
+    }
+    return () => {
+      if (callTimerRef.current) clearInterval(callTimerRef.current);
+    };
+  }, [inCall, callConnected]);
+
+  // Format duration in mm:ss
+  const formatDuration = (duration) => {
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
+    return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   // End the current call and cleanup streams/peer connection.
   const endCall = useCallback(() => {
@@ -164,10 +185,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setLocalStream(null);
     setRemoteStream(null);
     setInCall(false);
+    setCallConnected(false);
     setCallType(null);
     ringtoneAudio.pause();
     ringtoneAudio.currentTime = 0;
-    // Inform the other party that the call ended.
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
   }, [localStream, remoteStream, getCallPartnerId]);
 
@@ -184,12 +205,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
     pc.ontrack = (event) => {
       if (event.streams && event.streams[0]) {
         setRemoteStream(event.streams[0]);
-        if (remoteVideoRef.current && callType === "video") {
+        if (callTypeRef.current === "video" && remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = event.streams[0];
+        } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = event.streams[0];
         }
       }
     };
     pc.onconnectionstatechange = () => {
+      if (pc.connectionState === "connected") {
+        setCallConnected(true);
+      }
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
         endCall();
       }
@@ -199,7 +225,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Initiate an outgoing call (audio or video).
   const initiateCall = async (type) => {
-    // For admin, ensure a client is selected.
     if (isAdmin && !selectedClientId) {
       alert("Please select a client to call.");
       return;
@@ -277,7 +302,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Mark messages as read (only if a valid user ID is available).
+  // Mark messages as read.
   const markMessagesAsRead = useCallback(async () => {
     const targetUserId = isAdmin ? selectedClientId : clientId;
     if (!targetUserId) return;
@@ -316,7 +341,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       alert("No client selected.");
       return;
     }
-    // The event name and payload differ based on sender type.
     socketRef.current?.emit(
       isAdmin ? "send_message_to_client" : "send_message_to_admin",
       { clientId: selectedClientId, message }
@@ -405,7 +429,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
               <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
             </div>
           )}
-          {callType === "audio" && <p>Audio call in progress...</p>}
+          {callType === "audio" && (
+            <div className="audio-container">
+              <audio ref={remoteAudioRef} autoPlay />
+              <p>Audio call in progress...</p>
+            </div>
+          )}
+          <div className="call-timer">Call Duration: {formatDuration(callDuration)}</div>
           <button onClick={endCall}>End Call</button>
         </div>
       )}
@@ -413,8 +443,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       {incomingCall && (
         <div className="incoming-call-modal">
           <p>
-            Incoming call from {incomingCall.from} (
-            {incomingCall.callType === "audio" ? "Audio" : "Video"})
+            Incoming call from {incomingCall.from} ({incomingCall.callType === "audio" ? "Audio" : "Video"})
           </p>
           <button onClick={handleAcceptCall}>Accept</button>
           <button onClick={handleRejectCall}>Reject</button>
