@@ -98,14 +98,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
     // WebRTC signaling events for calls
     socket.on("call_offer", (data) => {
+      console.log("Received call_offer:", data);
+      // If already in a call, auto-reject.
       if (inCallRef.current) {
         socket.emit("call_reject", { to: data.from });
         return;
       }
-      // Always show incoming call modal regardless of selected client
+      // Always show incoming call modal.
       setIncomingCall(data);
       ringtoneAudio.loop = true;
-      ringtoneAudio.play().catch(() => {});
+      ringtoneAudio.play().catch((err) => console.error("Ringtone play error:", err));
     });
 
     socket.on("call_answer", async (data) => {
@@ -134,6 +136,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     socket.on("call_end", () => {
+      alert("Call ended by remote party.");
       endCall();
     });
 
@@ -189,6 +192,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setCallType(null);
     ringtoneAudio.pause();
     ringtoneAudio.currentTime = 0;
+    // Send hangup event so that both sides end call
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
   }, [localStream, remoteStream, getCallPartnerId]);
 
@@ -209,6 +213,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           remoteVideoRef.current.srcObject = event.streams[0];
         } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = event.streams[0];
+          remoteAudioRef.current.play().catch((err) => console.error("Remote audio play error:", err));
         }
       }
     };
@@ -243,6 +248,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         localVideoRef.current.srcObject = stream;
       }
       pcRef.current = createPeerConnection();
+      // Add all tracks to the peer connection
       stream.getTracks().forEach((track) => {
         pcRef.current.addTrack(track, stream);
       });
