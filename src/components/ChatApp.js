@@ -4,9 +4,11 @@ import "./ChatApp.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Audio for notifications and ringtones
+// Use an alternate ringtone or host your own file to avoid tracking prevention issues.
+const ringtoneURL = "https://your-domain.com/sounds/beep_short.mp3"; // Replace with a suitable URL.
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
-const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.mp3");
+const ringtoneAudio = new Audio(ringtoneURL);
+ringtoneAudio.crossOrigin = "anonymous";
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
@@ -36,6 +38,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
+  // A ref to hold ICE candidates that arrive before remote description is set
+  const pendingCandidatesRef = useRef([]);
 
   // Mirror state values into refs for socket callbacks
   const inCallRef = useRef(inCall);
@@ -69,7 +73,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       console.log("Connected to WebSocket server.");
     });
 
-    // New message: play sound and trigger a browser notification
+    // New message: play sound and trigger a browser notification.
     socket.on("new_message", (data) => {
       if (isAdmin || data.senderId !== clientId) {
         setMessages((prev) => [...prev, { sender: data.sender, message: data.message }]);
@@ -99,7 +103,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     // WebRTC signaling events for calls
     socket.on("call_offer", (data) => {
       console.log("Received call_offer:", data);
-      // If already in a call, auto-reject.
       if (inCallRef.current) {
         socket.emit("call_reject", { to: data.from });
         return;
@@ -114,6 +117,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
       if (pcRef.current) {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          // Process any queued ICE candidates.
+          pendingCandidatesRef.current.forEach((candidate) => {
+            pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
+              console.error("Error adding queued candidate:", err)
+            );
+          });
+          pendingCandidatesRef.current = [];
         } catch (error) {
           console.error("Error setting remote description:", error);
         }
@@ -121,11 +131,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     socket.on("call_candidate", async (data) => {
-      if (pcRef.current && data.candidate) {
-        try {
-          await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-        } catch (error) {
-          console.error("Error adding ICE candidate:", error);
+      if (pcRef.current) {
+        if (pcRef.current.remoteDescription && pcRef.current.remoteDescription.type) {
+          try {
+            await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          } catch (error) {
+            console.error("Error adding ICE candidate:", error);
+          }
+        } else {
+          // Queue candidate if remote description not set
+          pendingCandidatesRef.current.push(data.candidate);
         }
       }
     });
@@ -140,7 +155,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
-    // Request notification permission on mount
+    // Request notification permission on mount.
     if (Notification.permission !== "granted") {
       Notification.requestPermission();
     }
@@ -192,7 +207,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setCallType(null);
     ringtoneAudio.pause();
     ringtoneAudio.currentTime = 0;
-    // Send hangup event so that both sides end call
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
   }, [localStream, remoteStream, getCallPartnerId]);
 
@@ -213,7 +227,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
           remoteVideoRef.current.srcObject = event.streams[0];
         } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = event.streams[0];
-          remoteAudioRef.current.play().catch((err) => console.error("Remote audio play error:", err));
+          remoteAudioRef.current.play().catch((err) =>
+            console.error("Remote audio play error:", err)
+          );
         }
       }
     };
@@ -248,7 +264,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
         localVideoRef.current.srcObject = stream;
       }
       pcRef.current = createPeerConnection();
-      // Add all tracks to the peer connection
       stream.getTracks().forEach((track) => {
         pcRef.current.addTrack(track, stream);
       });
@@ -286,6 +301,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
         pcRef.current.addTrack(track, stream);
       });
       await pcRef.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+      // Process any queued ICE candidates now that remote description is set.
+      pendingCandidatesRef.current.forEach((candidate) => {
+        pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
+          console.error("Error adding queued candidate:", err)
+        );
+      });
+      pendingCandidatesRef.current = [];
       const answer = await pcRef.current.createAnswer();
       await pcRef.current.setLocalDescription(answer);
       socketRef.current?.emit("call_answer", { to: incomingCall.from, answer });
