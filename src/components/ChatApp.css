@@ -191,26 +191,16 @@ body {
   background-color: #aaa;
 }
 
-/* --- Message Styles --- */
+/* --- Unified Message Styles --- */
 .message {
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   max-width: 80%;
   word-wrap: break-word;
   margin-bottom: 10px;
-}
-
-.message.sender {
-  background: var(--primary-color);
-  color: var(--bg-white);
-  align-self: flex-end;
-  margin-left: auto;
-}
-
-.message.receiver {
   background: #e1f5fe;
+  color: #333;
   align-self: flex-start;
-  margin-right: auto;
 }
 
 /* --- Chat Input --- */
@@ -266,7 +256,7 @@ body {
   border: 1px solid var(--border-color);
   font-size: 0.875rem;
   background: var(--bg-white);
-  transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+  transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed);
 }
 
 .client-selector:focus {

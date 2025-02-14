@@ -11,7 +11,7 @@ const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/bee
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
-  // Chat state
+  // Chat states
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
@@ -20,7 +20,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Call state
+  // Call states
   const [inCall, setInCall] = useState(false);
   const [callType, setCallType] = useState(null); // "audio" or "video"
   const [incomingCall, setIncomingCall] = useState(null);
@@ -34,12 +34,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const pcRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Returns the ID of the call partner – if admin, it's the selected client; if not, it’s "admin"
-  const getCallPartnerId = useCallback(() => {
-    return isAdmin ? selectedClientId : "admin";
-  }, [isAdmin, selectedClientId]);
+  // Returns the call partner ID – if admin, it's the selected client; otherwise it's "admin"
+  const getCallPartnerId = useCallback(() => (isAdmin ? selectedClientId : "admin"), [isAdmin, selectedClientId]);
 
-  // Scroll chat to the bottom whenever messages update
+  // Scroll to bottom when messages update
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -49,7 +47,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Setup Socket.IO connection and event handlers
+  // Socket.IO connection and event handlers
   useEffect(() => {
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
@@ -59,17 +57,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     socket.on("new_message", (data) => {
-      // For admins, show all messages; for clients, ignore messages sent by self.
+      // For admin, show all messages; for clients, ignore messages sent by self.
       if (isAdmin || data.senderId !== clientId) {
         setMessages((prev) => [...prev, { sender: data.sender, message: data.message }]);
         notificationAudio.play().catch(() => {});
-        if (!isChatOpen || isMinimized) {
-          setUnreadCount((prev) => prev + 1);
-        }
+        if (!isChatOpen || isMinimized) setUnreadCount((prev) => prev + 1);
       }
     });
 
-    // Update client list for admin users
+    // Admin: update client list
     if (isAdmin) {
       socket.on("update_client_list", (clientList) => {
         setClients(clientList);
@@ -116,7 +112,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
-    // Request notification permission if not already granted
     if (Notification.permission !== "granted") {
       Notification.requestPermission();
     }
@@ -132,12 +127,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
       pcRef.current.close();
       pcRef.current = null;
     }
-    if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
-    }
-    if (remoteStream) {
-      remoteStream.getTracks().forEach((track) => track.stop());
-    }
+    if (localStream) localStream.getTracks().forEach((track) => track.stop());
+    if (remoteStream) remoteStream.getTracks().forEach((track) => track.stop());
     setLocalStream(null);
     setRemoteStream(null);
     setInCall(false);
@@ -279,7 +270,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     if (!isMinimized) setUnreadCount(0);
   }, [isMinimized]);
 
-  // Send a chat message
+  // Send a chat message (unified interface for both admin and client)
   const handleSendMessage = useCallback(() => {
     if (!message.trim()) {
       alert("Message is empty!");
@@ -297,7 +288,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setMessage("");
   }, [message, isAdmin, selectedClientId]);
 
-  // Render client list for admin users
+  // Render the client list (for admin)
   const renderClientList = () => (
     <select onChange={(e) => setSelectedClientId(e.target.value)} value={selectedClientId || ""} className="client-selector">
       <option value="">Select a client</option>
@@ -342,8 +333,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
               {isAdmin && renderClientList()}
               <div className="chat-messages">
                 {messages.map((msg, index) => (
-                  <div key={index} className={`message ${msg.sender === (isAdmin ? "admin" : "client") ? "sender" : "receiver"}`}>
-                    <span className="sender">{msg.sender} :</span>
+                  <div key={index} className="message">
+                    <span className="message-author">{msg.sender}:</span>
                     <p>{msg.message}</p>
                   </div>
                 ))}
