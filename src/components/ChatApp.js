@@ -4,14 +4,14 @@ import "./ChatApp.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Audio for notifications
+// Audio for notifications and ringtones
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.mp3");
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
-  // Chat states
+  // Chat state
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
@@ -20,7 +20,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Call states
+  // Call state
   const [inCall, setInCall] = useState(false);
   const [callType, setCallType] = useState(null); // "audio" or "video"
   const [incomingCall, setIncomingCall] = useState(null);
@@ -34,8 +34,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const pcRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Returns the call partner ID – if admin, it's the selected client; otherwise it's "admin"
-  const getCallPartnerId = useCallback(() => (isAdmin ? selectedClientId : "admin"), [isAdmin, selectedClientId]);
+  // Determines the call partner: if admin, call target is the selected client; if not, target is "admin"
+  const getCallPartnerId = useCallback(() => {
+    return isAdmin ? selectedClientId : "admin";
+  }, [isAdmin, selectedClientId]);
 
   // Scroll to bottom when messages update
   const scrollToBottom = useCallback(() => {
@@ -47,7 +49,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Socket.IO connection and event handlers
+  // Setup Socket.IO connection and event handlers
   useEffect(() => {
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
@@ -56,27 +58,45 @@ const ChatApp = ({ clientId, isAdmin }) => {
       console.log("Connected to WebSocket server.");
     });
 
+    // When a new message arrives, play sound and trigger a browser notification.
     socket.on("new_message", (data) => {
-      // For admin, show all messages; for clients, ignore messages sent by self.
+      // For admins: show all messages; for clients: ignore messages sent by self.
       if (isAdmin || data.senderId !== clientId) {
         setMessages((prev) => [...prev, { sender: data.sender, message: data.message }]);
         notificationAudio.play().catch(() => {});
-        if (!isChatOpen || isMinimized) setUnreadCount((prev) => prev + 1);
+        // Browser notification (if permission granted)
+        if (Notification.permission === "granted") {
+          new Notification(`Message from ${data.sender}`, { body: data.message });
+        } else if (Notification.permission !== "denied") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              new Notification(`Message from ${data.sender}`, { body: data.message });
+            }
+          });
+        }
+        if (!isChatOpen || isMinimized) {
+          setUnreadCount((prev) => prev + 1);
+        }
       }
     });
 
-    // Admin: update client list
+    // For admin: update the list of connected clients.
     if (isAdmin) {
       socket.on("update_client_list", (clientList) => {
         setClients(clientList);
       });
     }
 
-    // WebRTC signaling events
+    // WebRTC signaling events for calls
     socket.on("call_offer", (data) => {
+      // If already in a call, reject.
       if (inCall) {
         socket.emit("call_reject", { to: data.from });
         return;
+      }
+      // If admin and no client is selected, auto-select the caller.
+      if (isAdmin && !selectedClientId) {
+        setSelectedClientId(data.from);
       }
       setIncomingCall(data);
       ringtoneAudio.loop = true;
@@ -119,16 +139,20 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return () => {
       socket.disconnect();
     };
-  }, [isAdmin, inCall, isChatOpen, isMinimized, clientId, getCallPartnerId]);
+  }, [isAdmin, inCall, isChatOpen, isMinimized, clientId, getCallPartnerId, selectedClientId]);
 
-  // End the current call
+  // End the current call and cleanup streams/peer connection.
   const endCall = useCallback(() => {
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
     }
-    if (localStream) localStream.getTracks().forEach((track) => track.stop());
-    if (remoteStream) remoteStream.getTracks().forEach((track) => track.stop());
+    if (localStream) {
+      localStream.getTracks().forEach((track) => track.stop());
+    }
+    if (remoteStream) {
+      remoteStream.getTracks().forEach((track) => track.stop());
+    }
     setLocalStream(null);
     setRemoteStream(null);
     setInCall(false);
@@ -138,7 +162,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
   }, [localStream, remoteStream, getCallPartnerId]);
 
-  // Create and configure a new RTCPeerConnection
+  // Create and configure a new RTCPeerConnection.
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
@@ -164,8 +188,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return pc;
   };
 
-  // Initiate an outgoing call (audio or video)
+  // Initiate an outgoing call (audio or video).
   const initiateCall = async (type) => {
+    // For admin, ensure a client is selected.
     if (isAdmin && !selectedClientId) {
       alert("Please select a client to call.");
       return;
@@ -204,7 +229,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Accept an incoming call
+  // Accept an incoming call.
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
     ringtoneAudio.pause();
@@ -233,7 +258,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Reject an incoming call
+  // Reject an incoming call.
   const handleRejectCall = () => {
     if (incomingCall) {
       socketRef.current?.emit("call_reject", { to: incomingCall.from });
@@ -243,7 +268,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Mark messages as read (placeholder for API call)
+  // Mark messages as read (placeholder for API call).
   const markMessagesAsRead = useCallback(async () => {
     try {
       await fetch("/api/messages/markAsRead", {
@@ -256,7 +281,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [clientId, isAdmin, selectedClientId]);
 
-  // Toggle chat window open/close
+  // Toggle chat window open/close.
   const handleChatToggle = useCallback(() => {
     setIsChatOpen((prev) => !prev);
     setIsMinimized(false);
@@ -264,13 +289,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
     markMessagesAsRead();
   }, [markMessagesAsRead]);
 
-  // Toggle minimize chat
+  // Toggle minimize chat.
   const handleMinimizeToggle = useCallback(() => {
     setIsMinimized((prev) => !prev);
     if (!isMinimized) setUnreadCount(0);
   }, [isMinimized]);
 
-  // Send a chat message (unified interface for both admin and client)
+  // Send a chat message (unified for both admin and client).
   const handleSendMessage = useCallback(() => {
     if (!message.trim()) {
       alert("Message is empty!");
@@ -288,7 +313,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setMessage("");
   }, [message, isAdmin, selectedClientId]);
 
-  // Render the client list (for admin)
+  // Render the client list for admin.
   const renderClientList = () => (
     <select onChange={(e) => setSelectedClientId(e.target.value)} value={selectedClientId || ""} className="client-selector">
       <option value="">Select a client</option>
