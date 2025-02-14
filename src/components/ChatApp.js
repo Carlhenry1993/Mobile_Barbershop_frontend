@@ -6,7 +6,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Audio for notifications
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
-const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
+const ringtoneAudio = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.mp3");
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
@@ -33,6 +33,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const remoteVideoRef = useRef(null);
   const pcRef = useRef(null);
   const [socket, setSocket] = useState(null);
+
+  // Helper function to get the call partner ID
+  const getCallPartnerId = useCallback(() => (isAdmin ? selectedClientId : "admin"), [isAdmin, selectedClientId]);
 
   // Enable audio on user interaction
   useEffect(() => {
@@ -61,9 +64,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages, scrollToBottom]);
-
-  // Helper function to get call partner ID
-  const getCallPartnerId = useCallback(() => (isAdmin ? selectedClientId : "admin"), [isAdmin, selectedClientId]);
 
   // End the current call
   const endCall = useCallback(() => {
