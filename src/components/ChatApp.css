@@ -174,9 +174,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
 
-/* Custom Scrollbar */
 .chat-messages::-webkit-scrollbar {
   width: 6px;
 }
@@ -188,11 +189,6 @@ body {
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
   background-color: #aaa;
-}
-
-.chat-messages {
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
 }
 
 /* --- Message Styles --- */
