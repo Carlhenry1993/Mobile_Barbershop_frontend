@@ -4,7 +4,7 @@ import "./ChatApp.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// If you ever need jwt-decode, import it like this:
+// If you ever need to use jwt-decode, import it like this:
 // import { default as jwtDecode } from "jwt-decode";
 
 // Ringtone URLs (update with your valid URLs)
@@ -45,7 +45,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Ref to hold ICE candidates arriving before remote description is set
   const pendingCandidatesRef = useRef([]);
 
-  // Mirror state values into refs for socket callbacks
+  // Mirror state values into refs for use in socket callbacks
   const inCallRef = useRef(inCall);
   const selectedClientIdRef = useRef(selectedClientId);
   const callTypeRef = useRef(callType);
@@ -69,12 +69,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
   }, [messages, scrollToBottom]);
 
   // --- iOS Autoplay Workaround ---
-  // iOS requires user interaction to allow audio playback.
+  // iOS requires a user interaction to allow audio playback.
   useEffect(() => {
     const enableAudio = () => {
-      // Try playing a very short silent audio clip or our ringtone once to unlock audio playback.
-      ringtoneAudio.play().catch(err => console.warn("Autoplay blocked, waiting for user interaction."));
-      // Remove listener after first click.
+      // Try playing the ringtone once to unlock audio (this may be silent if blocked)
+      ringtoneAudio.play().catch(err => console.warn("Autoplay blocked:", err));
       document.removeEventListener("click", enableAudio);
     };
     document.addEventListener("click", enableAudio, { once: true });
@@ -82,7 +81,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Establish a single Socket.IO connection on mount
   useEffect(() => {
-    // IMPORTANT: Remove or update any dependency that uses unsupported regex (e.g. "natural").
+    // IMPORTANT: Remove or update any dependency that uses unsupported regex (like "natural").
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
 
