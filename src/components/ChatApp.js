@@ -8,7 +8,7 @@ import "react-toastify/dist/ReactToastify.css";
 // import { default as jwtDecode } from "jwt-decode";
 
 // Ringtone URL – ensure this file is served with proper CORS headers from your backend!
-const ringtoneURL = "https://mobile-barbershop-backend.onrender.com/sounds/beep_short.mp3";
+const ringtoneURL = "https://assets.mixkit.co/sfx/preview/mixkit-beep-alert-2870.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio(ringtoneURL);
 ringtoneAudio.crossOrigin = "anonymous";
