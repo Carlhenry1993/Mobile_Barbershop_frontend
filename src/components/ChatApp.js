@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import io from "socket.io-client";
 import "./ChatApp.css";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
-// If you ever need to use jwt-decode, import it like this:
-// import { default as jwtDecode } from "jwt-decode";
 
 // Ringtone URL – ensure this file is served with proper CORS headers from your backend!
 const ringtoneURL = "https://assets.mixkit.co/sfx/preview/mixkit-beep-alert-2870.mp3";
@@ -83,6 +80,28 @@ const ChatApp = ({ clientId, isAdmin }) => {
       Notification.requestPermission();
     }
   }, []);
+
+  // End call: cleanup streams and notify partner
+  const endCall = useCallback(() => {
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+    }
+    if (remoteStream) {
+      remoteStream.getTracks().forEach(track => track.stop());
+    }
+    setLocalStream(null);
+    setRemoteStream(null);
+    setInCall(false);
+    setCallConnected(false);
+    setCallType(null);
+    ringtoneAudio.pause();
+    ringtoneAudio.currentTime = 0;
+    socketRef.current?.emit("call_end", { to: getCallPartnerId() });
+  }, [localStream, remoteStream, getCallPartnerId]);
 
   // Establish Socket.IO connection
   useEffect(() => {
@@ -163,21 +182,21 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     socket.on("call_reject", () => {
-      alert("Call rejected by the recipient.");
+      toast.info("Call rejected by the recipient.");
       endCall();
     });
 
     socket.on("call_end", () => {
-      alert("Call ended by remote party.");
+      toast.info("Call ended by remote party.");
       endCall();
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [isAdmin, clientId, getCallPartnerId]);
+  }, [isAdmin, clientId, getCallPartnerId, endCall]);
 
-  // Call timer – use both connection and ICE state
+  // Call timer – update call duration every second once connected
   const callTimerRef = useRef(null);
   useEffect(() => {
     if (inCall && callConnected) {
@@ -199,28 +218,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  // End call: cleanup streams and notify partner
-  const endCall = useCallback(() => {
-    if (pcRef.current) {
-      pcRef.current.close();
-      pcRef.current = null;
-    }
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-    }
-    if (remoteStream) {
-      remoteStream.getTracks().forEach(track => track.stop());
-    }
-    setLocalStream(null);
-    setRemoteStream(null);
-    setInCall(false);
-    setCallConnected(false);
-    setCallType(null);
-    ringtoneAudio.pause();
-    ringtoneAudio.currentTime = 0;
-    socketRef.current?.emit("call_end", { to: getCallPartnerId() });
-  }, [localStream, remoteStream, getCallPartnerId]);
-
   // Create peer connection and attach handlers
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
@@ -231,7 +228,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socketRef.current?.emit("call_candidate", { to: getCallPartnerId(), candidate: event.candidate });
       }
     };
-    // Handle both connection and ICE state changes
     pc.onconnectionstatechange = () => {
       console.log("Connection state changed:", pc.connectionState);
       if (pc.connectionState === "connected" || pc.connectionState === "completed") {
@@ -271,14 +267,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Initiate an outgoing call (audio or video)
   const initiateCall = async (type) => {
     if (isAdmin && !selectedClientId) {
-      alert("Please select a client to call.");
+      toast.error("Please select a client to call.");
       return;
     }
     try {
       const constraints = type === "audio" ? { audio: true, video: false } : { audio: true, video: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(async (error) => {
         if (type === "video" && error.name === "NotFoundError") {
-          alert("Video device not found, falling back to audio-only call.");
+          toast.warn("Video device not found, falling back to audio-only call.");
           return await navigator.mediaDevices.getUserMedia({ audio: true });
         }
         throw error;
@@ -300,11 +296,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
     } catch (error) {
       console.error("Error initiating call:", error);
       if (error.name === "NotFoundError") {
-        alert("No microphone or camera found. Please check your devices.");
+        toast.error("No microphone or camera found. Please check your devices.");
       } else if (error.name === "NotAllowedError") {
-        alert("Permission denied for microphone or camera access.");
+        toast.error("Permission denied for microphone or camera access.");
       } else {
-        alert("Error initiating call. Ensure you're using HTTPS and check your permissions.");
+        toast.error("Error initiating call. Ensure you're using HTTPS and check your permissions.");
       }
     }
   };
@@ -341,7 +337,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setIncomingCall(null);
     } catch (error) {
       console.error("Error accepting call:", error);
-      alert("Error accepting call.");
+      toast.error("Error accepting call.");
     }
   };
 
@@ -387,11 +383,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Send a chat message
   const handleSendMessage = useCallback(() => {
     if (!message.trim()) {
-      alert("Message is empty!");
+      toast.error("Message is empty!");
       return;
     }
     if (isAdmin && !selectedClientId) {
-      alert("No client selected.");
+      toast.error("No client selected.");
       return;
     }
     socketRef.current?.emit(
