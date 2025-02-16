@@ -79,6 +79,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
     document.addEventListener("click", enableAudio, { once: true });
   }, []);
 
+  // Preload the ringtone audio
+  useEffect(() => {
+    ringtoneAudio.load();
+  }, []);
+
   // Request notification permission on mount if supported
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
@@ -100,7 +105,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       if (isAdmin || data.senderId !== clientId) {
         setMessages(prev => [...prev, { sender: data.sender, message: data.message }]);
         notificationAudio.play().catch(() => {});
-        // Only attempt notifications if supported
         if ("Notification" in window) {
           if (Notification.permission === "granted") {
             new Notification(`Message from ${data.sender}`, { body: data.message });
@@ -242,6 +246,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         setRemoteStream(event.streams[0]);
         if (callTypeRef.current === "video" && remoteVideoRef.current) {
           remoteVideoRef.current.srcObject = event.streams[0];
+          remoteVideoRef.current.play().catch(err => console.error("Remote video play error:", err));
         } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = event.streams[0];
           remoteAudioRef.current.play().catch(err =>
@@ -251,7 +256,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     };
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === "connected") {
+      console.log("Connection state changed to:", pc.connectionState);
+      if (pc.connectionState === "connected" || pc.connectionState === "completed") {
         setCallConnected(true);
       }
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
@@ -279,6 +285,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setLocalStream(stream);
       if (localVideoRef.current && type === "video") {
         localVideoRef.current.srcObject = stream;
+        localVideoRef.current.play().catch(err => console.error("Local video play error:", err));
       }
       pcRef.current = createPeerConnection();
       stream.getTracks().forEach(track => {
@@ -312,6 +319,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setLocalStream(stream);
       if (localVideoRef.current && incomingCall.callType === "video") {
         localVideoRef.current.srcObject = stream;
+        localVideoRef.current.play().catch(err => console.error("Local video play error:", err));
       }
       pcRef.current = createPeerConnection();
       stream.getTracks().forEach(track => {
