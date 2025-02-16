@@ -7,13 +7,12 @@ import "react-toastify/dist/ReactToastify.css";
 // If you ever need to use jwt-decode, import it like this:
 // import { default as jwtDecode } from "jwt-decode";
 
-// Ringtone URLs (update with your valid URLs)
-const ringtoneURL = "https://your-domain.com/sounds/beep_short.mp3";
+// Ringtone URL – ensure this file is served with proper CORS headers from your backend!
+const ringtoneURL = "https://mobile-barbershop-backend.onrender.com/sounds/beep_short.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio(ringtoneURL);
 ringtoneAudio.crossOrigin = "anonymous";
 
-// Socket server URL – ensure HTTPS is used
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
@@ -42,10 +41,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
-  // Ref to hold ICE candidates arriving before remote description is set
   const pendingCandidatesRef = useRef([]);
 
-  // Mirror state values into refs for use in socket callbacks
+  // Mirror state values into refs for socket callbacks
   const inCallRef = useRef(inCall);
   const selectedClientIdRef = useRef(selectedClientId);
   const callTypeRef = useRef(callType);
@@ -64,43 +62,37 @@ const ChatApp = ({ clientId, isAdmin }) => {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, []);
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, scrollToBottom]);
+  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
   // --- iOS Autoplay Workaround ---
-  // iOS requires a user interaction to allow audio playback.
   useEffect(() => {
     const enableAudio = () => {
-      // Try playing the ringtone once to unlock audio (this may be silent if blocked)
+      ringtoneAudio.load();
       ringtoneAudio.play().catch(err => console.warn("Autoplay blocked:", err));
       document.removeEventListener("click", enableAudio);
     };
     document.addEventListener("click", enableAudio, { once: true });
   }, []);
 
-  // Preload the ringtone audio
-  useEffect(() => {
-    ringtoneAudio.load();
-  }, []);
+  // Preload the ringtone audio on mount
+  useEffect(() => { ringtoneAudio.load(); }, []);
 
-  // Request notification permission on mount if supported
+  // Request notification permission if supported
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
   }, []);
 
-  // Establish a single Socket.IO connection on mount
+  // Establish Socket.IO connection
   useEffect(() => {
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
-
+    
     socket.on("connect", () => {
       console.log("Connected to WebSocket server.");
     });
 
-    // New message event: update state and show notification
     socket.on("new_message", (data) => {
       if (isAdmin || data.senderId !== clientId) {
         setMessages(prev => [...prev, { sender: data.sender, message: data.message }]);
@@ -122,14 +114,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     });
 
-    // For admin: update list of connected clients
     if (isAdmin) {
       socket.on("update_client_list", clientList => {
         setClients(clientList);
       });
     }
 
-    // WebRTC signaling events for calls
+    // WebRTC signaling events
     socket.on("call_offer", (data) => {
       console.log("Received call_offer:", data);
       if (inCallRef.current) {
@@ -145,7 +136,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       if (pcRef.current) {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-          // Process any queued ICE candidates
           pendingCandidatesRef.current.forEach(candidate => {
             pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
               console.error("Error adding queued candidate:", err)
@@ -187,7 +177,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [isAdmin, clientId, getCallPartnerId]);
 
-  // Call duration timer (starts after call is connected)
+  // Call timer – use both connection and ICE state
   const callTimerRef = useRef(null);
   useEffect(() => {
     if (inCall && callConnected) {
@@ -209,7 +199,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  // End call: cleanup streams, close peer connection, notify partner
+  // End call: cleanup streams and notify partner
   const endCall = useCallback(() => {
     if (pcRef.current) {
       pcRef.current.close();
@@ -231,7 +221,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
   }, [localStream, remoteStream, getCallPartnerId]);
 
-  // Create RTCPeerConnection and configure ICE candidate and track handlers
+  // Create peer connection and attach handlers
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
@@ -239,6 +229,25 @@ const ChatApp = ({ clientId, isAdmin }) => {
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         socketRef.current?.emit("call_candidate", { to: getCallPartnerId(), candidate: event.candidate });
+      }
+    };
+    // Handle both connection and ICE state changes
+    pc.onconnectionstatechange = () => {
+      console.log("Connection state changed:", pc.connectionState);
+      if (pc.connectionState === "connected" || pc.connectionState === "completed") {
+        setCallConnected(true);
+      }
+      if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
+        endCall();
+      }
+    };
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", pc.iceConnectionState);
+      if (pc.iceConnectionState === "connected" || pc.iceConnectionState === "completed") {
+        setCallConnected(true);
+      }
+      if (["disconnected", "failed", "closed"].includes(pc.iceConnectionState)) {
+        endCall();
       }
     };
     pc.ontrack = (event) => {
@@ -249,19 +258,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
           remoteVideoRef.current.play().catch(err => console.error("Remote video play error:", err));
         } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = event.streams[0];
+          remoteAudioRef.current.muted = false;
           remoteAudioRef.current.play().catch(err =>
             console.error("Remote audio play error:", err)
           );
         }
-      }
-    };
-    pc.onconnectionstatechange = () => {
-      console.log("Connection state changed to:", pc.connectionState);
-      if (pc.connectionState === "connected" || pc.connectionState === "completed") {
-        setCallConnected(true);
-      }
-      if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
-        endCall();
       }
     };
     return pc;
