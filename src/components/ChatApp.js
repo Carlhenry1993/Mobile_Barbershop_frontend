@@ -4,8 +4,8 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Ringtone URL – ensure this file is served with proper CORS headers from your backend!
-const ringtoneURL = "https://assets.mixkit.co/sfx/preview/mixkit-beep-alert-2870.mp3";
+// New Ringtone URL – using a different audio file that is publicly accessible
+const ringtoneURL = "https://www.soundjay.com/button/beep-07.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio(ringtoneURL);
 ringtoneAudio.crossOrigin = "anonymous";
