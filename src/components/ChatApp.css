@@ -36,11 +36,13 @@ body {
   font-size: 1.75rem;
   cursor: pointer;
   box-shadow: var(--shadow);
+  -webkit-transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, background-color var(--transition-speed) ease;
   transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, background-color var(--transition-speed) ease;
   z-index: 9999;
 }
 
 .chat-bubble-icon:hover {
+  -webkit-transform: scale(1.1);
   transform: scale(1.1);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
   background-color: var(--primary-dark);
@@ -63,12 +65,19 @@ body {
   font-size: 0.75rem;
   font-weight: bold;
   animation: pulse 1.5s infinite;
+  -webkit-animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.05); }
   100% { transform: scale(1); }
+}
+
+@-webkit-keyframes pulse {
+  0% { -webkit-transform: scale(1); }
+  50% { -webkit-transform: scale(1.05); }
+  100% { -webkit-transform: scale(1); }
 }
 
 /* --- Chat Container --- */
@@ -85,12 +94,18 @@ body {
   flex-direction: column;
   box-shadow: var(--shadow);
   animation: slideIn var(--transition-speed) ease-out;
+  -webkit-animation: slideIn var(--transition-speed) ease-out;
   z-index: 9998;
 }
 
 @keyframes slideIn {
   from { transform: translateY(100%); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+@-webkit-keyframes slideIn {
+  from { -webkit-transform: translateY(100%); opacity: 0; }
+  to { -webkit-transform: translateY(0); opacity: 1; }
 }
 
 /* --- Chat Header --- */
@@ -130,6 +145,7 @@ body {
   font-size: 1.5rem;
   color: var(--bg-white);
   cursor: pointer;
+  -webkit-transition: background-color var(--transition-speed) ease;
   transition: background-color var(--transition-speed) ease;
 }
 
@@ -156,6 +172,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  -webkit-transition: color var(--transition-speed) ease;
   transition: color var(--transition-speed) ease;
 }
 
@@ -217,6 +234,7 @@ body {
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: 5px;
+  -webkit-transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
   transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
   resize: none;
   font-size: 0.875rem;
@@ -235,6 +253,7 @@ body {
   padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
+  -webkit-transition: background-color var(--transition-speed) ease;
   transition: background-color var(--transition-speed) ease;
 }
 
@@ -256,6 +275,7 @@ body {
   border: 1px solid var(--border-color);
   font-size: 0.875rem;
   background: var(--bg-white);
+  -webkit-transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed);
   transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed);
 }
 
@@ -384,6 +404,7 @@ body {
   position: fixed;
   top: 50%;
   left: 50%;
+  -webkit-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
   background: var(--bg-white);
   border: 1px solid var(--border-color);
@@ -415,6 +436,7 @@ body {
   position: fixed;
   top: 20%;
   left: 50%;
+  -webkit-transform: translateX(-50%);
   transform: translateX(-50%);
   background: var(--bg-white);
   border: 1px solid var(--border-color);
