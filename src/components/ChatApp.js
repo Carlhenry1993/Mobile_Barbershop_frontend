@@ -4,6 +4,9 @@ import "./ChatApp.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+// If you ever need to use jwt-decode, import it like this:
+// import { default as jwtDecode } from "jwt-decode";
+
 // Ringtone URLs (update with your valid URLs)
 const ringtoneURL = "https://your-domain.com/sounds/beep_short.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
@@ -67,7 +70,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Establish a single Socket.IO connection on mount
   useEffect(() => {
-    // Ensure you do NOT import or use any packages that may use unsupported regex (like "natural")
+    // IMPORTANT: Remove or update any dependency (like "natural") that may use unsupported regex in Safari.
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
 
