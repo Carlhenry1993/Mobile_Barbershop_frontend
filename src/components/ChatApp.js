@@ -4,16 +4,17 @@ import "./ChatApp.css";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Use an alternate ringtone or host your own file to avoid tracking prevention issues.
-const ringtoneURL = "https://your-domain.com/sounds/beep_short.mp3"; // Replace with a suitable URL.
+// Ringtone URLs (update with your valid URLs)
+const ringtoneURL = "https://your-domain.com/sounds/beep_short.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio(ringtoneURL);
 ringtoneAudio.crossOrigin = "anonymous";
 
+// Socket server URL – ensure HTTPS is used
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 const ChatApp = ({ clientId, isAdmin }) => {
-  // Chat state
+  // Chat states
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
@@ -22,7 +23,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  // Call state
+  // Call states
   const [inCall, setInCall] = useState(false);
   const [callConnected, setCallConnected] = useState(false);
   const [callType, setCallType] = useState(null); // "audio" or "video"
@@ -31,17 +32,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [remoteStream, setRemoteStream] = useState(null);
   const [callDuration, setCallDuration] = useState(0);
 
-  // Refs for DOM and persistent values
+  // Refs for DOM elements and persistent values
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
-  // A ref to hold ICE candidates that arrive before remote description is set
+  // Ref to hold ICE candidates arriving before remote description is set
   const pendingCandidatesRef = useRef([]);
 
-  // Mirror state values into refs for socket callbacks
+  // Mirror state values into refs for use in socket callbacks
   const inCallRef = useRef(inCall);
   const selectedClientIdRef = useRef(selectedClientId);
   const callTypeRef = useRef(callType);
@@ -49,7 +50,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
   useEffect(() => { callTypeRef.current = callType; }, [callType]);
 
-  // Helper: Determines the call partner ID (for clients it is always "admin")
+  // Helper: Determine call partner ID (for admin, use the selected client)
   const getCallPartnerId = useCallback(() => {
     return isAdmin ? selectedClientIdRef.current : "admin";
   }, [isAdmin]);
@@ -66,6 +67,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Establish a single Socket.IO connection on mount
   useEffect(() => {
+    // Ensure you do NOT import or use any packages that may use unsupported regex (like "natural")
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
 
@@ -73,29 +75,29 @@ const ChatApp = ({ clientId, isAdmin }) => {
       console.log("Connected to WebSocket server.");
     });
 
-    // New message: play sound and trigger a browser notification.
+    // New message event: update state and show notification
     socket.on("new_message", (data) => {
       if (isAdmin || data.senderId !== clientId) {
-        setMessages((prev) => [...prev, { sender: data.sender, message: data.message }]);
+        setMessages(prev => [...prev, { sender: data.sender, message: data.message }]);
         notificationAudio.play().catch(() => {});
         if (Notification.permission === "granted") {
           new Notification(`Message from ${data.sender}`, { body: data.message });
         } else if (Notification.permission !== "denied") {
-          Notification.requestPermission().then((permission) => {
+          Notification.requestPermission().then(permission => {
             if (permission === "granted") {
               new Notification(`Message from ${data.sender}`, { body: data.message });
             }
           });
         }
         if (!isChatOpen || isMinimized) {
-          setUnreadCount((prev) => prev + 1);
+          setUnreadCount(prev => prev + 1);
         }
       }
     });
 
-    // For admin: update the list of connected clients.
+    // For admin: update list of connected clients
     if (isAdmin) {
-      socket.on("update_client_list", (clientList) => {
+      socket.on("update_client_list", clientList => {
         setClients(clientList);
       });
     }
@@ -107,18 +109,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socket.emit("call_reject", { to: data.from });
         return;
       }
-      // Always show incoming call modal.
       setIncomingCall(data);
       ringtoneAudio.loop = true;
-      ringtoneAudio.play().catch((err) => console.error("Ringtone play error:", err));
+      ringtoneAudio.play().catch(err => console.error("Ringtone play error:", err));
     });
 
     socket.on("call_answer", async (data) => {
       if (pcRef.current) {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-          // Process any queued ICE candidates.
-          pendingCandidatesRef.current.forEach((candidate) => {
+          // Process any queued ICE candidates
+          pendingCandidatesRef.current.forEach(candidate => {
             pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
               console.error("Error adding queued candidate:", err)
             );
@@ -139,7 +140,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
             console.error("Error adding ICE candidate:", error);
           }
         } else {
-          // Queue candidate if remote description not set
           pendingCandidatesRef.current.push(data.candidate);
         }
       }
@@ -155,7 +155,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
-    // Request notification permission on mount.
+    // Request notification permission on mount
     if (Notification.permission !== "granted") {
       Notification.requestPermission();
     }
@@ -165,12 +165,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [isAdmin, clientId, getCallPartnerId]);
 
-  // Timer for call duration (starts only after call is connected)
+  // Call duration timer (starts after call is connected)
   const callTimerRef = useRef(null);
   useEffect(() => {
     if (inCall && callConnected) {
       callTimerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
+        setCallDuration(prev => prev + 1);
       }, 1000);
     } else {
       setCallDuration(0);
@@ -181,24 +181,23 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [inCall, callConnected]);
 
-  // Format duration in mm:ss
   const formatDuration = (duration) => {
     const minutes = Math.floor(duration / 60);
     const seconds = duration % 60;
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  // End the current call and cleanup streams/peer connection.
+  // End call: cleanup streams, close peer connection, notify partner
   const endCall = useCallback(() => {
     if (pcRef.current) {
       pcRef.current.close();
       pcRef.current = null;
     }
     if (localStream) {
-      localStream.getTracks().forEach((track) => track.stop());
+      localStream.getTracks().forEach(track => track.stop());
     }
     if (remoteStream) {
-      remoteStream.getTracks().forEach((track) => track.stop());
+      remoteStream.getTracks().forEach(track => track.stop());
     }
     setLocalStream(null);
     setRemoteStream(null);
@@ -210,7 +209,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
   }, [localStream, remoteStream, getCallPartnerId]);
 
-  // Create and configure a new RTCPeerConnection.
+  // Create RTCPeerConnection and configure ICE candidate and track handlers
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
@@ -227,7 +226,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           remoteVideoRef.current.srcObject = event.streams[0];
         } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = event.streams[0];
-          remoteAudioRef.current.play().catch((err) =>
+          remoteAudioRef.current.play().catch(err =>
             console.error("Remote audio play error:", err)
           );
         }
@@ -244,7 +243,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return pc;
   };
 
-  // Initiate an outgoing call (audio or video).
+  // Initiate an outgoing call (audio or video)
   const initiateCall = async (type) => {
     if (isAdmin && !selectedClientId) {
       alert("Please select a client to call.");
@@ -264,7 +263,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         localVideoRef.current.srcObject = stream;
       }
       pcRef.current = createPeerConnection();
-      stream.getTracks().forEach((track) => {
+      stream.getTracks().forEach(track => {
         pcRef.current.addTrack(track, stream);
       });
       const offer = await pcRef.current.createOffer();
@@ -284,7 +283,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Accept an incoming call.
+  // Accept an incoming call
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
     ringtoneAudio.pause();
@@ -297,12 +296,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
         localVideoRef.current.srcObject = stream;
       }
       pcRef.current = createPeerConnection();
-      stream.getTracks().forEach((track) => {
+      stream.getTracks().forEach(track => {
         pcRef.current.addTrack(track, stream);
       });
       await pcRef.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
-      // Process any queued ICE candidates now that remote description is set.
-      pendingCandidatesRef.current.forEach((candidate) => {
+      pendingCandidatesRef.current.forEach(candidate => {
         pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
           console.error("Error adding queued candidate:", err)
         );
@@ -320,7 +318,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Reject an incoming call.
+  // Reject an incoming call
   const handleRejectCall = () => {
     if (incomingCall) {
       socketRef.current?.emit("call_reject", { to: incomingCall.from });
@@ -330,7 +328,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Mark messages as read.
+  // Mark messages as read (example API call)
   const markMessagesAsRead = useCallback(async () => {
     const targetUserId = isAdmin ? selectedClientId : clientId;
     if (!targetUserId) return;
@@ -345,21 +343,21 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [clientId, isAdmin, selectedClientId]);
 
-  // Toggle chat window open/close.
+  // Toggle chat window open/close
   const handleChatToggle = useCallback(() => {
-    setIsChatOpen((prev) => !prev);
+    setIsChatOpen(prev => !prev);
     setIsMinimized(false);
     setUnreadCount(0);
     markMessagesAsRead();
   }, [markMessagesAsRead]);
 
-  // Toggle minimize chat.
+  // Toggle minimize chat
   const handleMinimizeToggle = useCallback(() => {
-    setIsMinimized((prev) => !prev);
+    setIsMinimized(prev => !prev);
     if (!isMinimized) setUnreadCount(0);
   }, [isMinimized]);
 
-  // Send a chat message.
+  // Send a chat message
   const handleSendMessage = useCallback(() => {
     if (!message.trim()) {
       alert("Message is empty!");
@@ -373,11 +371,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
       isAdmin ? "send_message_to_client" : "send_message_to_admin",
       { clientId: selectedClientId, message }
     );
-    setMessages((prev) => [...prev, { sender: isAdmin ? "admin" : "client", message }]);
+    setMessages(prev => [...prev, { sender: isAdmin ? "admin" : "client", message }]);
     setMessage("");
   }, [message, isAdmin, selectedClientId]);
 
-  // Render the client list for admin.
+  // Render client list (for admin)
   const renderClientList = () => (
     <select
       onChange={(e) => setSelectedClientId(e.target.value)}
@@ -388,7 +386,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       {clients.length === 0 ? (
         <option disabled>No clients connected</option>
       ) : (
-        clients.map((client) => (
+        clients.map(client => (
           <option key={client.id} value={client.id}>
             {client.name}
           </option>
