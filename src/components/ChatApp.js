@@ -14,11 +14,11 @@ const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 // Media constraints for improved audio/video quality
 const audioConstraints = {
-  audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
+  audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
 };
 const videoConstraints = {
   audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
-  video: true
+  video: true,
 };
 
 const ChatApp = ({ clientId, isAdmin }) => {
@@ -178,12 +178,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
       });
     }
 
+    // Call Offer: No rejection logic here so that both parties remain connected
     socket.on("call_offer", (data) => {
       console.log("Received call offer:", data);
-      if (inCallRef.current) {
-        socket.emit("call_reject", { to: data.from });
-        return;
-      }
       setIncomingCall(data);
     });
 
@@ -271,7 +268,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }, []);
 
-  // Create RTCPeerConnection
+  // Create RTCPeerConnection with proper event handlers
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -317,7 +314,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return pc;
   }, [getCallPartnerId, endCall]);
 
-  // Initiate call
+  // Initiate an outgoing call (audio or video)
   const initiateCall = useCallback(async (type) => {
     if (isAdmin && !selectedClientId) {
       toast.error("Please select a client to call.");
@@ -359,7 +356,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [isAdmin, selectedClientId, createPeerConnection, getCallPartnerId]);
 
-  // Accept call
+  // Accept an incoming call
   const handleAcceptCall = useCallback(async () => {
     if (!incomingCall) return;
     stopRingtone();
@@ -394,7 +391,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [incomingCall, createPeerConnection, stopRingtone]);
 
-  // Reject call
+  // Reject an incoming call
   const handleRejectCall = useCallback(() => {
     if (incomingCall) {
       socketRef.current?.emit("call_reject", { to: incomingCall.from });
