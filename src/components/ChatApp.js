@@ -153,14 +153,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
     socket.on("new_message", (data) => {
       console.log("New message:", data);
-      setMessages(prev => [...prev, { sender: data.sender, message: data.message }]);
+      setMessages(prev => [...prev, { id: Date.now(), sender: data.sender, message: data.message }]);
       notificationAudio.play().catch(() => {});
       if (Notification.permission === "granted") {
         new Notification(`Message from ${data.sender}`, { body: data.message });
       }
       // Manage unread count differently for admin vs. client
       if (isAdmin) {
-        // For admin, update unread count per client if that conversation is not active
         if (selectedClientId !== data.senderId) {
           setUnreadCounts(prev => ({
             ...prev,
@@ -426,7 +425,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setIsMinimized(false);
     if (!isAdmin) setUnreadCount(0);
     else if (isAdmin && selectedClientId) {
-      // Clear unread count for the selected client
       setUnreadCounts(prev => {
         const updated = { ...prev };
         delete updated[selectedClientId];
@@ -466,7 +464,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     <select
       onChange={(e) => {
         setSelectedClientId(e.target.value);
-        // Clear unread count for this client when selected
         setUnreadCounts(prev => {
           const updated = { ...prev };
           delete updated[e.target.value];
@@ -523,9 +520,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
           {!isMinimized && (
             <>
               {isAdmin && renderClientList()}
-              <div className="chat-messages">
+              {/* Role-specific chat messages container */}
+              <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`}>
                 {messages.map((msg) => (
-                  <div key={msg.id} className="message">
+                  <div key={msg.id} className={`message ${msg.sender}`}>
                     <span className="message-author">{msg.sender}:</span>
                     <p>{msg.message}</p>
                   </div>
