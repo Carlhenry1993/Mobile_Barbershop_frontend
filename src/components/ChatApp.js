@@ -69,6 +69,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // --- iOS Autoplay Workaround ---
   useEffect(() => {
     const enableAudio = () => {
+      // Preload ringtone once the user interacts
       ringtoneAudio.load();
       ringtoneAudio.play().catch(err => console.warn("Autoplay blocked:", err));
       document.removeEventListener("click", enableAudio);
@@ -85,6 +86,29 @@ const ChatApp = ({ clientId, isAdmin }) => {
       Notification.requestPermission();
     }
   }, []);
+
+  // Helper functions for ringtone control
+  const startRingtone = useCallback(() => {
+    // Only start if not already playing
+    if (ringtoneAudio.paused) {
+      ringtoneAudio.loop = true;
+      ringtoneAudio.play().catch(err => console.error("Ringtone play error:", err));
+    }
+  }, []);
+
+  const stopRingtone = useCallback(() => {
+    ringtoneAudio.pause();
+    ringtoneAudio.currentTime = 0;
+  }, []);
+
+  // Effect to control ringtone based on incoming call state
+  useEffect(() => {
+    if (incomingCall) {
+      startRingtone();
+    } else {
+      stopRingtone();
+    }
+  }, [incomingCall, startRingtone, stopRingtone]);
 
   // End call: cleanup streams and notify partner
   const endCall = useCallback(() => {
@@ -103,10 +127,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setInCall(false);
     setCallConnected(false);
     setCallType(null);
-    ringtoneAudio.pause();
-    ringtoneAudio.currentTime = 0;
+    stopRingtone();
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
-  }, [localStream, remoteStream, getCallPartnerId]);
+  }, [localStream, remoteStream, getCallPartnerId, stopRingtone]);
 
   // Establish Socket.IO connection
   useEffect(() => {
@@ -151,9 +174,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socket.emit("call_reject", { to: data.from });
         return;
       }
+      // Set the incoming call; ringtone will start via effect
       setIncomingCall(data);
-      ringtoneAudio.loop = true;
-      ringtoneAudio.play().catch(err => console.error("Ringtone play error:", err));
     });
 
     socket.on("call_answer", async (data) => {
@@ -199,7 +221,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return () => {
       socket.disconnect();
     };
-  }, [isAdmin, clientId, getCallPartnerId, endCall]);
+  }, [isAdmin, clientId, getCallPartnerId, endCall, isChatOpen, isMinimized]);
 
   // Call timer – update call duration every second once connected
   const callTimerRef = useRef(null);
@@ -313,8 +335,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Accept an incoming call
   const handleAcceptCall = async () => {
     if (!incomingCall) return;
-    ringtoneAudio.pause();
-    ringtoneAudio.currentTime = 0;
+    stopRingtone();
     try {
       const constraints = incomingCall.callType === "audio" ? { audio: true, video: false } : { audio: true, video: true };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -350,8 +371,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const handleRejectCall = () => {
     if (incomingCall) {
       socketRef.current?.emit("call_reject", { to: incomingCall.from });
-      ringtoneAudio.pause();
-      ringtoneAudio.currentTime = 0;
+      stopRingtone();
       setIncomingCall(null);
     }
   };
