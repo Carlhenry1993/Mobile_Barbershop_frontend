@@ -4,10 +4,6 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Note: Remove or comment out any jwt-decode import if not used.
-// For example, if you need jwt-decode in the future, import it as follows:
-// import { default as jwtDecode } from "jwt-decode";
-
 // Use a local audio file for the ringtone to avoid CORS issues.
 // Place 'ringtone.mp3' in your public/audio folder.
 const ringtoneURL = "/audio/ringtone.mp3";
@@ -17,7 +13,7 @@ ringtoneAudio.crossOrigin = "anonymous";
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
-// Define audio constraints for improved audio quality
+// Define constraints for improved audio quality
 const audioConstraints = {
   audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
 };
@@ -49,7 +45,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  const remoteAudioRef = useRef(null);
+  const remoteAudioRef = useRef(null); // Always rendered to play remote audio
   const pcRef = useRef(null);
   const socketRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
@@ -284,16 +280,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     };
     pc.ontrack = (event) => {
-      // Use the provided stream if available; otherwise, create a new MediaStream from the track.
-      const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
-      setRemoteStream(stream);
-      if (callTypeRef.current === "video" && remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
-        remoteVideoRef.current.play().catch(err => console.error("Remote video play error:", err));
-      } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = stream;
+      // Process each track separately.
+      if (event.track.kind === "audio" && remoteAudioRef.current) {
+        const audioStream = new MediaStream([event.track]);
+        remoteAudioRef.current.srcObject = audioStream;
         remoteAudioRef.current.volume = 1;
         remoteAudioRef.current.play().catch(err => console.error("Remote audio play error:", err));
+      } else if (event.track.kind === "video" && remoteVideoRef.current) {
+        const videoStream = new MediaStream([event.track]);
+        remoteVideoRef.current.srcObject = videoStream;
+        remoteVideoRef.current.play().catch(err => console.error("Remote video play error:", err));
       }
     };
     return pc;
@@ -306,7 +302,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       return;
     }
     try {
-      // Use our defined constraints for better audio quality
       const constraints = type === "audio" ? audioConstraints : videoConstraints;
       const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(async (error) => {
         if (type === "video" && error.name === "NotFoundError") {
@@ -512,9 +507,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
               <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
             </div>
           )}
+          {/* Always render the remote audio element (hidden) to ensure audio is played */}
+          <audio ref={remoteAudioRef} autoPlay style={{ display: "none" }} />
           {callType === "audio" && (
             <div className="audio-container">
-              <audio ref={remoteAudioRef} autoPlay />
               <p>Audio call in progress...</p>
             </div>
           )}
