@@ -4,7 +4,7 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Ringtone & Notification Audio Setup
+// Use a local audio file for the ringtone
 const ringtoneURL = "/audio/ringtone.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio(ringtoneURL);
@@ -13,12 +13,10 @@ ringtoneAudio.crossOrigin = "anonymous";
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
 // Media constraints
-const audioConstraints = {
-  audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
-};
+const audioConstraints = { audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 } };
 const videoConstraints = {
   audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
-  video: true
+  video: true,
 };
 
 const ChatApp = ({ clientId, isAdmin }) => {
@@ -39,16 +37,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [localStream, setLocalStream] = useState(null);
   const [callDuration, setCallDuration] = useState(0);
 
-  // Refs
+  // Refs for DOM elements and persistent values
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  // Instead of hiding audio with display: "none", we use minimal dimensions so that browsers allow playback
   const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
 
-  // Mirror state for callbacks
+  // Mirror state values into refs for socket callbacks
   const inCallRef = useRef(inCall);
   const selectedClientIdRef = useRef(selectedClientId);
   const callTypeRef = useRef(callType);
@@ -61,7 +60,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return isAdmin ? selectedClientIdRef.current : "admin";
   }, [isAdmin]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom when messages update
   const scrollToBottom = useCallback(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -69,7 +68,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   }, []);
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  // iOS Autoplay Workaround
+  // --- iOS Autoplay Workaround ---
   useEffect(() => {
     const enableAudio = () => {
       ringtoneAudio.play().then(() => {
@@ -81,10 +80,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
     document.addEventListener("click", enableAudio, { once: true });
   }, []);
 
-  // Preload ringtone audio
   useEffect(() => { ringtoneAudio.load(); }, []);
 
-  // Request notification permission
+  // Request notification permission if supported
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
@@ -120,7 +118,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
     }
-    // Stop remote media tracks and clear source objects
+    // Stop remote media tracks and clear the source object
     if (remoteAudioRef.current && remoteAudioRef.current.srcObject) {
       remoteAudioRef.current.srcObject.getTracks().forEach(track => track.stop());
       remoteAudioRef.current.srcObject = null;
@@ -134,14 +132,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setCallConnected(false);
     setCallType(null);
     stopRingtone();
+    // Notify remote party that the call is ending
     socketRef.current?.emit("call_end", { to: getCallPartnerId() });
+    // Notify the local user with toast
+    toast.info("Call has been ended.");
   }, [localStream, getCallPartnerId, stopRingtone]);
 
   // Establish Socket.IO connection and signaling events
   useEffect(() => {
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
-    
+
     socket.on("connect", () => {
       console.log("Connected to WebSocket server.");
     });
@@ -217,12 +218,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
+    // Also listen for socket disconnect to clean up
+    socket.on("disconnect", () => {
+      endCall();
+    });
+
     return () => {
       socket.disconnect();
     };
   }, [isAdmin, clientId, getCallPartnerId, endCall, isChatOpen, isMinimized]);
 
-  // Call timer
+  // Call timer – update call duration every second once connected
   const callTimerRef = useRef(null);
   useEffect(() => {
     if (inCall && callConnected) {
@@ -246,7 +252,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Create PeerConnection and attach event handlers
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
     });
     pc.onicecandidate = (event) => {
       if (event.candidate) {
@@ -280,6 +286,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
           remoteAudioRef.current.srcObject = remoteAudioStream;
         }
         remoteAudioStream.addTrack(event.track);
+        // Ensure volume is at max (or adjust as needed)
+        remoteAudioRef.current.volume = 1.0;
         remoteAudioRef.current.play().catch(err => console.error("Error playing remote audio:", err));
       } else if (event.track.kind === "video" && remoteVideoRef.current) {
         let remoteVideoStream = remoteVideoRef.current.srcObject;
@@ -387,7 +395,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       await fetch("/api/messages/markAsRead", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: targetUserId })
+        body: JSON.stringify({ userId: targetUserId }),
       });
     } catch (error) {
       console.error("Error marking messages as read:", error);
@@ -505,8 +513,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
               <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
             </div>
           )}
-          {/* Remote audio element (hidden, but will play audio) */}
-          <audio ref={remoteAudioRef} autoPlay style={{ display: "none" }} />
+          {/* Remote audio element: hidden by zero size rather than display:none */}
+          <audio ref={remoteAudioRef} autoPlay style={{ width: "0px", height: "0px", opacity: 0 }} />
           {callType === "audio" && (
             <div className="audio-container">
               <p>Audio call in progress...</p>
