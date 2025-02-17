@@ -220,9 +220,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
+    // Modified disconnect handler: only call endCall() if a call is active.
     socket.on("disconnect", () => {
       console.log("Socket disconnected.");
-      endCall();
+      if (inCallRef.current) {
+        endCall();
+      }
     });
 
     return () => {
