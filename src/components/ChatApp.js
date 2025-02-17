@@ -4,8 +4,8 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// New Ringtone URL – using a different audio file that is publicly accessible
-const ringtoneURL = "https://www.soundjay.com/button/beep-07.mp3";
+// Change the ringtone URL to a local file
+const ringtoneURL = "/audio/ringtone.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio(ringtoneURL);
 ringtoneAudio.crossOrigin = "anonymous";
