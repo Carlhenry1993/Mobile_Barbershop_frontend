@@ -67,11 +67,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
   // --- iOS Autoplay Workaround ---
+  // Instead of playing the ringtone directly (which triggers audible ring on any click),
+  // we play and immediately pause to unlock audio context.
   useEffect(() => {
     const enableAudio = () => {
-      // Preload ringtone once the user interacts
-      ringtoneAudio.load();
-      ringtoneAudio.play().catch(err => console.warn("Autoplay blocked:", err));
+      ringtoneAudio.play().then(() => {
+        ringtoneAudio.pause();
+        ringtoneAudio.currentTime = 0;
+      }).catch(err => console.warn("Autoplay blocked:", err));
       document.removeEventListener("click", enableAudio);
     };
     document.addEventListener("click", enableAudio, { once: true });
@@ -89,7 +92,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Helper functions for ringtone control
   const startRingtone = useCallback(() => {
-    // Only start if not already playing
     if (ringtoneAudio.paused) {
       ringtoneAudio.loop = true;
       ringtoneAudio.play().catch(err => console.error("Ringtone play error:", err));
@@ -174,8 +176,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socket.emit("call_reject", { to: data.from });
         return;
       }
-      // Set the incoming call; ringtone will start via effect
       setIncomingCall(data);
+      // Ringtone will start via the incomingCall effect
     });
 
     socket.on("call_answer", async (data) => {
