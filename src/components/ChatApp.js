@@ -17,6 +17,15 @@ ringtoneAudio.crossOrigin = "anonymous";
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
+// Define audio constraints for improved audio quality
+const audioConstraints = {
+  audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
+};
+const videoConstraints = {
+  audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 },
+  video: true
+};
+
 const ChatApp = ({ clientId, isAdmin }) => {
   // Chat states
   const [message, setMessage] = useState("");
@@ -67,8 +76,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
   // --- iOS Autoplay Workaround ---
-  // Instead of playing the ringtone directly (which triggers audible ring on any click),
-  // we play and immediately pause to unlock audio context.
+  // Play and immediately pause the ringtone to unlock the audio context without starting the ring.
   useEffect(() => {
     const enableAudio = () => {
       ringtoneAudio.play().then(() => {
@@ -300,11 +308,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
       return;
     }
     try {
-      const constraints = type === "audio" ? { audio: true, video: false } : { audio: true, video: true };
+      // Use our defined constraints for better audio quality
+      const constraints = type === "audio" ? audioConstraints : videoConstraints;
       const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(async (error) => {
         if (type === "video" && error.name === "NotFoundError") {
           toast.warn("Video device not found, falling back to audio-only call.");
-          return await navigator.mediaDevices.getUserMedia({ audio: true });
+          return await navigator.mediaDevices.getUserMedia(audioConstraints);
         }
         throw error;
       });
@@ -339,7 +348,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     if (!incomingCall) return;
     stopRingtone();
     try {
-      const constraints = incomingCall.callType === "audio" ? { audio: true, video: false } : { audio: true, video: true };
+      const constraints = incomingCall.callType === "audio" ? audioConstraints : videoConstraints;
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setLocalStream(stream);
       if (localVideoRef.current && incomingCall.callType === "video") {
