@@ -1,22 +1,31 @@
+/* Global Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 /* --- CSS Variables --- */
 :root {
   --primary-color: #007bff;
   --primary-dark: #0056b3;
   --secondary-color: #ff4d4f;
-  --bg-white: #fff;
+  --bg-white: #ffffff;
   --bg-light: #f9f9f9;
   --border-color: #ccc;
   --shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   --transition-speed: 0.3s;
   --font-size-base: 16px;
+  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* --- Global Styles --- */
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-family-base);
   font-size: var(--font-size-base);
   color: #333;
+  background-color: var(--bg-light);
 }
 
 /* --- Chat Bubble Icon --- */
@@ -26,7 +35,7 @@ body {
   right: 20px;
   width: 60px;
   height: 60px;
-  background: var(--primary-color);
+  background-color: var(--primary-color);
   color: var(--bg-white);
   border: none;
   border-radius: 50%;
@@ -36,13 +45,13 @@ body {
   font-size: 1.75rem;
   cursor: pointer;
   box-shadow: var(--shadow);
-  -webkit-transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, background-color var(--transition-speed) ease;
-  transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease, background-color var(--transition-speed) ease;
+  transition: transform var(--transition-speed) ease,
+              box-shadow var(--transition-speed) ease,
+              background-color var(--transition-speed) ease;
   z-index: 9999;
 }
 
 .chat-bubble-icon:hover {
-  -webkit-transform: scale(1.1);
   transform: scale(1.1);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
   background-color: var(--primary-dark);
@@ -58,26 +67,19 @@ body {
   position: absolute;
   top: -5px;
   right: -5px;
-  background: var(--secondary-color);
+  background-color: var(--secondary-color);
   color: var(--bg-white);
   border-radius: 50%;
   padding: 0.3rem 0.6rem;
   font-size: 0.75rem;
   font-weight: bold;
   animation: pulse 1.5s infinite;
-  -webkit-animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  0%   { transform: scale(1); }
+  50%  { transform: scale(1.05); }
   100% { transform: scale(1); }
-}
-
-@-webkit-keyframes pulse {
-  0% { -webkit-transform: scale(1); }
-  50% { -webkit-transform: scale(1.05); }
-  100% { -webkit-transform: scale(1); }
 }
 
 /* --- Chat Container --- */
@@ -89,23 +91,17 @@ body {
   max-width: 320px;
   border: 1px solid var(--border-color);
   border-radius: 10px 10px 0 0;
-  background: var(--bg-white);
+  background-color: var(--bg-white);
   display: flex;
   flex-direction: column;
   box-shadow: var(--shadow);
   animation: slideIn var(--transition-speed) ease-out;
-  -webkit-animation: slideIn var(--transition-speed) ease-out;
   z-index: 9998;
 }
 
 @keyframes slideIn {
   from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
-@-webkit-keyframes slideIn {
-  from { -webkit-transform: translateY(100%); opacity: 0; }
-  to { -webkit-transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 /* --- Chat Header --- */
@@ -113,7 +109,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: var(--primary-color);
+  background-color: var(--primary-color);
   color: var(--bg-white);
   padding: 10px;
   border-radius: 10px 10px 0 0;
@@ -145,7 +141,6 @@ body {
   font-size: 1.5rem;
   color: var(--bg-white);
   cursor: pointer;
-  -webkit-transition: background-color var(--transition-speed) ease;
   transition: background-color var(--transition-speed) ease;
 }
 
@@ -172,7 +167,6 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  -webkit-transition: color var(--transition-speed) ease;
   transition: color var(--transition-speed) ease;
 }
 
@@ -186,7 +180,7 @@ body {
   flex: 1;
   max-height: 300px;
   overflow-y: auto;
-  background: var(--bg-light);
+  background-color: var(--bg-light);
   padding: 10px;
   display: flex;
   flex-direction: column;
@@ -208,14 +202,14 @@ body {
   background-color: #aaa;
 }
 
-/* --- Unified Message Styles --- */
+/* --- Message Bubbles --- */
 .message {
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   max-width: 80%;
   word-wrap: break-word;
   margin-bottom: 10px;
-  background: #e1f5fe;
+  background-color: #e1f5fe;
   color: #333;
   align-self: flex-start;
 }
@@ -224,7 +218,7 @@ body {
 .chat-input {
   display: flex;
   padding: 10px;
-  background: var(--bg-white);
+  background-color: var(--bg-white);
   border-top: 1px solid var(--border-color);
   gap: 10px;
 }
@@ -234,10 +228,9 @@ body {
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: 5px;
-  -webkit-transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
-  transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
   resize: none;
   font-size: 0.875rem;
+  transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
 }
 
 .chat-input textarea:focus {
@@ -247,13 +240,12 @@ body {
 }
 
 .chat-input button {
-  background: var(--primary-color);
+  background-color: var(--primary-color);
   color: var(--bg-white);
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
-  -webkit-transition: background-color var(--transition-speed) ease;
   transition: background-color var(--transition-speed) ease;
 }
 
@@ -274,8 +266,7 @@ body {
   border-radius: 5px;
   border: 1px solid var(--border-color);
   font-size: 0.875rem;
-  background: var(--bg-white);
-  -webkit-transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed);
+  background-color: var(--bg-white);
   transition: border-color var(--transition-speed) ease, box-shadow var(--transition-speed);
 }
 
@@ -289,12 +280,11 @@ body {
 .chat-container.minimized {
   height: 50px;
   overflow: hidden;
-  animation: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 10px;
-  background: var(--primary-color);
+  background-color: var(--primary-color);
   color: var(--bg-white);
   border-radius: 10px;
   cursor: pointer;
@@ -320,7 +310,7 @@ body {
   position: fixed;
   bottom: 70px;
   right: 20px;
-  background: var(--primary-color);
+  background-color: var(--primary-color);
   color: var(--bg-white);
   padding: 2px 6px;
   border-radius: 6px;
@@ -350,28 +340,28 @@ body {
     right: 0;
     border-radius: 0;
   }
-
+  
   .chat-messages {
     max-height: 200px;
   }
-
+  
   .call-container,
   .incoming-call-modal {
     width: 90%;
     max-width: 90%;
   }
-
+  
   .video-container {
     flex-direction: column;
   }
-
+  
   .remote-video,
   .local-video {
     width: 100%;
     height: auto;
     max-height: 150px;
   }
-
+  
   .chat-info {
     bottom: 70px;
     right: 10px;
@@ -379,7 +369,7 @@ body {
     padding: 2px 6px;
     max-width: 120px;
   }
-
+  
   .chat-info::after {
     font-size: 1.375rem;
   }
@@ -393,7 +383,7 @@ body {
     padding: 0.25rem 0.375rem;
     max-width: 110px;
   }
-
+  
   .chat-info::after {
     font-size: 1.25rem;
   }
@@ -404,9 +394,8 @@ body {
   position: fixed;
   top: 50%;
   left: 50%;
-  -webkit-transform: translate(-50%, -50%);
   transform: translate(-50%, -50%);
-  background: var(--bg-white);
+  background-color: var(--bg-white);
   border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 20px;
@@ -427,7 +416,7 @@ body {
 .local-video {
   width: 160px;
   height: 120px;
-  background: #000;
+  background-color: #000;
   border-radius: 5px;
   object-fit: cover;
 }
@@ -436,9 +425,8 @@ body {
   position: fixed;
   top: 20%;
   left: 50%;
-  -webkit-transform: translateX(-50%);
   transform: translateX(-50%);
-  background: var(--bg-white);
+  background-color: var(--bg-white);
   border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 20px;
