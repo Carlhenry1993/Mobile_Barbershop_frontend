@@ -25,11 +25,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Chat states
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  // For client side a single count; for admin side, we use an object mapping client IDs to counts
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCounts, setUnreadCounts] = useState({});
+
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
 
   // Call states
   const [inCall, setInCall] = useState(false);
@@ -43,7 +46,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  // Minimally visible remote audio element so autoplay is allowed
   const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
@@ -134,7 +136,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setCallConnected(false);
     setCallType(null);
     stopRingtone();
-    // Only emit if call was active
     if (inCallRef.current) {
       socketRef.current?.emit("call_end", { to: getCallPartnerId() });
       toast.info("Call has been ended.");
@@ -143,44 +144,51 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Socket.IO connection and event listeners
   useEffect(() => {
-    const socket = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
-    socketRef.current = socket;
+    socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
+    const socket = socketRef.current;
 
-    const handleConnect = () => {
+    socket.on("connect", () => {
       console.log("Connected to signaling server.");
-    };
+    });
 
-    const handleNewMessage = (data) => {
-      // Prevent duplicate messages by checking if message already exists (this can be expanded with unique IDs)
-      setMessages(prev => {
-        const exists = prev.some(msg => msg.sender === data.sender && msg.message === data.message);
-        if (!exists) {
-          return [...prev, { sender: data.sender, message: data.message, id: Date.now() }];
-        }
-        return prev;
-      });
+    socket.on("new_message", (data) => {
+      console.log("New message:", data);
+      setMessages(prev => [...prev, { sender: data.sender, message: data.message }]);
       notificationAudio.play().catch(() => {});
       if (Notification.permission === "granted") {
         new Notification(`Message from ${data.sender}`, { body: data.message });
       }
-      if (!isChatOpen || isMinimized) setUnreadCount(prev => prev + 1);
-    };
+      // Manage unread count differently for admin vs. client
+      if (isAdmin) {
+        // For admin, update unread count per client if that conversation is not active
+        if (selectedClientId !== data.senderId) {
+          setUnreadCounts(prev => ({
+            ...prev,
+            [data.senderId]: (prev[data.senderId] || 0) + 1,
+          }));
+        }
+      } else {
+        if (!isChatOpen || isMinimized) setUnreadCount(prev => prev + 1);
+      }
+    });
 
-    const handleUpdateClientList = (clientList) => {
-      console.log("Client list updated:", clientList);
-      setClients(clientList);
-    };
+    if (isAdmin) {
+      socket.on("update_client_list", (clientList) => {
+        console.log("Client list updated:", clientList);
+        setClients(clientList);
+      });
+    }
 
-    const handleCallOffer = (data) => {
+    socket.on("call_offer", (data) => {
       console.log("Received call offer:", data);
       if (inCallRef.current) {
         socket.emit("call_reject", { to: data.from });
         return;
       }
       setIncomingCall(data);
-    };
+    });
 
-    const handleCallAnswer = async (data) => {
+    socket.on("call_answer", async (data) => {
       if (pcRef.current) {
         try {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
@@ -194,9 +202,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
           console.error("Error in call_answer:", error);
         }
       }
-    };
+    });
 
-    const handleCallCandidate = async (data) => {
+    socket.on("call_candidate", async (data) => {
       if (pcRef.current) {
         if (pcRef.current.remoteDescription && pcRef.current.remoteDescription.type) {
           try {
@@ -209,55 +217,40 @@ const ChatApp = ({ clientId, isAdmin }) => {
           pendingCandidatesRef.current.push(data.candidate);
         }
       }
-    };
+    });
 
-    const handleCallReject = (data) => {
+    socket.on("call_reject", (data) => {
       console.log("Received call rejection:", data);
       toast.info("Call rejected by the recipient.");
       endCall();
-    };
+    });
 
-    const handleCallEnd = () => {
+    socket.on("call_end", () => {
       console.log("Received call end event.");
       toast.info("Call ended by remote party.");
       endCall();
-    };
+    });
 
-    const handleDisconnect = () => {
+    socket.on("disconnect", () => {
       console.log("Socket disconnected.");
       if (inCallRef.current) endCall();
-    };
-
-    socket.on("connect", handleConnect);
-    socket.on("new_message", handleNewMessage);
-    if (isAdmin) {
-      socket.on("update_client_list", handleUpdateClientList);
-    }
-    socket.on("call_offer", handleCallOffer);
-    socket.on("call_answer", handleCallAnswer);
-    socket.on("call_candidate", handleCallCandidate);
-    socket.on("call_reject", handleCallReject);
-    socket.on("call_end", handleCallEnd);
-    socket.on("disconnect", handleDisconnect);
+    });
 
     return () => {
-      // Cleanup socket event listeners
-      socket.off("connect", handleConnect);
-      socket.off("new_message", handleNewMessage);
-      if (isAdmin) {
-        socket.off("update_client_list", handleUpdateClientList);
-      }
-      socket.off("call_offer", handleCallOffer);
-      socket.off("call_answer", handleCallAnswer);
-      socket.off("call_candidate", handleCallCandidate);
-      socket.off("call_reject", handleCallReject);
-      socket.off("call_end", handleCallEnd);
-      socket.off("disconnect", handleDisconnect);
+      socket.off("connect");
+      socket.off("new_message");
+      if (isAdmin) socket.off("update_client_list");
+      socket.off("call_offer");
+      socket.off("call_answer");
+      socket.off("call_candidate");
+      socket.off("call_reject");
+      socket.off("call_end");
+      socket.off("disconnect");
       socket.disconnect();
     };
-  }, [isAdmin, clientId, getCallPartnerId, endCall, isChatOpen, isMinimized]);
+  }, [isAdmin, clientId, selectedClientId, getCallPartnerId, endCall, isChatOpen, isMinimized]);
 
-  // Call timer: update call duration every second when call is connected
+  // Call timer
   const callTimerRef = useRef(null);
   useEffect(() => {
     if (inCall && callConnected) {
@@ -279,7 +272,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }, []);
 
-  // Create RTCPeerConnection with robust ICE and ontrack handling
+  // Create RTCPeerConnection
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -292,7 +285,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
     const connectionStateHandler = () => {
       console.log("Connection state changed:", pc.connectionState);
-      if (pc.connectionState === "connected" || pc.connectionState === "completed") {
+      if (["connected", "completed"].includes(pc.connectionState)) {
         setCallConnected(true);
       }
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
@@ -325,7 +318,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return pc;
   }, [getCallPartnerId, endCall]);
 
-  // Initiate an outgoing call (audio or video)
+  // Initiate call
   const initiateCall = useCallback(async (type) => {
     if (isAdmin && !selectedClientId) {
       toast.error("Please select a client to call.");
@@ -367,7 +360,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [isAdmin, selectedClientId, createPeerConnection, getCallPartnerId]);
 
-  // Accept an incoming call
+  // Accept call
   const handleAcceptCall = useCallback(async () => {
     if (!incomingCall) return;
     stopRingtone();
@@ -402,7 +395,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [incomingCall, createPeerConnection, stopRingtone]);
 
-  // Reject an incoming call and notify caller
+  // Reject call
   const handleRejectCall = useCallback(() => {
     if (incomingCall) {
       socketRef.current?.emit("call_reject", { to: incomingCall.from });
@@ -431,15 +424,23 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const handleChatToggle = useCallback(() => {
     setIsChatOpen(prev => !prev);
     setIsMinimized(false);
-    setUnreadCount(0);
+    if (!isAdmin) setUnreadCount(0);
+    else if (isAdmin && selectedClientId) {
+      // Clear unread count for the selected client
+      setUnreadCounts(prev => {
+        const updated = { ...prev };
+        delete updated[selectedClientId];
+        return updated;
+      });
+    }
     markMessagesAsRead();
-  }, [markMessagesAsRead]);
+  }, [isAdmin, selectedClientId, markMessagesAsRead]);
 
   // Toggle minimize chat
   const handleMinimizeToggle = useCallback(() => {
     setIsMinimized(prev => !prev);
-    if (!isMinimized) setUnreadCount(0);
-  }, [isMinimized]);
+    if (!isMinimized && !isAdmin) setUnreadCount(0);
+  }, [isMinimized, isAdmin]);
 
   // Send a chat message
   const handleSendMessage = useCallback(() => {
@@ -451,7 +452,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       toast.error("No client selected.");
       return;
     }
-    // Construct message with a unique identifier (timestamp)
     const newMessage = { id: Date.now(), sender: isAdmin ? "admin" : "client", message };
     socketRef.current?.emit(
       isAdmin ? "send_message_to_client" : "send_message_to_admin",
@@ -461,10 +461,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setMessage("");
   }, [message, isAdmin, selectedClientId]);
 
-  // Render client list (for admin)
+  // Render client list for admin with unread badges
   const renderClientList = useCallback(() => (
     <select
-      onChange={(e) => setSelectedClientId(e.target.value)}
+      onChange={(e) => {
+        setSelectedClientId(e.target.value);
+        // Clear unread count for this client when selected
+        setUnreadCounts(prev => {
+          const updated = { ...prev };
+          delete updated[e.target.value];
+          return updated;
+        });
+      }}
       value={selectedClientId || ""}
       className="client-selector"
     >
@@ -475,11 +483,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
         clients.map(client => (
           <option key={client.id} value={client.id}>
             {client.name}
+            {unreadCounts[client.id] ? ` (${unreadCounts[client.id]})` : ""}
           </option>
         ))
       )}
     </select>
-  ), [clients, selectedClientId]);
+  ), [clients, selectedClientId, unreadCounts]);
 
   return (
     <div className="chat-app">
@@ -487,7 +496,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
         <>
           <p className="chat-info">Chat with us!</p>
           <button className="chat-bubble-icon" onClick={handleChatToggle}>
-            💬 {unreadCount > 0 && <span className="unread-count">{unreadCount}</span>}
+            💬 {(isAdmin ? Object.values(unreadCounts).reduce((a, b) => a + b, 0) : unreadCount) > 0 && (
+              <span className="unread-count">
+                {isAdmin ? Object.values(unreadCounts).reduce((a, b) => a + b, 0) : unreadCount}
+              </span>
+            )}
           </button>
         </>
       ) : (
@@ -541,7 +554,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
               <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
             </div>
           )}
-          {/* Minimally visible remote audio element to allow autoplay */}
           <audio ref={remoteAudioRef} autoPlay style={{ width: "1px", height: "1px", opacity: 0 }} />
           {callType === "audio" && (
             <div className="audio-container">
