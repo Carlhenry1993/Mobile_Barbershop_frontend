@@ -12,7 +12,7 @@ ringtoneAudio.crossOrigin = "anonymous";
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
-// Media constraints for improved audio/video quality
+// Media constraints for audio/video quality
 const audioConstraints = {
   audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
 };
@@ -43,7 +43,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  // Instead of display: none, we set minimal size so browsers allow playback
+  // Use a minimally visible remote audio element so browsers allow playback
   const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
@@ -62,15 +62,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return isAdmin ? selectedClientIdRef.current : "admin";
   }, [isAdmin]);
 
-  // Scroll to bottom when messages update
+  // Scroll chat to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  // iOS Autoplay workaround: play and immediately pause ringtone to unlock audio context
+  // iOS Autoplay workaround: unlock audio context on first user click
   useEffect(() => {
     const enableAudio = () => {
       ringtoneAudio.play().then(() => {
@@ -81,7 +79,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
     document.addEventListener("click", enableAudio, { once: true });
   }, []);
-
   useEffect(() => { ringtoneAudio.load(); }, []);
 
   // Request notification permission
@@ -103,15 +100,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
     ringtoneAudio.currentTime = 0;
   }, []);
 
+  // Automatically start or stop ringtone based on incoming call
   useEffect(() => {
-    if (incomingCall) {
-      startRingtone();
-    } else {
-      stopRingtone();
-    }
+    incomingCall ? startRingtone() : stopRingtone();
   }, [incomingCall, startRingtone, stopRingtone]);
 
-  // End call: cleanup connection and streams, notify remote peer and display toast
+  // End call: cleanup all streams and connections, emit "call_end", and show toast
   const endCall = useCallback(() => {
     console.log("Ending call...");
     if (pcRef.current) {
@@ -134,12 +128,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setCallConnected(false);
     setCallType(null);
     stopRingtone();
-    // Emit call_end so that remote peer also ends the call
-    socketRef.current?.emit("call_end", { to: getCallPartnerId() });
-    toast.info("Call has been ended.");
+    // Emit call_end only if a call was in progress
+    if (inCallRef.current) {
+      socketRef.current?.emit("call_end", { to: getCallPartnerId() });
+      toast.info("Call has been ended.");
+    }
   }, [localStream, getCallPartnerId, stopRingtone]);
 
-  // Establish Socket.IO connection and setup event listeners
+  // Socket.IO connection and event listeners
   useEffect(() => {
     socketRef.current = io(SOCKET_SERVER_URL, { auth: { token: localStorage.getItem("token") } });
     const socket = socketRef.current;
@@ -220,7 +216,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
-    // Modified disconnect handler: only call endCall() if a call is active.
+    // Only end the call on disconnect if a call was active.
     socket.on("disconnect", () => {
       console.log("Socket disconnected.");
       if (inCallRef.current) {
@@ -254,7 +250,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  // Create RTCPeerConnection and register event handlers
+  // Create RTCPeerConnection with robust ICE and ontrack handling
   const createPeerConnection = () => {
     const pc = new RTCPeerConnection({
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
