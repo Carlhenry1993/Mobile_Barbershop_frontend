@@ -4,7 +4,12 @@ import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Change the ringtone URL to a local file
+// Note: Remove or comment out any jwt-decode import if not used.
+// For example, if you need jwt-decode in the future, import it as follows:
+// import { default as jwtDecode } from "jwt-decode";
+
+// Use a local audio file for the ringtone to avoid CORS issues.
+// Place 'ringtone.mp3' in your public/audio folder.
 const ringtoneURL = "/audio/ringtone.mp3";
 const notificationAudio = new Audio("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
 const ringtoneAudio = new Audio(ringtoneURL);
