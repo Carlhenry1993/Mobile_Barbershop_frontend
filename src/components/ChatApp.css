@@ -126,6 +126,54 @@ body {
   gap: 10px;
 }
 
+/* --- Message Arrangement Based on Viewer Role --- */
+
+/* Admin view: 
+   - Messages sent by the admin are aligned to the right.
+   - Messages from clients are aligned to the left.
+*/
+.admin-view .message.admin {
+  align-self: flex-end;
+  background-color: #DCF8C6; /* Example background (light green) */
+  border-top-right-radius: 0; /* Optional: adjust border radius for chat bubble tail effect */
+}
+
+.admin-view .message.client {
+  align-self: flex-start;
+  background-color: #fff; /* Example background (white) */
+  border-top-left-radius: 0;
+}
+
+/* Client view:
+   - Messages from admin appear on the left.
+   - Messages from the client are aligned to the right.
+*/
+.client-view .message.admin {
+  align-self: flex-start;
+  background-color: #fff;
+  border-top-left-radius: 0;
+}
+
+.client-view .message.client {
+  align-self: flex-end;
+  background-color: #DCF8C6;
+  border-top-right-radius: 0;
+}
+
+/* Optional: Common message adjustments */
+.message {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
+  margin-bottom: 10px;
+  color: #333;
+  /* Default alignment, can be overridden by above selectors */
+  align-self: flex-start;
+}
+
+
+
 /* --- Call Buttons --- */
 .call-buttons-container {
   display: flex;
