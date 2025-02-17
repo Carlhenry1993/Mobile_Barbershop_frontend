@@ -12,7 +12,7 @@ ringtoneAudio.crossOrigin = "anonymous";
 
 const SOCKET_SERVER_URL = "https://mobile-barbershop-backend.onrender.com";
 
-// Media constraints for audio/video quality
+// Media constraints for improved audio/video quality
 const audioConstraints = {
   audio: { echoCancellation: true, noiseSuppression: true, sampleRate: 44100 }
 };
@@ -43,13 +43,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
-  // Use a minimally visible remote audio element so browsers allow playback
+  // Use minimally visible remote audio element so autoplay is allowed
   const remoteAudioRef = useRef(null);
   const pcRef = useRef(null);
   const socketRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
 
-  // Mirror state for use in event handlers
+  // Mirror state values for event handlers
   const inCallRef = useRef(inCall);
   const selectedClientIdRef = useRef(selectedClientId);
   const callTypeRef = useRef(callType);
@@ -62,13 +62,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return isAdmin ? selectedClientIdRef.current : "admin";
   }, [isAdmin]);
 
-  // Scroll chat to bottom when new messages arrive
+  // Scroll to bottom when messages update
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
-  // iOS Autoplay workaround: unlock audio context on first user click
+  // iOS Autoplay workaround: unlock audio context on first user interaction
   useEffect(() => {
     const enableAudio = () => {
       ringtoneAudio.play().then(() => {
@@ -100,12 +100,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
     ringtoneAudio.currentTime = 0;
   }, []);
 
-  // Automatically start or stop ringtone based on incoming call
   useEffect(() => {
     incomingCall ? startRingtone() : stopRingtone();
   }, [incomingCall, startRingtone, stopRingtone]);
 
-  // End call: cleanup all streams and connections, emit "call_end", and show toast
+  // End call: cleanup streams, close connection, emit "call_end", and show toast.
   const endCall = useCallback(() => {
     console.log("Ending call...");
     if (pcRef.current) {
@@ -128,7 +127,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setCallConnected(false);
     setCallType(null);
     stopRingtone();
-    // Emit call_end only if a call was in progress
+    // Only emit if call was active
     if (inCallRef.current) {
       socketRef.current?.emit("call_end", { to: getCallPartnerId() });
       toast.info("Call has been ended.");
@@ -152,9 +151,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         if (Notification.permission === "granted") {
           new Notification(`Message from ${data.sender}`, { body: data.message });
         }
-        if (!isChatOpen || isMinimized) {
-          setUnreadCount(prev => prev + 1);
-        }
+        if (!isChatOpen || isMinimized) setUnreadCount(prev => prev + 1);
       }
     });
 
@@ -206,22 +203,23 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     });
 
-    socket.on("call_reject", () => {
+    // Handle call rejection events:
+    socket.on("call_reject", (data) => {
+      console.log("Received call rejection:", data);
       toast.info("Call rejected by the recipient.");
       endCall();
     });
 
     socket.on("call_end", () => {
+      console.log("Received call end event.");
       toast.info("Call ended by remote party.");
       endCall();
     });
 
-    // Only end the call on disconnect if a call was active.
+    // Disconnect: only cleanup if call active
     socket.on("disconnect", () => {
       console.log("Socket disconnected.");
-      if (inCallRef.current) {
-        endCall();
-      }
+      if (inCallRef.current) endCall();
     });
 
     return () => {
@@ -229,7 +227,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [isAdmin, clientId, getCallPartnerId, endCall, isChatOpen, isMinimized]);
 
-  // Call timer: update duration every second when call is connected
+  // Call timer: update call duration every second when call is connected
   const callTimerRef = useRef(null);
   useEffect(() => {
     if (inCall && callConnected) {
@@ -363,9 +361,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
       });
       await pcRef.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
       pendingCandidatesRef.current.forEach(candidate => {
-        pcRef.current.addIceCandidate(new RTCIceCandidate(candidate)).catch(err =>
-          console.error("Error adding queued candidate:", err)
-        );
+        pcRef.current.addIceCandidate(new RTCIceCandidate(candidate))
+          .catch(err => console.error("Error adding queued candidate:", err));
       });
       pendingCandidatesRef.current = [];
       const answer = await pcRef.current.createAnswer();
@@ -381,11 +378,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   };
 
-  // Reject an incoming call
+  // Reject an incoming call and notify caller
   const handleRejectCall = () => {
     if (incomingCall) {
       socketRef.current?.emit("call_reject", { to: incomingCall.from });
       stopRingtone();
+      toast.info("You rejected the call.");
       setIncomingCall(null);
     }
   };
