@@ -291,10 +291,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
           remoteVideoRef.current.play().catch(err => console.error("Remote video play error:", err));
         } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = event.streams[0];
+          // Ensure that the remote audio element plays once metadata is loaded
+          remoteAudioRef.current.onloadedmetadata = () => {
+            remoteAudioRef.current.play().catch(err => console.error("Remote audio play error:", err));
+          };
+          // Also explicitly unmute if needed
           remoteAudioRef.current.muted = false;
-          remoteAudioRef.current.play().catch(err =>
-            console.error("Remote audio play error:", err)
-          );
         }
       }
     };
