@@ -284,20 +284,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     };
     pc.ontrack = (event) => {
-      if (event.streams && event.streams[0]) {
-        setRemoteStream(event.streams[0]);
-        if (callTypeRef.current === "video" && remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = event.streams[0];
-          remoteVideoRef.current.play().catch(err => console.error("Remote video play error:", err));
-        } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
-          remoteAudioRef.current.srcObject = event.streams[0];
-          // Ensure that the remote audio element plays once metadata is loaded
-          remoteAudioRef.current.onloadedmetadata = () => {
-            remoteAudioRef.current.play().catch(err => console.error("Remote audio play error:", err));
-          };
-          // Also explicitly unmute if needed
-          remoteAudioRef.current.muted = false;
-        }
+      // Use the provided stream if available; otherwise, create a new MediaStream from the track.
+      const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+      setRemoteStream(stream);
+      if (callTypeRef.current === "video" && remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch(err => console.error("Remote video play error:", err));
+      } else if (callTypeRef.current === "audio" && remoteAudioRef.current) {
+        remoteAudioRef.current.srcObject = stream;
+        remoteAudioRef.current.volume = 1;
+        remoteAudioRef.current.play().catch(err => console.error("Remote audio play error:", err));
       }
     };
     return pc;
