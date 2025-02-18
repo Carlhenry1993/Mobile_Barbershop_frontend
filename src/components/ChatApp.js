@@ -34,6 +34,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
+  // Connection status states
+  const [isConnected, setIsConnected] = useState(false); // For admin
+  const [adminOnline, setAdminOnline] = useState(false);   // For clients
+
   // Call states
   const [inCall, setInCall] = useState(false);
   const [callConnected, setCallConnected] = useState(false);
@@ -148,7 +152,22 @@ const ChatApp = ({ clientId, isAdmin }) => {
     const socket = socketRef.current;
 
     socket.on("connect", () => {
+      setIsConnected(true);
       console.log("Connected to signaling server.");
+      // If you're the admin, emit your online status so that clients can see you are online
+      if (isAdmin) {
+        socket.emit("admin_status", { adminId: clientId, online: true });
+      }
+    });
+
+    socket.on("disconnect", () => {
+      setIsConnected(false);
+      console.log("Socket disconnected.");
+      if (isAdmin) {
+        // Optionally, emit offline status if needed
+        socket.emit("admin_status", { adminId: clientId, online: false });
+      }
+      if (inCallRef.current) endCall();
     });
 
     socket.on("new_message", (data) => {
@@ -175,6 +194,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
       socket.on("update_client_list", (clientList) => {
         console.log("Client list updated:", clientList);
         setClients(clientList);
+      });
+    } else {
+      // On the client side, listen for admin status updates
+      socket.on("admin_status", (data) => {
+        console.log("Received admin status:", data);
+        setAdminOnline(data.online);
       });
     }
 
@@ -227,21 +252,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
       endCall();
     });
 
-    socket.on("disconnect", () => {
-      console.log("Socket disconnected.");
-      if (inCallRef.current) endCall();
-    });
-
     return () => {
       socket.off("connect");
+      socket.off("disconnect");
       socket.off("new_message");
       if (isAdmin) socket.off("update_client_list");
+      else socket.off("admin_status");
       socket.off("call_offer");
       socket.off("call_answer");
       socket.off("call_candidate");
       socket.off("call_reject");
       socket.off("call_end");
-      socket.off("disconnect");
       socket.disconnect();
     };
   }, [isAdmin, clientId, selectedClientId, getCallPartnerId, endCall, isChatOpen, isMinimized]);
@@ -486,6 +507,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   return (
     <div className="chat-app">
+      {/* Status Indicator */}
+      <div className="status-indicator">
+        {isAdmin ? (
+          <span>You are {isConnected ? "Online" : "Offline"}</span>
+        ) : (
+          <span>Admin is {adminOnline ? "Online" : "Offline"}</span>
+        )}
+      </div>
       {!isChatOpen ? (
         <>
           <p className="chat-info">Chat with us!</p>
