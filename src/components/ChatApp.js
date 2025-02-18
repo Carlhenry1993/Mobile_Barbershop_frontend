@@ -35,8 +35,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isMinimized, setIsMinimized] = useState(false);
 
   // Connection status states
-  const [isConnected, setIsConnected] = useState(false); // For admin
-  const [adminOnline, setAdminOnline] = useState(false);   // For clients
+  const [isConnected, setIsConnected] = useState(false); // for admin connection state
+  const [adminOnline, setAdminOnline] = useState(false);   // for client view of admin status
 
   // Call states
   const [inCall, setInCall] = useState(false);
@@ -164,7 +164,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setIsConnected(false);
       console.log("Socket disconnected.");
       if (isAdmin) {
-        // Optionally, emit offline status if needed
         socket.emit("admin_status", { adminId: clientId, online: false });
       }
       if (inCallRef.current) endCall();
@@ -507,14 +506,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   return (
     <div className="chat-app">
-      {/* Status Indicator */}
-      <div className="status-indicator">
-        {isAdmin ? (
+      {/* Status Indicator (for admin, separate from chat header) */}
+      {isAdmin && (
+        <div className="status-indicator">
           <span>You are {isConnected ? "Online" : "Offline"}</span>
-        ) : (
-          <span>Admin is {adminOnline ? "Online" : "Offline"}</span>
-        )}
-      </div>
+        </div>
+      )}
       {!isChatOpen ? (
         <>
           <p className="chat-info">Chat with us!</p>
@@ -530,6 +527,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
         <div className={`chat-container ${isMinimized ? "minimized" : ""}`}>
           <div className="chat-header">
             <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
+            {/* For client users, show admin connection status in the header */}
+            {!isAdmin && (
+              <div className="admin-status">
+                Admin is {adminOnline ? "Online" : "Offline"}
+              </div>
+            )}
             <div className="header-buttons">
               <div className="call-buttons-container">
                 <button className="call-button audio" onClick={() => initiateCall("audio")}>📞</button>
@@ -546,7 +549,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
           {!isMinimized && (
             <>
               {isAdmin && renderClientList()}
-              {/* Role-specific chat messages container */}
               <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`}>
                 {messages.map((msg) => (
                   <div key={msg.id} className={`message ${msg.sender}`}>
