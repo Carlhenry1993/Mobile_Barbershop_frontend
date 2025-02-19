@@ -496,8 +496,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       ) : (
         clients.map(client => (
           <option key={client.id} value={client.id}>
-            {client.name}
-            {unreadCounts[client.id] ? ` (${unreadCounts[client.id]})` : ""}
+            {client.name} {unreadCounts[client.id] ? `(${unreadCounts[client.id]})` : ""}
           </option>
         ))
       )}
