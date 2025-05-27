@@ -75,6 +75,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [selectedClientId, setSelectedClientId] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
 
   // Connection status states
   const [isConnected, setIsConnected] = useState(false);
@@ -362,6 +363,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
             window.focus();
             setIsChatOpen(true);
             setIsMinimized(false);
+            setIsMaximized(false);
             notification.close();
           };
         }
@@ -676,11 +678,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
         eventCurrentTarget: event.currentTarget.tagName,
         eventType: event.type,
       });
-      setIsChatOpen((prev) => {
-        console.log("Setting isChatOpen to:", !prev);
-        return !prev;
-      });
+      setIsChatOpen((prev) => !prev);
       setIsMinimized(false);
+      setIsMaximized(false);
       if (!isAdmin) {
         setUnreadCount(0);
       } else if (isAdmin && selectedClientId) {
@@ -698,11 +698,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Toggle minimize chat
   const handleMinimizeToggle = useCallback(() => {
     setIsMinimized((prev) => !prev);
+    setIsMaximized(false); // Reset maximize state when minimizing
     if (!isMinimized && !isAdmin) {
       setUnreadCount(0);
       markMessagesAsRead();
     }
   }, [isMinimized, isAdmin, markMessagesAsRead]);
+
+  // Toggle maximize/restore chat
+  const handleMaximizeToggle = useCallback(() => {
+    setIsMaximized((prev) => !prev);
+    setIsMinimized(false); // Ensure not minimized when toggling maximize
+  }, []);
 
   // Send a chat message
   const handleSendMessage = useCallback(() => {
@@ -863,7 +870,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
             </button>
           </div>
         ) : (
-          <div className={`chat-container ${isMinimized ? "minimized" : ""}`}>
+          <div className={`chat-container ${isMinimized ? "minimized" : ""} ${isMaximized ? "maximized" : ""}`}>
             {isMinimized && <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>}
             {!isMinimized && (
               <>
@@ -901,10 +908,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="minimize-button"
                         onClick={handleMinimizeToggle}
-                        title={isMinimized ? "Expand" : "Minimize"}
-                        aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
+                        title={isMinimized ? "Restore" : "Minimize"}
+                        aria-label={isMinimized ? "Restore chat" : "Minimize chat"}
                       >
-                        {isMinimized ? "🗖" : "__"}
+                        _
+                      </button>
+                      <button
+                        className="maximize-button"
+                        onClick={handleMaximizeToggle}
+                        title={isMaximized ? "Restore" : "Maximize"}
+                        aria-label={isMaximized ? "Restore chat" : "Maximize chat"}
+                      >
+                        {isMaximized ? "🗗" : "🗖"}
                       </button>
                       <button
                         className="close-button"
