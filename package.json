@@ -2,6 +2,7 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "type": "module", 
   "dependencies": {
     "@fortawesome/fontawesome-free": "^6.7.2",
     "@shadcn/ui": "^0.0.4",
@@ -42,7 +43,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "proxy": "https://mobile-barbershop-backend.onrender.com",
+  "proxy": "https://api.mrrenaudinbarbershop.com",
   "eslintConfig": {
     "extends": [
       "react-app",
