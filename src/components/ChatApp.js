@@ -6,21 +6,30 @@ import "react-toastify/dist/ReactToastify.css";
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
-  state = { hasError: false };
+  state = { hasError: false, error: null };
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("ErrorBoundary caught:", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
-      return <div>Something went wrong. Please refresh the page.</div>;
+      return (
+        <div style={{ padding: "20px", color: "red" }}>
+          <h2>Something went wrong.</h2>
+          <p>{this.state.error?.message || "Please refresh the page."}</p>
+        </div>
+      );
     }
     return this.props.children;
   }
 }
 
-// Audio setup with better error handling
+// Audio setup with Supabase-hosted files
 const createAudioElement = (src, options = {}) => {
   const audio = new Audio(src);
   audio.crossOrigin = "anonymous";
@@ -29,65 +38,31 @@ const createAudioElement = (src, options = {}) => {
   return audio;
 };
 
-const ringtoneURL = "/audio/ringtone.mp3";
-const notificationAudio = createAudioElement("https://assets.mixkit.co/active_storage/sfx/3007/3007-preview.mp3");
+const ringtoneURL = "https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/ringtone.mp3";
+const notificationAudio = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/notification.mp3");
 const ringtoneAudio = createAudioElement(ringtoneURL, { loop: true });
 
-const SOCKET_URL = process.env.REACT_APP_SOCKET_SERVER_URL || "https://api.mrrenaudinbarbershop.com";
+const SOCKET_SERVER_URL = "https://api.mrrenaudinbarbershop.com";
 
-// Enhanced media constraints with fallback options
-const MEDIA_CONSTRAINTS = {
+// Media constraints for improved audio/video quality
+const audioConstraints = {
   audio: {
-    ideal: {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-      sampleRate: 44100,
-      channelCount: 1
-    },
-    fallback: {
-      echoCancellation: true,
-      noiseSuppression: true
-    }
+    echoCancellation: true,
+    noiseSuppression: true,
+    sampleRate: 44100,
+  },
+};
+const videoConstraints = {
+  audio: {
+    echoCancellation: true,
+    noiseSuppression: true,
+    sampleRate: 44100,
   },
   video: {
-    ideal: {
-      width: { ideal: 1280, max: 1920 },
-      height: { ideal: 720, max: 1080 },
-      frameRate: { ideal: 30, max: 60 },
-      facingMode: "user"
-    },
-    fallback: {
-      width: { ideal: 640, max: 1280 },
-      height: { ideal: 480, max: 720 },
-      frameRate: { ideal: 15, max: 30 }
-    }
-  }
-};
-
-// Enhanced ICE server configuration
-const ICE_SERVERS = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-  { urls: "stun:stun2.l.google.com:19302" }
-];
-
-// Connection states enum
-const CONNECTION_STATES = {
-  DISCONNECTED: 'disconnected',
-  CONNECTING: 'connecting',
-  CONNECTED: 'connected',
-  RECONNECTING: 'reconnecting',
-  ERROR: 'error'
-};
-
-// Call states enum
-const CALL_STATES = {
-  IDLE: 'idle',
-  CALLING: 'calling',
-  RINGING: 'ringing',
-  CONNECTED: 'connected',
-  ENDING: 'ending'
+    width: { ideal: 1280 },
+    height: { ideal: 720 },
+    frameRate: { ideal: 30 },
+  },
 };
 
 const ChatApp = ({ clientId, isAdmin }) => {
@@ -101,28 +76,20 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
 
-  // Enhanced connection states
-  const [connectionState, setConnectionState] = useState(CONNECTION_STATES.DISCONNECTED);
+  // Connection status states
+  const [isConnected, setIsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
-  const [lastSeen, setLastSeen] = useState(null);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
-  // Enhanced call states
-  const [callState, setCallState] = useState(CALL_STATES.IDLE);
-  const [callType, setCallType] = useState(null);
+  // Call states
+  const [inCall, setInCall] = useState(false);
+  const [callConnected, setCallConnected] = useState(false);
+  const [callType, setCallType] = useState(null); // "audio" or "video"
   const [incomingCall, setIncomingCall] = useState(null);
   const [localStream, setLocalStream] = useState(null);
-  const [remoteStream, setRemoteStream] = useState(null);
   const [callDuration, setCallDuration] = useState(0);
-  const [callQuality, setCallQuality] = useState('good');
 
-  // Media states
-  const [isAudioMuted, setIsAudioMuted] = useState(false);
-  const [isVideoMuted, setIsVideoMuted] = useState(false);
-  const [isSpeakerOn, setIsSpeakerOn] = useState(false);
-  const [isMediaLoading, setIsMediaLoading] = useState(false);
-
-  // Refs
+  // Refs for DOM elements and persistent values
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -130,107 +97,60 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const pcRef = useRef(null);
   const socketRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
-  const callTimerRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
-  const messageInputRef = useRef(null);
 
-  // State refs for event handlers
-  const stateRefs = useRef({});
-  useEffect(() => {
-    stateRefs.current = {
-      callState,
-      selectedClientId,
-      callType,
-      connectionState,
-      isAdmin,
-      clientId
-    };
-  }, [callState, selectedClientId, callType, connectionState, isAdmin, clientId]);
+  // Mirror state values for event handlers
+  const inCallRef = useRef(inCall);
+  const selectedClientIdRef = useRef(selectedClientId);
+  const callTypeRef = useRef(callType);
+  useEffect(() => { inCallRef.current = inCall; }, [inCall]);
+  useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
+  useEffect(() => { callTypeRef.current = callType; }, [callType]);
 
-  // Memoized values
-  const isConnected = useMemo(() => connectionState === CONNECTION_STATES.CONNECTED, [connectionState]);
-  const inCall = useMemo(() => [CALL_STATES.CALLING, CALL_STATES.RINGING, CALL_STATES.CONNECTED].includes(callState), [callState]);
-  const callConnected = useMemo(() => callState === CALL_STATES.CONNECTED, [callState]);
-  const memoizedMessages = useMemo(() => messages, [messages]);
-
+  // Determine call partner ID
   const getCallPartnerId = useCallback(() => {
-    return isAdmin ? stateRefs.current.selectedClientId : "admin";
+    return isAdmin ? selectedClientIdRef.current : "admin";
   }, [isAdmin]);
 
-  // Load persisted messages and selected client
-  useEffect(() => {
-    const savedMessages = localStorage.getItem(`messages_${selectedClientId || clientId}`);
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages));
-    }
-    const savedClientId = localStorage.getItem("selectedClientId");
-    if (savedClientId && clients.some(c => c.id === savedClientId)) {
-      setSelectedClientId(savedClientId);
-    }
-  }, [clients, selectedClientId, clientId]);
-
-  useEffect(() => {
-    if (memoizedMessages.length > 0) {
-      localStorage.setItem(`messages_${selectedClientId || clientId}`, JSON.stringify(memoizedMessages));
-    }
-  }, [memoizedMessages, selectedClientId, clientId]);
-
-  useEffect(() => {
-    if (selectedClientId) {
-      localStorage.setItem("selectedClientId", selectedClientId);
-    }
-  }, [selectedClientId]);
-
-  // Global error handler
-  useEffect(() => {
-    const errorHandler = (event) => {
-      console.error("Uncaught error:", event.error);
-      toast.error("An unexpected error occurred. Please refresh the page.");
-    };
-    window.addEventListener("error", errorHandler);
-    return () => window.removeEventListener("error", errorHandler);
-  }, []);
-
-  // Enhanced scroll to bottom with smooth behavior
+  // Scroll to bottom when messages update
   const scrollToBottom = useCallback(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: "smooth", 
-        block: "end" 
-      });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
-
   useEffect(() => {
     const timeoutId = setTimeout(scrollToBottom, 100);
     return () => clearTimeout(timeoutId);
-  }, [memoizedMessages, scrollToBottom]);
+  }, [messages, scrollToBottom]);
 
-  // Enhanced audio initialization with better iOS support
+  // Initialize audio with error handling
   const initializeAudio = useCallback(async () => {
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
       if (AudioContextClass) {
         const audioContext = new AudioContextClass();
-        if (audioContext.state === 'suspended') {
+        if (audioContext.state === "suspended") {
           await audioContext.resume();
         }
       }
       await Promise.all([
-        new Promise((resolve) => {
-          ringtoneAudio.addEventListener('canplaythrough', resolve, { once: true });
+        new Promise((resolve, reject) => {
+          ringtoneAudio.addEventListener("canplaythrough", resolve, { once: true });
+          ringtoneAudio.addEventListener("error", reject, { once: true });
           ringtoneAudio.load();
         }),
-        new Promise((resolve) => {
-          notificationAudio.addEventListener('canplaythrough', resolve, { once: true });
-          notificationAudio.load();
-        })
+        notificationAudio
+          ? new Promise((resolve, reject) => {
+              notificationAudio.addEventListener("canplaythrough", resolve, { once: true });
+              notificationAudio.addEventListener("error", reject, { once: true });
+              notificationAudio.load();
+            })
+          : Promise.resolve(),
       ]);
     } catch (error) {
       console.warn("Audio initialization warning:", error);
     }
   }, []);
 
+  // iOS Autoplay workaround
   useEffect(() => {
     const enableAudio = async () => {
       try {
@@ -242,17 +162,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
         console.warn("Audio unlock failed:", error);
       }
     };
-
     document.addEventListener("click", enableAudio, { once: true });
     document.addEventListener("touchend", enableAudio, { once: true });
-
     return () => {
       document.removeEventListener("click", enableAudio);
       document.removeEventListener("touchend", enableAudio);
     };
   }, [initializeAudio]);
 
-  // Enhanced notification permissions
+  // Request notification permission
   useEffect(() => {
     const requestNotificationPermission = async () => {
       if ("Notification" in window && Notification.permission === "default") {
@@ -263,35 +181,38 @@ const ChatApp = ({ clientId, isAdmin }) => {
         }
       }
     };
-
     requestNotificationPermission();
   }, []);
 
-  // Enhanced ringtone management
-  const audioManager = useMemo(() => ({
-    startRingtone: async () => {
-      try {
-        if (ringtoneAudio.paused) {
-          ringtoneAudio.loop = true;
-          await ringtoneAudio.play();
+  // Ringtone control functions
+  const audioManager = useMemo(
+    () => ({
+      startRingtone: async () => {
+        try {
+          if (ringtoneAudio.paused) {
+            ringtoneAudio.loop = true;
+            await ringtoneAudio.play();
+          }
+        } catch (error) {
+          console.error("Ringtone play error:", error);
         }
-      } catch (error) {
-        console.error("Ringtone play error:", error);
-      }
-    },
-    stopRingtone: () => {
-      ringtoneAudio.pause();
-      ringtoneAudio.currentTime = 0;
-    },
-    playNotification: async () => {
-      try {
-        notificationAudio.currentTime = 0;
-        await notificationAudio.play();
-      } catch (error) {
-        console.warn("Notification sound failed:", error);
-      }
-    }
-  }), []);
+      },
+      stopRingtone: () => {
+        ringtoneAudio.pause();
+        ringtoneAudio.currentTime = 0;
+      },
+      playNotification: async () => {
+        if (!notificationAudio) return;
+        try {
+          notificationAudio.currentTime = 0;
+          await notificationAudio.play();
+        } catch (error) {
+          console.warn("Notification sound failed:", error);
+        }
+      },
+    }),
+    []
+  );
 
   useEffect(() => {
     if (incomingCall) {
@@ -301,148 +222,115 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [incomingCall, audioManager]);
 
-  // Enhanced media stream management
-  const mediaManager = useMemo(() => ({
-    async getUserMedia(constraints) {
-      try {
-        return await Promise.race([
-          navigator.mediaDevices.getUserMedia(constraints.ideal),
-          new Promise((_, reject) => setTimeout(() => reject(new Error("Media permission timeout")), 10000))
-        ]);
-      } catch (error) {
-        console.warn("Ideal constraints failed, trying fallback:", error);
-        try {
-          return await Promise.race([
-            navigator.mediaDevices.getUserMedia(constraints.fallback),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Media permission timeout")), 10000))
-          ]);
-        } catch (fallbackError) {
-          console.error("All media constraints failed:", fallbackError);
-          throw fallbackError;
-        }
-      }
-    },
-    stopAllTracks(stream) {
-      if (stream) {
-        stream.getTracks().forEach(track => {
-          track.stop();
-          console.log(`Stopped ${track.kind} track`);
-        });
-      }
-    },
-    toggleAudio(stream, muted) {
-      if (stream) {
-        stream.getAudioTracks().forEach(track => {
-          track.enabled = !muted;
-          console.log(`Audio track ${muted ? 'muted' : 'unmuted'}`);
-        });
-      }
-    },
-    toggleVideo(stream, muted) {
-      if (stream) {
-        stream.getVideoTracks().forEach(track => {
-          track.enabled = !muted;
-          console.log(`Video track ${muted ? 'muted' : 'unmuted'}`);
-        });
-      }
+  // Helper to stop media tracks
+  const stopMediaTracks = useCallback((stream) => {
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        track.stop();
+        console.log(`Stopped ${track.kind} track`);
+      });
     }
-  }), []);
+  }, []);
 
-  // Enhanced call ending with proper cleanup
-  const endCall = useCallback(async () => {
+  // End call with cleanup
+  const endCall = useCallback(() => {
     console.log("Ending call...");
-    
-    setCallState(CALL_STATES.ENDING);
-    
     try {
       audioManager.stopRingtone();
-      
       if (pcRef.current) {
         pcRef.current.close();
         pcRef.current = null;
       }
-      
-      mediaManager.stopAllTracks(localStream);
-      
+      stopMediaTracks(localStream);
+      setLocalStream(null);
       if (remoteAudioRef.current?.srcObject) {
-        mediaManager.stopAllTracks(remoteAudioRef.current.srcObject);
+        stopMediaTracks(remoteAudioRef.current.srcObject);
         remoteAudioRef.current.srcObject = null;
       }
-      
       if (remoteVideoRef.current?.srcObject) {
-        mediaManager.stopAllTracks(remoteVideoRef.current.srcObject);
+        stopMediaTracks(remoteVideoRef.current.srcObject);
         remoteVideoRef.current.srcObject = null;
       }
-      
-      setLocalStream(null);
-      setRemoteStream(null);
+      if (localVideoRef.current?.srcObject) {
+        stopMediaTracks(localVideoRef.current.srcObject);
+        localVideoRef.current.srcObject = null;
+      }
+      setInCall(false);
+      setCallConnected(false);
       setCallType(null);
-      setIsAudioMuted(false);
-      setIsVideoMuted(false);
-      setIsSpeakerOn(false);
-      setIsMediaLoading(false);
-      
-      if ([CALL_STATES.CALLING, CALL_STATES.RINGING, CALL_STATES.CONNECTED].includes(stateRefs.current.callState)) {
+      setIncomingCall(null);
+      pendingCandidatesRef.current = [];
+      if (inCallRef.current) {
         socketRef.current?.emit("call_end", { to: getCallPartnerId() });
         toast.info("Call has been ended.");
       }
     } catch (error) {
       console.error("Error during call cleanup:", error);
-      toast.error("Error ending call. Please try again.");
-    } finally {
-      setCallState(CALL_STATES.IDLE);
+      toast.error("Error ending call.");
     }
-  }, [localStream, getCallPartnerId, mediaManager, audioManager]);
+  }, [localStream, getCallPartnerId, stopMediaTracks, audioManager]);
 
-  // Enhanced socket connection with reconnection logic
+  // Fetch initial messages from Supabase
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        const response = await fetch(`${SOCKET_SERVER_URL}/api/messages`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        setMessages(data.map((msg) => ({
+          id: msg.id,
+          sender: msg.sender_id === clientId ? "client" : "admin",
+          senderId: msg.sender_id,
+          message: msg.message,
+          timestamp: msg.timestamp,
+        })));
+      } catch (error) {
+        console.error("Error fetching messages:", error);
+        toast.error("Failed to load messages.");
+      }
+    };
+    fetchMessages();
+  }, [clientId]);
+
+  // Socket.IO connection with reconnection logic
   useEffect(() => {
     reconnectTimeoutRef.current = null;
 
     const connectSocket = () => {
-      setConnectionState(CONNECTION_STATES.CONNECTING);
-
-      socketRef.current = io(SOCKET_URL, {
+      socketRef.current = io(SOCKET_SERVER_URL, {
         auth: { token: localStorage.getItem("token") },
-        transports: ['websocket', 'polling'],
+        transports: ["websocket", "polling"],
         timeout: 10000,
-        forceNew: true
+        reconnection: false,
       });
-
       const socket = socketRef.current;
 
       socket.on("connect", () => {
-        console.log("Socket connected successfully to", SOCKET_URL);
-        setConnectionState(CONNECTION_STATES.CONNECTED);
+        console.log("Connected to signaling server:", SOCKET_SERVER_URL);
+        setIsConnected(true);
         setReconnectAttempts(0);
-        
         if (isAdmin) {
           socket.emit("admin_status", { adminId: clientId, online: true });
         }
       });
 
       socket.on("disconnect", (reason) => {
-        setConnectionState(CONNECTION_STATES.DISCONNECTED);
         console.log("Socket disconnected:", reason);
-        
+        setIsConnected(false);
         if (isAdmin) {
           socket.emit("admin_status", { adminId: clientId, online: false });
         }
-        
-        if (stateRefs.current.callState !== CALL_STATES.IDLE) {
-          endCall();
-        }
-        
-        if (reason !== 'io client disconnect') {
-          setConnectionState(CONNECTION_STATES.RECONNECTING);
+        if (inCallRef.current) endCall();
+        if (reason !== "io client disconnect") {
           const attempts = reconnectAttempts + 1;
           setReconnectAttempts(attempts);
-          
-          const delay = Math.min(1000 * Math.pow(2, attempts), 30000);
+          const delay = Math.min(1000 * Math.pow(2, attempts) + Math.random() * 100, 30000);
           reconnectTimeoutRef.current = setTimeout(() => {
             if (attempts < 5) {
               connectSocket();
             } else {
-              setConnectionState(CONNECTION_STATES.ERROR);
               toast.error("Connection failed. Please refresh the page.");
             }
           }, delay);
@@ -451,51 +339,42 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
       socket.on("connect_error", (error) => {
         console.error("Connection error:", error);
-        setConnectionState(CONNECTION_STATES.ERROR);
-        toast.error("Failed to connect to server. Please check your network or try again later.");
+        toast.error("Failed to connect to server.");
       });
 
       socket.on("new_message", (data) => {
         console.log("New message:", data);
-        
         const newMessage = {
           id: Date.now() + Math.random(),
           sender: data.sender || "Unknown User",
           message: data.message,
-          timestamp: new Date(),
-          senderId: data.senderId
+          senderId: data.senderId,
+          timestamp: data.timestamp || new Date().toISOString(),
         };
-        
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);
         audioManager.playNotification();
-        
         if (Notification.permission === "granted" && (!isChatOpen || isMinimized)) {
           const notification = new Notification(`Message from ${data.sender || "User"}`, {
             body: data.message,
-            icon: '/favicon.ico',
-            tag: 'chat-message'
+            icon: "/favicon.ico",
           });
-          
           notification.onclick = () => {
             window.focus();
             setIsChatOpen(true);
             setIsMinimized(false);
             notification.close();
           };
-          
-          setTimeout(() => notification.close(), 5000);
         }
-        
         if (isAdmin) {
           if (selectedClientId !== data.senderId) {
-            setUnreadCounts(prev => ({
+            setUnreadCounts((prev) => ({
               ...prev,
               [data.senderId]: (prev[data.senderId] || 0) + 1,
             }));
           }
         } else {
           if (!isChatOpen || isMinimized) {
-            setUnreadCount(prev => prev + 1);
+            setUnreadCount((prev) => prev + 1);
           }
         }
       });
@@ -509,34 +388,31 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socket.on("admin_status", (data) => {
           console.log("Received admin status:", data);
           setAdminOnline(data.online);
-          setLastSeen(data.lastSeen);
         });
       }
 
       socket.on("call_offer", (data) => {
         console.log("Received call offer:", data);
-        if (stateRefs.current.callState === CALL_STATES.IDLE) {
+        if (!inCallRef.current) {
           setIncomingCall(data);
-          setCallState(CALL_STATES.RINGING);
         } else {
           socket.emit("call_busy", { to: data.from });
         }
       });
 
       socket.on("call_answer", async (data) => {
-        if (pcRef.current && stateRefs.current.callState === CALL_STATES.CALLING) {
+        if (pcRef.current && inCallRef.current) {
           try {
             await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
             console.log("Remote description set.");
-            
-            while (pendingCandidatesRef.current.length > 0) {
-              const candidate = pendingCandidatesRef.current.shift();
+            for (const candidate of pendingCandidatesRef.current) {
               try {
                 await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
               } catch (err) {
                 console.error("Error adding queued candidate:", err);
               }
             }
+            pendingCandidatesRef.current = [];
           } catch (error) {
             console.error("Error in call_answer:", error);
             endCall();
@@ -588,331 +464,199 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [isAdmin, clientId, selectedClientId, endCall, isChatOpen, isMinimized, audioManager, reconnectAttempts, getCallPartnerId]);
 
-  // Enhanced call timer
+  // Call timer
+  const callTimerRef = useRef(null);
   useEffect(() => {
-    if (callConnected) {
+    if (inCall && callConnected) {
       callTimerRef.current = setInterval(() => {
-        setCallDuration(prev => prev + 1);
+        setCallDuration((prev) => prev + 1);
       }, 1000);
     } else {
       setCallDuration(0);
-      if (callTimerRef.current) {
-        clearInterval(callTimerRef.current);
-        callTimerRef.current = null;
-      }
+      if (callTimerRef.current) clearInterval(callTimerRef.current);
     }
-    
     return () => {
-      if (callTimerRef.current) {
-        clearInterval(callTimerRef.current);
-      }
+      if (callTimerRef.current) clearInterval(callTimerRef.current);
     };
-  }, [callConnected]);
+  }, [inCall, callConnected]);
 
-  // Enhanced duration formatting
   const formatDuration = useCallback((duration) => {
-    const hours = Math.floor(duration / 3600);
-    const minutes = Math.floor((duration % 3600) / 60);
+    const minutes = Math.floor(duration / 60);
     const seconds = duration % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-    }
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }, []);
 
-  // Enhanced peer connection creation
+  // Create RTCPeerConnection
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({
-      iceServers: ICE_SERVERS,
-      iceCandidatePoolSize: 10,
-      bundlePolicy: 'balanced',
-      rtcpMuxPolicy: 'require'
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
+      ],
     });
-
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         console.log("ICE candidate generated");
         socketRef.current?.emit("call_candidate", {
           to: getCallPartnerId(),
-          candidate: event.candidate
+          candidate: event.candidate,
         });
       }
     };
-
     pc.onconnectionstatechange = () => {
-      console.log("WebRTC connection state:", pc.connectionState, "ICE state:", pc.iceConnectionState);
-      
-      switch (pc.connectionState) {
-        case "connected":
-          setCallState(CALL_STATES.CONNECTED);
-          setCallQuality('good');
-          break;
-        case "disconnected":
-        case "failed":
-        case "closed":
-          if (stateRefs.current.callState !== CALL_STATES.ENDING) {
-            endCall();
-          }
-          break;
-        default:
-          break;
+      console.log("WebRTC connection state:", pc.connectionState);
+      if (["connected", "completed"].includes(pc.connectionState)) {
+        setCallConnected(true);
       }
-    };
-
-    pc.oniceconnectionstatechange = () => {
-      console.log("ICE connection state:", pc.iceConnectionState);
-      if (pc.iceConnectionState === 'failed') {
-        toast.error("Failed to establish a stable connection. Please check your network.");
+      if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
         endCall();
       }
     };
-
-    pc.ontrack = (event) => {
-      console.log("Received remote track:", event.track.kind);
-      
-      const [remoteStream] = event.streams;
-      setRemoteStream(remoteStream);
-      
-      if (event.track.kind === "audio" && remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = remoteStream;
-        remoteAudioRef.current.volume = isSpeakerOn ? 1.0 : 0.8;
-        remoteAudioRef.current.play().catch(err => 
-          console.error("Error playing remote audio:", err)
-        );
-      }
-      
-      if (event.track.kind === "video" && remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream || new MediaStream();
-        remoteVideoRef.current.play().catch(err => 
-          console.error("Error playing remote video:", err)
-        );
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", pc.iceConnectionState);
+      if (pc.iceConnectionState === "failed") {
+        toast.error("Failed to establish a stable connection.");
+        endCall();
       }
     };
-
-    const statsInterval = setInterval(async () => {
-      if (pc.connectionState === 'connected') {
-        try {
-          const stats = await pc.getStats();
-          let packetsLost = 0;
-          let packetsReceived = 0;
-          
-          stats.forEach(report => {
-            if (report.type === 'inbound-rtp') {
-              packetsLost += report.packetsLost || 0;
-              packetsReceived += report.packetsReceived || 0;
-            }
-          });
-          
-          const lossRate = packetsReceived > 0 ? packetsLost / packetsReceived : 0;
-          setCallQuality(lossRate < 0.05 ? 'good' : lossRate < 0.1 ? 'fair' : 'poor');
-        } catch (error) {
-          console.warn("Stats monitoring error:", error);
-        }
+    pc.ontrack = (event) => {
+      console.log("Received remote track:", event.track.kind);
+      let stream = event.streams[0] || new MediaStream();
+      if (event.track.kind === "audio" && remoteAudioRef.current) {
+        stream.addTrack(event.track);
+        remoteAudioRef.current.srcObject = stream;
+        remoteAudioRef.current.play().catch((err) => console.error("Error playing remote audio:", err));
+      } else if (event.track.kind === "video" && remoteVideoRef.current) {
+        stream.addTrack(event.track);
+        remoteVideoRef.current.srcObject = stream;
+        remoteVideoRef.current.play().catch((err) => console.error("Error playing remote video:", err));
       }
-    }, 10000);
-
-    pc.addEventListener('connectionstatechange', () => {
-      if (['closed', 'failed'].includes(pc.connectionState)) {
-        clearInterval(statsInterval);
-      }
-    });
-
+    };
     return pc;
-  }, [getCallPartnerId, endCall, isSpeakerOn]);
+  }, [getCallPartnerId, endCall]);
 
-  // Enhanced call initiation
-  const initiateCall = useCallback(async (type) => {
-    if (isAdmin && !selectedClientId) {
-      toast.error("Please select a client to call.");
-      return;
-    }
-
-    if (!isConnected) {
-      toast.error("Not connected to server. Please wait and try again.");
-      return;
-    }
-
-    setCallState(CALL_STATES.CALLING);
-    setIsMediaLoading(true);
-
-    try {
-      const constraints = {
-        audio: MEDIA_CONSTRAINTS.audio,
-        video: type === "video" ? MEDIA_CONSTRAINTS.video : false
-      };
-
-      const stream = await mediaManager.getUserMedia(constraints);
-      setLocalStream(stream);
-      
-      if (localVideoRef.current && type === "video") {
-        localVideoRef.current.srcObject = stream;
-        localVideoRef.current.play().catch(err => 
-          console.error("Local video play error:", err)
-        );
+  // Initiate an outgoing call
+  const initiateCall = useCallback(
+    async (type) => {
+      if (isAdmin && !selectedClientId) {
+        toast.error("Please select a client to call.");
+        return;
       }
-      
-      pcRef.current = createPeerConnection();
-      
-      stream.getTracks().forEach(track => {
-        pcRef.current.addTrack(track, stream);
-      });
-      
-      const offer = await pcRef.current.createOffer({
-        offerToReceiveAudio: true,
-        offerToReceiveVideo: type === "video"
-      });
-      
-      await pcRef.current.setLocalDescription(offer);
-      
-      socketRef.current?.emit("call_offer", {
-        to: getCallPartnerId(),
-        callType: type,
-        offer
-      });
-      
-      setCallType(type);
-      console.log("Call initiated successfully");
-      
-      setTimeout(() => {
-        if (stateRefs.current.callState === CALL_STATES.CALLING) {
-          toast.info("Call timeout - recipient didn't answer");
-          endCall();
+      if (!isConnected) {
+        toast.error("Not connected to server.");
+        return;
+      }
+      try {
+        const constraints = type === "audio" ? audioConstraints : videoConstraints;
+        const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(async (error) => {
+          if (type === "video" && error.name === "NotFoundError") {
+            toast.warn("Video device not found, falling back to audio-only call.");
+            return await navigator.mediaDevices.getUserMedia(audioConstraints);
+          }
+          throw error;
+        });
+        setLocalStream(stream);
+        if (localVideoRef.current && type === "video") {
+          localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch((err) => console.error("Local video play error:", err));
         }
-      }, 30000);
-      
-    } catch (error) {
-      console.error("Error initiating call:", error);
-      setCallState(CALL_STATES.IDLE);
-      setIsMediaLoading(false);
-      const errorMessages = {
-        'NotFoundError': "No microphone or camera found. Please check your devices.",
-        'NotAllowedError': "Permission denied for microphone or camera access.",
-        'NotReadableError': "Your camera or microphone is being used by another application.",
-        'OverconstrainedError': "Camera or microphone doesn't meet the requirements."
-      };
-      toast.error(errorMessages[error.name] || "Error starting call. Please try again.");
-    }
-  }, [isAdmin, selectedClientId, isConnected, mediaManager, createPeerConnection, getCallPartnerId, endCall]);
+        pcRef.current = createPeerConnection();
+        stream.getTracks().forEach((track) => {
+          pcRef.current.addTrack(track, stream);
+        });
+        const offer = await pcRef.current.createOffer();
+        await pcRef.current.setLocalDescription(offer);
+        socketRef.current?.emit("call_offer", {
+          to: getCallPartnerId(),
+          callType: type,
+          offer,
+        });
+        setCallType(type);
+        setInCall(true);
+        setTimeout(() => {
+          if (inCallRef.current && !callConnected) {
+            toast.info("Call timeout - recipient didn't answer");
+            endCall();
+          }
+        }, 30000);
+      } catch (error) {
+        console.error("Error initiating call:", error);
+        const errorMessages = {
+          NotFoundError: "No microphone or camera found.",
+          NotAllowedError: "Permission denied for microphone or camera.",
+          NotReadableError: "Camera or microphone is in use.",
+        };
+        toast.error(errorMessages[error.name] || "Error starting call.");
+      }
+    },
+    [isAdmin, selectedClientId, isConnected, createPeerConnection, getCallPartnerId, callConnected, endCall]
+  );
 
-  // Enhanced call acceptance
+  // Accept an incoming call
   const handleAcceptCall = useCallback(async () => {
     if (!incomingCall) return;
-    
     audioManager.stopRingtone();
-    setCallState(CALL_STATES.CALLING);
-    setIsMediaLoading(true);
-    
     try {
-      const constraints = {
-        audio: MEDIA_CONSTRAINTS.audio,
-        video: incomingCall.callType === "video" ? MEDIA_CONSTRAINTS.video : false
-      };
-      
-      const stream = await mediaManager.getUserMedia(constraints);
+      const constraints = incomingCall.callType === "audio" ? audioConstraints : videoConstraints;
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       setLocalStream(stream);
-      
       if (localVideoRef.current && incomingCall.callType === "video") {
         localVideoRef.current.srcObject = stream;
-        localVideoRef.current.play().catch(err => 
-          console.error("Local video play error:", err)
-        );
+        localVideoRef.current.play().catch((err) => console.error("Local video play error:", err));
       }
-      
       pcRef.current = createPeerConnection();
-      
-      stream.getTracks().forEach(track => {
+      stream.getTracks().forEach((track) => {
         pcRef.current.addTrack(track, stream);
       });
-      
       await pcRef.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
-      
-      while (pendingCandidatesRef.current.length > 0) {
-        const candidate = pendingCandidatesRef.current.shift();
+      for (const candidate of pendingCandidatesRef.current) {
         try {
           await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
           console.error("Error adding queued candidate:", err);
         }
       }
-      
+      pendingCandidatesRef.current = [];
       const answer = await pcRef.current.createAnswer();
       await pcRef.current.setLocalDescription(answer);
-      
       socketRef.current?.emit("call_answer", {
         to: incomingCall.from,
-        answer
+        answer,
       });
-      
       setCallType(incomingCall.callType);
+      setInCall(true);
       setIncomingCall(null);
-      console.log("Call accepted successfully");
-      
     } catch (error) {
       console.error("Error accepting call:", error);
-      toast.error("Error accepting call. Please try again.");
-      setCallState(CALL_STATES.IDLE);
-      setIncomingCall(null);
-      setIsMediaLoading(false);
+      toast.error("Error accepting call.");
+      endCall();
     }
-  }, [incomingCall, createPeerConnection, audioManager, mediaManager]);
+  }, [incomingCall, createPeerConnection, audioManager, endCall]);
 
-  // Enhanced call rejection
+  // Reject an incoming call
   const handleRejectCall = useCallback(() => {
     if (incomingCall) {
       socketRef.current?.emit("call_reject", { to: incomingCall.from });
       audioManager.stopRingtone();
-      toast.info("Call rejected.");
+      toast.info("You rejected the call.");
       setIncomingCall(null);
-      setCallState(CALL_STATES.IDLE);
     }
   }, [incomingCall, audioManager]);
 
-  // Media control functions
-  const toggleAudio = useCallback(() => {
-    if (localStream) {
-      const newMutedState = !isAudioMuted;
-      mediaManager.toggleAudio(localStream, newMutedState);
-      setIsAudioMuted(newMutedState);
-      toast.info(newMutedState ? "Microphone muted" : "Microphone unmuted");
-    }
-  }, [localStream, isAudioMuted, mediaManager]);
-
-  const toggleVideo = useCallback(() => {
-    if (localStream && callType === "video") {
-      const newMutedState = !isVideoMuted;
-      mediaManager.toggleVideo(localStream, newMutedState);
-      setIsVideoMuted(newMutedState);
-      toast.info(newMutedState ? "Camera off" : "Camera on");
-    }
-  }, [localStream, isVideoMuted, callType, mediaManager]);
-
-  const toggleSpeaker = useCallback(() => {
-    const newSpeakerState = !isSpeakerOn;
-    setIsSpeakerOn(newSpeakerState);
-    
-    if (remoteAudioRef.current) {
-      remoteAudioRef.current.volume = newSpeakerState ? 1.0 : 0.8;
-    }
-    
-    toast.info(newSpeakerState ? "Speaker on" : "Speaker off");
-  }, [isSpeakerOn]);
-
-  // Enhanced message reading
+  // Mark messages as read
   const markMessagesAsRead = useCallback(async () => {
     const targetUserId = isAdmin ? selectedClientId : clientId;
     if (!targetUserId) return;
-
     try {
-      const response = await fetch(`${SOCKET_URL}/api/messages/markAsRead`, {
+      const response = await fetch(`${SOCKET_SERVER_URL}/api/messages/markAsRead`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({ userId: targetUserId }),
       });
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -921,141 +665,106 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [clientId, isAdmin, selectedClientId]);
 
-  // Enhanced chat toggle
-  const handleChatToggle = useCallback((event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    console.log("Chat toggle clicked, isChatOpen:", !isChatOpen);
-    setIsChatOpen(prev => !prev);
-    setIsMinimized(false);
-    
-    if (!isAdmin) {
-      setUnreadCount(0);
-    } else if (isAdmin && selectedClientId) {
-      setUnreadCounts(prev => {
-        const updated = { ...prev };
-        delete updated[selectedClientId];
-        return updated;
+  // Toggle chat window
+  const handleChatToggle = useCallback(
+    (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      console.log("Chat toggle clicked", {
+        isChatOpen: !isChatOpen,
+        eventTarget: event.target.tagName,
+        eventCurrentTarget: event.currentTarget.tagName,
+        eventType: event.type,
       });
-    }
-    
-    markMessagesAsRead();
-    
-    setTimeout(() => {
-      if (messageInputRef.current) {
-        messageInputRef.current.focus();
+      setIsChatOpen((prev) => {
+        console.log("Setting isChatOpen to:", !prev);
+        return !prev;
+      });
+      setIsMinimized(false);
+      if (!isAdmin) {
+        setUnreadCount(0);
+      } else if (isAdmin && selectedClientId) {
+        setUnreadCounts((prev) => {
+          const updated = { ...prev };
+          delete updated[selectedClientId];
+          return updated;
+        });
       }
-    }, 100);
-  }, [isChatOpen, isAdmin, selectedClientId, markMessagesAsRead]);
+      markMessagesAsRead();
+    },
+    [isChatOpen, isAdmin, selectedClientId, markMessagesAsRead]
+  );
 
-  // Enhanced minimize toggle
+  // Toggle minimize chat
   const handleMinimizeToggle = useCallback(() => {
-    setIsMinimized(prev => !prev);
-    
+    setIsMinimized((prev) => !prev);
     if (!isMinimized && !isAdmin) {
       setUnreadCount(0);
       markMessagesAsRead();
     }
   }, [isMinimized, isAdmin, markMessagesAsRead]);
 
-  // Enhanced message sending with validation and retry
-  const handleSendMessage = useCallback(async () => {
+  // Send a chat message
+  const handleSendMessage = useCallback(() => {
     const trimmedMessage = message.trim();
-    
     if (!trimmedMessage) {
       toast.error("Message cannot be empty!");
       return;
     }
-    
-    if (trimmedMessage.length > 1000) {
-      toast.error("Message is too long (max 1000 characters).");
-      return;
-    }
-    
     if (isAdmin && !selectedClientId) {
       toast.error("No client selected.");
       return;
     }
-    
     if (!isConnected) {
-      toast.error("Not connected to server. Please wait and try again.");
+      toast.error("Not connected to server.");
       return;
     }
-    
     const newMessage = {
       id: Date.now() + Math.random(),
       sender: isAdmin ? "admin" : "client",
       message: trimmedMessage,
-      timestamp: new Date(),
-      status: 'sending'
+      status: "sending",
+      timestamp: new Date().toISOString(),
     };
-    
-    setMessages(prev => [...prev, newMessage]);
-    setMessage("");
-    
+    setMessages((prev) => [...prev, newMessage]);
     try {
-      const eventName = isAdmin ? "send_message_to_client" : "send_message_to_admin";
-      const payload = { 
-        clientId: selectedClientId, 
-        message: trimmedMessage,
-        messageId: newMessage.id
-      };
-      
-      socketRef.current?.emit(eventName, payload);
-      
-      setMessages(prev => prev.map(msg => 
-        msg.id === newMessage.id ? { ...msg, status: 'sent' } : msg
-      ));
-      
+      socketRef.current?.emit(
+        isAdmin ? "send_message_to_client" : "send_message_to_admin",
+        { clientId: selectedClientId, message: trimmedMessage }
+      );
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === newMessage.id ? { ...msg, status: "sent" } : msg
+        )
+      );
+      setMessage("");
     } catch (error) {
       console.error("Error sending message:", error);
-      toast.error("Failed to send message. Please try again.");
-      
-      setMessages(prev => prev.map(msg => 
-        msg.id === newMessage.id ? { ...msg, status: 'failed' } : msg
-      ));
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === newMessage.id ? { ...msg, status: "failed" } : msg
+        )
+      );
+      toast.error("Failed to send message.");
     }
   }, [message, isAdmin, selectedClientId, isConnected]);
 
-  // Enhanced keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
-        event.preventDefault();
-        handleSendMessage();
-      }
-      
-      if (event.key === 'Escape' && isChatOpen) {
-        setIsChatOpen(false);
-      }
-    };
-    
-    if (isChatOpen) {
-      document.addEventListener('keydown', handleKeyDown);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [isChatOpen, handleSendMessage]);
-
-  // Enhanced client selection
-  const handleClientSelect = useCallback((clientId) => {
-    setSelectedClientId(clientId);
-    
-    if (clientId) {
-      setUnreadCounts(prev => {
-        const updated = { ...prev };
-        delete updated[clientId];
-        return updated;
-      });
-      
-      markMessagesAsRead();
-    }
-  }, [markMessagesAsRead]);
-
-  // Enhanced client list rendering
-  const renderClientList = useCallback(() => (
-    <div className="client-list-container">
+  // Render client list
+  const renderClientList = useCallback(
+    () => (
       <select
-        onChange={(e) => handleClientSelect(e.target.value)}
+        onChange={(e) => {
+          const clientId = e.target.value;
+          setSelectedClientId(clientId);
+          if (clientId) {
+            setUnreadCounts((prev) => {
+              const updated = { ...prev };
+              delete updated[clientId];
+              return updated;
+            });
+            markMessagesAsRead();
+          }
+        }}
         value={selectedClientId || ""}
         className="client-selector"
         disabled={!isConnected}
@@ -1065,192 +774,111 @@ const ChatApp = ({ clientId, isAdmin }) => {
         {clients.length === 0 ? (
           <option disabled>No clients connected</option>
         ) : (
-          clients.map(client => (
+          clients.map((client) => (
             <option key={client.id} value={client.id}>
-              {client.name || "Unknown Client"} 
+              {client.name || "Unknown Client"}
               {unreadCounts[client.id] ? ` (${unreadCounts[client.id]})` : ""}
               {client.online ? " 🟢" : " 🔴"}
             </option>
           ))
         )}
       </select>
-      {selectedClientId && (
-        <div className="selected-client-info">
-          <span className="client-status">
-            {clients.find(c => c.id === selectedClientId)?.online ? "Online" : "Offline"}
-          </span>
-        </div>
-      )}
-    </div>
-  ), [clients, selectedClientId, unreadCounts, isConnected, handleClientSelect]);
+    ),
+    [clients, selectedClientId, unreadCounts, isConnected, markMessagesAsRead]
+  );
 
-  // Connection status indicator
-  const renderConnectionStatus = useCallback(() => {
-    const statusConfig = {
-      [CONNECTION_STATES.CONNECTED]: { text: "Online", class: "connected", icon: "🟢" },
-      [CONNECTION_STATES.CONNECTING]: { text: "Connecting...", class: "connecting", icon: "🟡" },
-      [CONNECTION_STATES.RECONNECTING]: { text: "Reconnecting...", class: "reconnecting", icon: "🟡" },
-      [CONNECTION_STATES.DISCONNECTED]: { text: "Offline", class: "disconnected", icon: "🔴" },
-      [CONNECTION_STATES.ERROR]: { text: "Connection Error", class: "error", icon: "❌" }
-    };
-    
-    const config = statusConfig[connectionState] || statusConfig[CONNECTION_STATES.DISCONNECTED];
-    
-    return (
-      <div className={`connection-status ${config.class}`}>
-        <span className="status-icon">{config.icon}</span>
-        <span className="status-text">{config.text}</span>
-        {reconnectAttempts > 0 && connectionState === CONNECTION_STATES.RECONNECTING && (
-          <span className="reconnect-attempts">({reconnectAttempts}/5)</span>
-        )}
-      </div>
-    );
-  }, [connectionState, reconnectAttempts]);
-
-  // Enhanced message rendering
-  const renderMessages = useMemo(() => (
-    <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`} aria-live="polite">
-      {memoizedMessages.length === 0 ? (
-        <div className="no-messages">
-          <p>No messages yet. Start a conversation!</p>
-        </div>
-      ) : (
-        memoizedMessages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.sender} ${msg.status || ''}`}>
-            <div className="message-header">
-              <span className="message-author">{msg.sender || "Unknown User"}:</span>
-              <span className="message-time">
-                {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''}
-              </span>
+  // Render messages with timestamps
+  const renderMessages = useMemo(() => {
+    try {
+      return (
+        <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`} aria-live="polite">
+          {messages.length === 0 ? (
+            <div className="no-messages">
+              <p>No messages yet. Start a conversation!</p>
             </div>
-            <p className="message-content">{msg.message}</p>
-            {msg.status && (
-              <div className="message-status">
-                {msg.status === 'sending' && '⏳'}
-                {msg.status === 'sent' && '✓'}
-                {msg.status === 'failed' && '❌'}
+          ) : (
+            messages.map((msg) => (
+              <div key={msg.id} className={`message ${msg.sender} ${msg.status || ""}`}>
+                <span className="message-author">{msg.sender || "Unknown User"}:</span>
+                <p>{msg.message}</p>
+                <span className="message-timestamp">
+                  {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                {msg.status && (
+                  <div className="message-status">
+                    {msg.status === "sending" && "⏳"}
+                    {msg.status === "sent" && "✓"}
+                    {msg.status === "failed" && "❌"}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        ))
-      )}
-      <div ref={messagesEndRef} />
-    </div>
-  ), [memoizedMessages, isAdmin]);
-
-  // Enhanced call controls
-  const renderCallControls = useCallback(() => (
-    <div className="call-controls">
-      <button 
-        className={`control-button audio ${isAudioMuted ? 'muted' : ''}`}
-        onClick={toggleAudio}
-        title={isAudioMuted ? "Unmute microphone" : "Mute microphone"}
-        aria-label={isAudioMuted ? "Unmute microphone" : "Mute microphone"}
-      >
-        {isAudioMuted ? "🎤❌" : "🎤"}
-      </button>
-      
-      {callType === "video" && (
-        <button 
-          className={`control-button video ${isVideoMuted ? 'muted' : ''}`}
-          onClick={toggleVideo}
-          title={isVideoMuted ? "Turn on camera" : "Turn off camera"}
-          aria-label={isVideoMuted ? "Turn on camera" : "Turn off camera"}
-        >
-          {isVideoMuted ? "📹❌" : "📹"}
-        </button>
-      )}
-      
-      <button 
-        className={`control-button speaker ${isSpeakerOn ? 'active' : ''}`}
-        onClick={toggleSpeaker}
-        title={isSpeakerOn ? "Turn off speaker" : "Turn on speaker"}
-        aria-label={isSpeakerOn ? "Turn off speaker" : "Turn on speaker"}
-      >
-        {isSpeakerOn ? "🔊" : "🔉"}
-      </button>
-      
-      <button 
-        className="control-button end-call"
-        onClick={endCall}
-        title="End call"
-        aria-label="End call"
-      >
-        📞❌
-      </button>
-    </div>
-  ), [isAudioMuted, isVideoMuted, isSpeakerOn, callType, toggleAudio, toggleVideo, toggleSpeaker, endCall]);
+            ))
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      );
+    } catch (error) {
+      console.error("Render messages error:", error);
+      return <div>Error rendering messages. Please refresh.</div>;
+    }
+  }, [messages, isAdmin]);
 
   // Calculate total unread messages
-  const totalUnreadMessages = useMemo(() => {
-    return isAdmin 
-      ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
-      : unreadCount;
-  }, [isAdmin, unreadCounts, unreadCount]);
+  const totalUnreadMessages = isAdmin
+    ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
+    : unreadCount;
 
   return (
     <ErrorBoundary>
       <div className="chat-app">
         {isAdmin && (
-          <div className="admin-status-panel">
-            {renderConnectionStatus()}
-            <div className="admin-stats">
-              <span>Clients: {clients.length}</span>
-              <span>Messages: {totalUnreadMessages}</span>
-            </div>
+          <div className="status-indicator">
+            <span>
+              You are {isConnected ? "Online 🟢" : "Offline 🔴"}
+              {reconnectAttempts > 0 && ` (Reconnecting: ${reconnectAttempts}/5)`}
+            </span>
           </div>
         )}
-
         {!isChatOpen ? (
           <div className="chat-bubble-container">
-            <div className="chat-info">
-              <p>Chat with us!</p>
-              {!isAdmin && !adminOnline && (
-                <p className="admin-offline-notice">Admin is currently offline</p>
-              )}
-            </div>
-            <button 
+            <p className="chat-info">Chat with us!</p>
+            {!isAdmin && !adminOnline && (
+              <p className="admin-offline-notice">Admin is currently offline</p>
+            )}
+            <button
+              type="button"
               className="chat-bubble-icon"
               onClick={handleChatToggle}
               disabled={!isConnected}
               title={isConnected ? "Open chat" : "Connecting..."}
               aria-label={isConnected ? "Open chat window" : "Chat is connecting"}
-              aria-disabled={!isConnected}
+              aria-expanded={isChatOpen}
             >
-              💬 
+              💬
               {totalUnreadMessages > 0 && (
                 <span className="unread-count" aria-label={`${totalUnreadMessages} unread messages`}>
-                  {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+                  {totalUnreadMessages > 99 ? "99+" : totalUnreadMessages}
                 </span>
               )}
             </button>
           </div>
         ) : (
           <div className={`chat-container ${isMinimized ? "minimized" : ""}`}>
-            {isMinimized && (
-              <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
-            )}
+            {isMinimized && <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>}
             {!isMinimized && (
               <>
                 <div className="chat-header">
-                  <div className="header-left">
+                  <div>
                     <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
                     {!isAdmin && (
-                      <div className={`admin-status ${adminOnline ? 'online' : 'offline'}`}>
-                        Admin is {adminOnline ? "Online" : "Offline"}
-                        {lastSeen && !adminOnline && (
-                          <span className="last-seen">
-                            Last seen: {new Date(lastSeen).toLocaleString()}
-                          </span>
-                        )}
+                      <div className="admin-status">
+                        Admin is {adminOnline ? "Online 🟢" : "Offline 🔴"}
                       </div>
                     )}
-                    {isAdmin && renderConnectionStatus()}
                   </div>
-                  
-                  <div className="header-right">
+                  <div className="header-buttons">
                     <div className="call-buttons-container">
-                      <button 
+                      <button
                         className="call-button audio"
                         onClick={() => initiateCall("audio")}
                         disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
@@ -1259,7 +887,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       >
                         📞
                       </button>
-                      <button 
+                      <button
                         className="call-button video"
                         onClick={() => initiateCall("video")}
                         disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
@@ -1269,9 +897,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
                         📹
                       </button>
                     </div>
-                    
                     <div className="chat-controls">
-                      <button 
+                      <button
                         className="minimize-button"
                         onClick={handleMinimizeToggle}
                         title={isMinimized ? "Expand" : "Minimize"}
@@ -1279,7 +906,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       >
                         {isMinimized ? "🗖" : "__"}
                       </button>
-                      <button 
+                      <button
                         className="close-button"
                         onClick={handleChatToggle}
                         title="Close chat"
@@ -1290,154 +917,87 @@ const ChatApp = ({ clientId, isAdmin }) => {
                     </div>
                   </div>
                 </div>
-
                 {isAdmin && renderClientList()}
-                {renderMessages()}
-                
+                {renderMessages}
                 <div className="chat-input">
                   <textarea
-                    ref={messageInputRef}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type your message... (Ctrl+Enter to send)"
+                    placeholder="Type your message..."
                     maxLength={1000}
                     disabled={!isConnected || (isAdmin && !selectedClientId)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                      if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
                       }
                     }}
-                    aria-label="Type your message"
+                    aria-label="Message input"
+                    aria-describedby="chat-input-instructions"
                   />
-                  <div className="input-controls">
-                    <span className="char-count">
-                      {message.length}/1000
-                    </span>
-                    <button 
-                      onClick={handleSendMessage}
-                      disabled={!message.trim() || !isConnected || (isAdmin && !selectedClientId)}
-                      title="Send message (Ctrl+Enter)"
-                      aria-label="Send message"
-                    >
-                      Send
-                    </button>
-                  </div>
+                  <span id="chat-input-instructions" className="sr-only">
+                    Type your message and press Enter to send. Shift + Enter for a new line.
+                  </span>
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!message.trim() || !isConnected || (isAdmin && !selectedClientId)}
+                    aria-label="Send message"
+                  >
+                    Send
+                  </button>
                 </div>
               </>
             )}
           </div>
         )}
 
-        {isMediaLoading && (
-          <div className="media-loading">
-            <div className="spinner"></div>
-            <p>Loading media...</p>
-          </div>
-        )}
-
         {inCall && (
           <div className="call-container">
-            <div className="call-header">
-              <h4>
-                {callState === CALL_STATES.CALLING ? "Calling..." : 
-                 callState === CALL_STATES.RINGING ? "Ringing..." :
-                 `${callType === "audio" ? "Audio" : "Video"} Call`}
-              </h4>
-              <div className="call-info">
-                <span className="call-duration">
-                  {callConnected ? formatDuration(callDuration) : "Connecting..."}
-                </span>
-                <span className={`call-quality ${callQuality}`}>
-                  {callConnected && `Quality: ${callQuality}`}
-                </span>
-              </div>
-            </div>
-            
+            <h4>
+              {callConnected
+                ? `${callType === "audio" ? "Audio" : "Video"} Call`
+                : "Connecting..."}
+            </h4>
             {callType === "video" && (
               <div className="video-container">
-                <video 
-                  ref={remoteVideoRef}
-                  autoPlay
-                  playsInline
-                  className="remote-video"
-                />
-                <video 
-                  ref={localVideoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className={`local-video ${isVideoMuted ? 'muted' : ''}`}
-                />
-                {isVideoMuted && (
-                  <div className="video-muted-overlay local">Your Camera Off</div>
-                )}
-                {callConnected && !remoteStream && (
-                  <div className="video-muted-overlay remote">Remote Camera Off</div>
-                )}
+                <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
+                <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
               </div>
             )}
-            
-            <audio 
-              ref={remoteAudioRef}
-              autoPlay
-              style={{ display: 'none' }}
-            />
-            
+            <audio ref={remoteAudioRef} autoPlay style={{ display: "none" }} />
             {callType === "audio" && (
               <div className="audio-container">
-                <div className="audio-visualization">
-                  <div className="audio-wave"></div>
-                  <p>Audio call in progress...</p>
-                </div>
+                <p>Audio call in progress...</p>
               </div>
             )}
-            
-            {callConnected && renderCallControls()}
-            
-            {!callConnected && (
-              <div className="call-connecting">
-                <div className="connecting-spinner"></div>
-                <p>Connecting...</p>
-              </div>
-            )}
+            <div className="call-timer">Call Duration: {formatDuration(callDuration)}</div>
+            <div className="call-controls">
+              <button
+                onClick={() => {
+                  if (localStream) {
+                    localStream.getAudioTracks().forEach((track) => {
+                      track.enabled = !track.enabled;
+                    });
+                    toast.info(localStream.getAudioTracks()[0].enabled ? "Microphone unmuted" : "Microphone muted");
+                  }
+                }}
+                aria-label={localStream?.getAudioTracks()[0]?.enabled ? "Mute microphone" : "Unmute microphone"}
+              >
+                {localStream?.getAudioTracks()[0]?.enabled ? "Mute" : "Unmute"}
+              </button>
+              <button onClick={endCall} aria-label="End call">End Call</button>
+            </div>
           </div>
         )}
 
         {incomingCall && (
           <div className="incoming-call-modal">
-            <div className="modal-content">
-              <div className="caller-info">
-                <h3>Incoming Call</h3>
-                <p className="caller-name">
-                  From: {incomingCall.from || "Unknown User"}
-                </p>
-                <p className="call-type">
-                  {incomingCall.callType === "audio" ? "📞 Audio Call" : "📹 Video Call"}
-                </p>
-              </div>
-              
-              <div className="incoming-call-controls">
-                <button 
-                  className="accept-button"
-                  onClick={handleAcceptCall}
-                  title="Accept call"
-                  aria-label="Accept incoming call"
-                >
-                  ✅ Accept
-                </button>
-                <button 
-                  className="reject-button"
-                  onClick={handleRejectCall}
-                  title="Reject call"
-                  aria-label="Reject incoming call"
-                >
-                  ❌ Reject
-                </button>
-              </div>
-            </div>
-            
-            <div className="modal-background" onClick={handleRejectCall}></div>
+            <p>
+              Incoming {incomingCall.callType === "audio" ? "Audio" : "Video"} Call from{" "}
+              {incomingCall.from || "Unknown User"}
+            </p>
+            <button onClick={handleAcceptCall} aria-label="Accept incoming call">Accept</button>
+            <button onClick={handleRejectCall} aria-label="Reject incoming call">Reject</button>
           </div>
         )}
 
@@ -1451,8 +1011,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          limit={3}
-          toastClassName="custom-toast"
         />
       </div>
     </ErrorBoundary>
