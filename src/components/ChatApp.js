@@ -151,10 +151,45 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const isConnected = useMemo(() => connectionState === CONNECTION_STATES.CONNECTED, [connectionState]);
   const inCall = useMemo(() => [CALL_STATES.CALLING, CALL_STATES.RINGING, CALL_STATES.CONNECTED].includes(callState), [callState]);
   const callConnected = useMemo(() => callState === CALL_STATES.CONNECTED, [callState]);
+  const memoizedMessages = useMemo(() => messages, [messages]);
 
   const getCallPartnerId = useCallback(() => {
     return isAdmin ? stateRefs.current.selectedClientId : "admin";
   }, [isAdmin]);
+
+  // Load persisted messages and selected client
+  useEffect(() => {
+    const savedMessages = localStorage.getItem(`messages_${selectedClientId || clientId}`);
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages));
+    }
+    const savedClientId = localStorage.getItem("selectedClientId");
+    if (savedClientId && clients.some(c => c.id === savedClientId)) {
+      setSelectedClientId(savedClientId);
+    }
+  }, [clients, selectedClientId, clientId]);
+
+  useEffect(() => {
+    if (memoizedMessages.length > 0) {
+      localStorage.setItem(`messages_${selectedClientId || clientId}`, JSON.stringify(memoizedMessages));
+    }
+  }, [memoizedMessages, selectedClientId, clientId]);
+
+  useEffect(() => {
+    if (selectedClientId) {
+      localStorage.setItem("selectedClientId", selectedClientId);
+    }
+  }, [selectedClientId]);
+
+  // Global error handler
+  useEffect(() => {
+    const errorHandler = (event) => {
+      console.error("Uncaught error:", event.error);
+      toast.error("An unexpected error occurred. Please refresh the page.");
+    };
+    window.addEventListener("error", errorHandler);
+    return () => window.removeEventListener("error", errorHandler);
+  }, []);
 
   // Enhanced scroll to bottom with smooth behavior
   const scrollToBottom = useCallback(() => {
@@ -169,7 +204,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => {
     const timeoutId = setTimeout(scrollToBottom, 100);
     return () => clearTimeout(timeoutId);
-  }, [messages, scrollToBottom]);
+  }, [memoizedMessages, scrollToBottom]);
 
   // Enhanced audio initialization with better iOS support
   const initializeAudio = useCallback(async () => {
@@ -270,11 +305,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const mediaManager = useMemo(() => ({
     async getUserMedia(constraints) {
       try {
-        return await navigator.mediaDevices.getUserMedia(constraints.ideal);
+        return await Promise.race([
+          navigator.mediaDevices.getUserMedia(constraints.ideal),
+          new Promise((_, reject) => setTimeout(() => reject(new Error("Media permission timeout")), 10000))
+        ]);
       } catch (error) {
         console.warn("Ideal constraints failed, trying fallback:", error);
         try {
-          return await navigator.mediaDevices.getUserMedia(constraints.fallback);
+          return await Promise.race([
+            navigator.mediaDevices.getUserMedia(constraints.fallback),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Media permission timeout")), 10000))
+          ]);
         } catch (fallbackError) {
           console.error("All media constraints failed:", fallbackError);
           throw fallbackError;
@@ -370,9 +411,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
       const socket = socketRef.current;
 
       socket.on("connect", () => {
+        console.log("Socket connected successfully to", SOCKET_URL);
         setConnectionState(CONNECTION_STATES.CONNECTED);
         setReconnectAttempts(0);
-        console.log("Connected to signaling server.");
         
         if (isAdmin) {
           socket.emit("admin_status", { adminId: clientId, online: true });
@@ -419,7 +460,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         
         const newMessage = {
           id: Date.now() + Math.random(),
-          sender: data.sender,
+          sender: data.sender || "Unknown User",
           message: data.message,
           timestamp: new Date(),
           senderId: data.senderId
@@ -429,7 +470,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         audioManager.playNotification();
         
         if (Notification.permission === "granted" && (!isChatOpen || isMinimized)) {
-          const notification = new Notification(`Message from ${data.sender}`, {
+          const notification = new Notification(`Message from ${data.sender || "User"}`, {
             body: data.message,
             icon: '/favicon.ico',
             tag: 'chat-message'
@@ -600,7 +641,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
 
     pc.onconnectionstatechange = () => {
-      console.log("Connection state:", pc.connectionState);
+      console.log("WebRTC connection state:", pc.connectionState, "ICE state:", pc.iceConnectionState);
       
       switch (pc.connectionState) {
         case "connected":
@@ -642,7 +683,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
       
       if (event.track.kind === "video" && remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream;
+        remoteVideoRef.current.srcObject = remoteStream || new MediaStream();
         remoteVideoRef.current.play().catch(err => 
           console.error("Error playing remote video:", err)
         );
@@ -881,7 +922,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
   }, [clientId, isAdmin, selectedClientId]);
 
   // Enhanced chat toggle
-  const handleChatToggle = useCallback(() => {
+  const handleChatToggle = useCallback((event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    console.log("Chat toggle clicked, isChatOpen:", !isChatOpen);
     setIsChatOpen(prev => !prev);
     setIsMinimized(false);
     
@@ -902,7 +946,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         messageInputRef.current.focus();
       }
     }, 100);
-  }, [isAdmin, selectedClientId, markMessagesAsRead]);
+  }, [isChatOpen, isAdmin, selectedClientId, markMessagesAsRead]);
 
   // Enhanced minimize toggle
   const handleMinimizeToggle = useCallback(() => {
@@ -1023,7 +1067,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         ) : (
           clients.map(client => (
             <option key={client.id} value={client.id}>
-              {client.name} 
+              {client.name || "Unknown Client"} 
               {unreadCounts[client.id] ? ` (${unreadCounts[client.id]})` : ""}
               {client.online ? " 🟢" : " 🔴"}
             </option>
@@ -1065,16 +1109,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Enhanced message rendering
   const renderMessages = useMemo(() => (
-    <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`}>
-      {messages.length === 0 ? (
+    <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`} aria-live="polite">
+      {memoizedMessages.length === 0 ? (
         <div className="no-messages">
           <p>No messages yet. Start a conversation!</p>
         </div>
       ) : (
-        messages.map((msg) => (
+        memoizedMessages.map((msg) => (
           <div key={msg.id} className={`message ${msg.sender} ${msg.status || ''}`}>
             <div className="message-header">
-              <span className="message-author">{msg.sender}:</span>
+              <span className="message-author">{msg.sender || "Unknown User"}:</span>
               <span className="message-time">
                 {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''}
               </span>
@@ -1092,7 +1136,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       )}
       <div ref={messagesEndRef} />
     </div>
-  ), [messages, isAdmin]);
+  ), [memoizedMessages, isAdmin]);
 
   // Enhanced call controls
   const renderCallControls = useCallback(() => (
@@ -1326,7 +1370,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
                   className={`local-video ${isVideoMuted ? 'muted' : ''}`}
                 />
                 {isVideoMuted && (
-                  <div className="video-muted-overlay">Camera Off</div>
+                  <div className="video-muted-overlay local">Your Camera Off</div>
+                )}
+                {callConnected && !remoteStream && (
+                  <div className="video-muted-overlay remote">Remote Camera Off</div>
                 )}
               </div>
             )}
@@ -1363,7 +1410,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
               <div className="caller-info">
                 <h3>Incoming Call</h3>
                 <p className="caller-name">
-                  From: {incomingCall.from}
+                  From: {incomingCall.from || "Unknown User"}
                 </p>
                 <p className="call-type">
                   {incomingCall.callType === "audio" ? "📞 Audio Call" : "📹 Video Call"}
