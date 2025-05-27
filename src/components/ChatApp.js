@@ -1,8 +1,24 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, webkitAudioContext } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import io from "socket.io-client";
 import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div>Something went wrong. Please refresh the page.</div>;
+    }
+    return this.props.children;
+  }
+}
 
 // Audio setup with better error handling
 const createAudioElement = (src, options = {}) => {
@@ -129,7 +145,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       isAdmin,
       clientId
     };
-  });
+  }, [callState, selectedClientId, callType, connectionState, isAdmin, clientId]);
 
   // Memoized values
   const isConnected = useMemo(() => connectionState === CONNECTION_STATES.CONNECTED, [connectionState]);
@@ -158,8 +174,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Enhanced audio initialization with better iOS support
   const initializeAudio = useCallback(async () => {
     try {
-      if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
-        const AudioContextClass = AudioContext || webkitAudioContext;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass) {
         const audioContext = new AudioContextClass();
         if (audioContext.state === 'suspended') {
           await audioContext.resume();
@@ -277,6 +293,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       if (stream) {
         stream.getAudioTracks().forEach(track => {
           track.enabled = !muted;
+          console.log(`Audio track ${muted ? 'muted' : 'unmuted'}`);
         });
       }
     },
@@ -284,6 +301,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       if (stream) {
         stream.getVideoTracks().forEach(track => {
           track.enabled = !muted;
+          console.log(`Video track ${muted ? 'muted' : 'unmuted'}`);
         });
       }
     }
@@ -321,6 +339,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       setIsAudioMuted(false);
       setIsVideoMuted(false);
       setIsSpeakerOn(false);
+      setIsMediaLoading(false);
       
       if ([CALL_STATES.CALLING, CALL_STATES.RINGING, CALL_STATES.CONNECTED].includes(stateRefs.current.callState)) {
         socketRef.current?.emit("call_end", { to: getCallPartnerId() });
@@ -328,6 +347,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     } catch (error) {
       console.error("Error during call cleanup:", error);
+      toast.error("Error ending call. Please try again.");
     } finally {
       setCallState(CALL_STATES.IDLE);
     }
@@ -391,6 +411,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       socket.on("connect_error", (error) => {
         console.error("Connection error:", error);
         setConnectionState(CONNECTION_STATES.ERROR);
+        toast.error("Failed to connect to server. Please check your network or try again later.");
       });
 
       socket.on("new_message", (data) => {
@@ -722,17 +743,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
     } catch (error) {
       console.error("Error initiating call:", error);
       setCallState(CALL_STATES.IDLE);
-      
+      setIsMediaLoading(false);
       const errorMessages = {
         'NotFoundError': "No microphone or camera found. Please check your devices.",
         'NotAllowedError': "Permission denied for microphone or camera access.",
         'NotReadableError': "Your camera or microphone is being used by another application.",
         'OverconstrainedError': "Camera or microphone doesn't meet the requirements."
       };
-      
       toast.error(errorMessages[error.name] || "Error starting call. Please try again.");
-    } finally {
-      setIsMediaLoading(false);
     }
   }, [isAdmin, selectedClientId, isConnected, mediaManager, createPeerConnection, getCallPartnerId, endCall]);
 
@@ -794,7 +812,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       toast.error("Error accepting call. Please try again.");
       setCallState(CALL_STATES.IDLE);
       setIncomingCall(null);
-    } finally {
       setIsMediaLoading(false);
     }
   }, [incomingCall, createPeerConnection, audioManager, mediaManager]);
@@ -1047,7 +1064,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   }, [connectionState, reconnectAttempts]);
 
   // Enhanced message rendering
-  const renderMessages = useCallback(() => (
+  const renderMessages = useMemo(() => (
     <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`}>
       {messages.length === 0 ? (
         <div className="no-messages">
@@ -1128,264 +1145,270 @@ const ChatApp = ({ clientId, isAdmin }) => {
   }, [isAdmin, unreadCounts, unreadCount]);
 
   return (
-    <div className="chat-app">
-      {isAdmin && (
-        <div className="admin-status-panel">
-          {renderConnectionStatus()}
-          <div className="admin-stats">
-            <span>Clients: {clients.length}</span>
-            <span>Messages: {totalUnreadMessages}</span>
+    <ErrorBoundary>
+      <div className="chat-app">
+        {isAdmin && (
+          <div className="admin-status-panel">
+            {renderConnectionStatus()}
+            <div className="admin-stats">
+              <span>Clients: {clients.length}</span>
+              <span>Messages: {totalUnreadMessages}</span>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {!isChatOpen ? (
-        <div className="chat-bubble-container">
-          <div className="chat-info">
-            <p>Chat with us!</p>
-            {!isAdmin && !adminOnline && (
-              <p className="admin-offline-notice">Admin is currently offline</p>
-            )}
+        {!isChatOpen ? (
+          <div className="chat-bubble-container">
+            <div className="chat-info">
+              <p>Chat with us!</p>
+              {!isAdmin && !adminOnline && (
+                <p className="admin-offline-notice">Admin is currently offline</p>
+              )}
+            </div>
+            <button 
+              className="chat-bubble-icon"
+              onClick={handleChatToggle}
+              disabled={!isConnected}
+              title={isConnected ? "Open chat" : "Connecting..."}
+              aria-label={isConnected ? "Open chat window" : "Chat is connecting"}
+              aria-disabled={!isConnected}
+            >
+              💬 
+              {totalUnreadMessages > 0 && (
+                <span className="unread-count" aria-label={`${totalUnreadMessages} unread messages`}>
+                  {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
+                </span>
+              )}
+            </button>
           </div>
-          <button 
-            className={`chat-bubble-icon ${!isConnected ? 'disabled' : ''}`}
-            onClick={handleChatToggle}
-            disabled={!isConnected}
-            title={isConnected ? "Open chat" : "Connecting..."}
-            aria-label={isConnected ? "Open chat window" : "Chat is connecting"}
-          >
-            💬 
-            {totalUnreadMessages > 0 && (
-              <span className="unread-count" aria-label={`${totalUnreadMessages} unread messages`}>
-                {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
-              </span>
-            )}
-          </button>
-        </div>
-      ) : (
-        <div className={`chat-container ${isMinimized ? "minimized" : ""}`}>
-          <div className="chat-header">
-            <div className="header-left">
+        ) : (
+          <div className={`chat-container ${isMinimized ? "minimized" : ""}`}>
+            {isMinimized && (
               <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
-              {!isAdmin && (
-                <div className={`admin-status ${adminOnline ? 'online' : 'offline'}`}>
-                  Admin is {adminOnline ? "Online" : "Offline"}
-                  {lastSeen && !adminOnline && (
-                    <span className="last-seen">
-                      Last seen: {new Date(lastSeen).toLocaleString()}
+            )}
+            {!isMinimized && (
+              <>
+                <div className="chat-header">
+                  <div className="header-left">
+                    <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
+                    {!isAdmin && (
+                      <div className={`admin-status ${adminOnline ? 'online' : 'offline'}`}>
+                        Admin is {adminOnline ? "Online" : "Offline"}
+                        {lastSeen && !adminOnline && (
+                          <span className="last-seen">
+                            Last seen: {new Date(lastSeen).toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {isAdmin && renderConnectionStatus()}
+                  </div>
+                  
+                  <div className="header-right">
+                    <div className="call-buttons-container">
+                      <button 
+                        className="call-button audio"
+                        onClick={() => initiateCall("audio")}
+                        disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        title="Start audio call"
+                        aria-label="Start audio call"
+                      >
+                        📞
+                      </button>
+                      <button 
+                        className="call-button video"
+                        onClick={() => initiateCall("video")}
+                        disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        title="Start video call"
+                        aria-label="Start video call"
+                      >
+                        📹
+                      </button>
+                    </div>
+                    
+                    <div className="chat-controls">
+                      <button 
+                        className="minimize-button"
+                        onClick={handleMinimizeToggle}
+                        title={isMinimized ? "Expand" : "Minimize"}
+                        aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
+                      >
+                        {isMinimized ? "🗖" : "__"}
+                      </button>
+                      <button 
+                        className="close-button"
+                        onClick={handleChatToggle}
+                        title="Close chat"
+                        aria-label="Close chat"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {isAdmin && renderClientList()}
+                {renderMessages()}
+                
+                <div className="chat-input">
+                  <textarea
+                    ref={messageInputRef}
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Type your message... (Ctrl+Enter to send)"
+                    maxLength={1000}
+                    disabled={!isConnected || (isAdmin && !selectedClientId)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    aria-label="Type your message"
+                  />
+                  <div className="input-controls">
+                    <span className="char-count">
+                      {message.length}/1000
                     </span>
-                  )}
+                    <button 
+                      onClick={handleSendMessage}
+                      disabled={!message.trim() || !isConnected || (isAdmin && !selectedClientId)}
+                      title="Send message (Ctrl+Enter)"
+                      aria-label="Send message"
+                    >
+                      Send
+                    </button>
+                  </div>
                 </div>
-              )}
-              {isAdmin && renderConnectionStatus()}
+              </>
+            )}
+          </div>
+        )}
+
+        {isMediaLoading && (
+          <div className="media-loading">
+            <div className="spinner"></div>
+            <p>Loading media...</p>
+          </div>
+        )}
+
+        {inCall && (
+          <div className="call-container">
+            <div className="call-header">
+              <h4>
+                {callState === CALL_STATES.CALLING ? "Calling..." : 
+                 callState === CALL_STATES.RINGING ? "Ringing..." :
+                 `${callType === "audio" ? "Audio" : "Video"} Call`}
+              </h4>
+              <div className="call-info">
+                <span className="call-duration">
+                  {callConnected ? formatDuration(callDuration) : "Connecting..."}
+                </span>
+                <span className={`call-quality ${callQuality}`}>
+                  {callConnected && `Quality: ${callQuality}`}
+                </span>
+              </div>
             </div>
             
-            <div className="header-right">
-              <div className="call-buttons-container">
-                <button 
-                  className="call-button audio"
-                  onClick={() => initiateCall("audio")}
-                  disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
-                  title="Start audio call"
-                  aria-label="Start audio call"
-                >
-                  📞
-                </button>
-                <button 
-                  className="call-button video"
-                  onClick={() => initiateCall("video")}
-                  disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
-                  title="Start video call"
-                  aria-label="Start video call"
-                >
-                  📹
-                </button>
-              </div>
-              
-              <div className="chat-controls">
-                <button 
-                  className="minimize-button"
-                  onClick={handleMinimizeToggle}
-                  title={isMinimized ? "Expand" : "Minimize"}
-                  aria-label={isMinimized ? "Expand chat" : "Minimize chat"}
-                >
-                  {isMinimized ? "🗖" : "__"}
-                </button>
-                <button 
-                  className="close-button"
-                  onClick={handleChatToggle}
-                  title="Close chat"
-                  aria-label="Close chat"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {!isMinimized && (
-            <>
-              {isAdmin && renderClientList()}
-              {renderMessages()}
-              
-              <div className="chat-input">
-                <textarea
-                  ref={messageInputRef}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Type your message... (Ctrl+Enter to send)"
-                  maxLength={1000}
-                  disabled={!isConnected || (isAdmin && !selectedClientId)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  aria-label="Type your message"
+            {callType === "video" && (
+              <div className="video-container">
+                <video 
+                  ref={remoteVideoRef}
+                  autoPlay
+                  playsInline
+                  className="remote-video"
                 />
-                <div className="input-controls">
-                  <span className="char-count">
-                    {message.length}/1000
-                  </span>
-                  <button 
-                    onClick={handleSendMessage}
-                    disabled={!message.trim() || !isConnected || (isAdmin && !selectedClientId)}
-                    title="Send message (Ctrl+Enter)"
-                    aria-label="Send message"
-                  >
-                    Send
-                  </button>
+                <video 
+                  ref={localVideoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className={`local-video ${isVideoMuted ? 'muted' : ''}`}
+                />
+                {isVideoMuted && (
+                  <div className="video-muted-overlay">Camera Off</div>
+                )}
+              </div>
+            )}
+            
+            <audio 
+              ref={remoteAudioRef}
+              autoPlay
+              style={{ display: 'none' }}
+            />
+            
+            {callType === "audio" && (
+              <div className="audio-container">
+                <div className="audio-visualization">
+                  <div className="audio-wave"></div>
+                  <p>Audio call in progress...</p>
                 </div>
               </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {isMediaLoading && (
-        <div className="media-loading">
-          <div className="spinner"></div>
-          <p>Loading media...</p>
-        </div>
-      )}
-
-      {inCall && (
-        <div className="call-container">
-          <div className="call-header">
-            <h4>
-              {callState === CALL_STATES.CALLING ? "Calling..." : 
-               callState === CALL_STATES.RINGING ? "Ringing..." :
-               `${callType === "audio" ? "Audio" : "Video"} Call`}
-            </h4>
-            <div className="call-info">
-              <span className="call-duration">
-                {callConnected ? formatDuration(callDuration) : "Connecting..."}
-              </span>
-              <span className={`call-quality ${callQuality}`}>
-                {callConnected && `Quality: ${callQuality}`}
-              </span>
-            </div>
+            )}
+            
+            {callConnected && renderCallControls()}
+            
+            {!callConnected && (
+              <div className="call-connecting">
+                <div className="connecting-spinner"></div>
+                <p>Connecting...</p>
+              </div>
+            )}
           </div>
-          
-          {callType === "video" && (
-            <div className="video-container">
-              <video 
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className="remote-video"
-              />
-              <video 
-                ref={localVideoRef}
-                autoPlay
-                playsInline
-                muted
-                className={`local-video ${isVideoMuted ? 'muted' : ''}`}
-              />
-              {isVideoMuted && (
-                <div className="video-muted-overlay">Camera Off</div>
-              )}
-            </div>
-          )}
-          
-          <audio 
-            ref={remoteAudioRef}
-            autoPlay
-            style={{ display: 'none' }}
-          />
-          
-          {callType === "audio" && (
-            <div className="audio-container">
-              <div className="audio-visualization">
-                <div className="audio-wave"></div>
-                <p>Audio call in progress...</p>
+        )}
+
+        {incomingCall && (
+          <div className="incoming-call-modal">
+            <div className="modal-content">
+              <div className="caller-info">
+                <h3>Incoming Call</h3>
+                <p className="caller-name">
+                  From: {incomingCall.from}
+                </p>
+                <p className="call-type">
+                  {incomingCall.callType === "audio" ? "📞 Audio Call" : "📹 Video Call"}
+                </p>
+              </div>
+              
+              <div className="incoming-call-controls">
+                <button 
+                  className="accept-button"
+                  onClick={handleAcceptCall}
+                  title="Accept call"
+                  aria-label="Accept incoming call"
+                >
+                  ✅ Accept
+                </button>
+                <button 
+                  className="reject-button"
+                  onClick={handleRejectCall}
+                  title="Reject call"
+                  aria-label="Reject incoming call"
+                >
+                  ❌ Reject
+                </button>
               </div>
             </div>
-          )}
-          
-          {callConnected && renderCallControls()}
-          
-          {!callConnected && (
-            <div className="call-connecting">
-              <div className="connecting-spinner"></div>
-              <p>Connecting...</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {incomingCall && (
-        <div className="incoming-call-modal">
-          <div className="modal-content">
-            <div className="caller-info">
-              <h3>Incoming Call</h3>
-              <p className="caller-name">
-                From: {incomingCall.from}
-              </p>
-              <p className="call-type">
-                {incomingCall.callType === "audio" ? "📞 Audio Call" : "📹 Video Call"}
-              </p>
-            </div>
             
-            <div className="incoming-call-controls">
-              <button 
-                className="accept-button"
-                onClick={handleAcceptCall}
-                title="Accept call"
-                aria-label="Accept incoming call"
-              >
-                ✅ Accept
-              </button>
-              <button 
-                className="reject-button"
-                onClick={handleRejectCall}
-                title="Reject call"
-                aria-label="Reject incoming call"
-              >
-                ❌ Reject
-              </button>
-            </div>
+            <div className="modal-background" onClick={handleRejectCall}></div>
           </div>
-          
-          <div className="modal-background" onClick={handleRejectCall}></div>
-        </div>
-      )}
+        )}
 
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        limit={3}
-        toastClassName="custom-toast"
-      />
-    </div>
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          limit={3}
+          toastClassName="custom-toast"
+        />
+      </div>
+    </ErrorBoundary>
   );
 };
 
