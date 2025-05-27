@@ -647,7 +647,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   }, [incomingCall, audioManager]);
 
   // Mark messages as read
-  const markMessagesAsRead = useCallback(async () => {
+  const handleMarkMessagesAsRead = useCallback(async () => {
     const targetUserId = isAdmin ? selectedClientId : clientId;
     if (!targetUserId) return;
     try {
@@ -690,9 +690,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
           return updated;
         });
       }
-      markMessagesAsRead();
+      handleMarkMessagesAsRead();
     },
-    [isChatOpen, isAdmin, selectedClientId, markMessagesAsRead]
+    [isChatOpen, isAdmin, selectedClientId, handleMarkMessagesAsRead]
   );
 
   // Toggle minimize chat
@@ -701,9 +701,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setIsMaximized(false); // Reset maximize state when minimizing
     if (!isMinimized && !isAdmin) {
       setUnreadCount(0);
-      markMessagesAsRead();
+      handleMarkMessagesAsRead();
     }
-  }, [isMinimized, isAdmin, markMessagesAsRead]);
+  }, [isMinimized, isAdmin, handleMarkMessagesAsRead]);
 
   // Toggle maximize/restore chat
   const handleMaximizeToggle = useCallback(() => {
@@ -769,7 +769,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
               delete updated[clientId];
               return updated;
             });
-            markMessagesAsRead();
+            handleMarkMessagesAsRead();
           }
         }}
         value={selectedClientId || ""}
@@ -791,7 +791,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         )}
       </select>
     ),
-    [clients, selectedClientId, unreadCounts, isConnected, markMessagesAsRead]
+    [clients, selectedClientId, unreadCounts, isConnected, handleMarkMessagesAsRead]
   );
 
   // Render messages with timestamps
@@ -871,8 +871,37 @@ const ChatApp = ({ clientId, isAdmin }) => {
           </div>
         ) : (
           <div className={`chat-container ${isMinimized ? "minimized" : ""} ${isMaximized ? "maximized" : ""}`}>
-            {isMinimized && <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>}
-            {!isMinimized && (
+            {isMinimized ? (
+              <div className="chat-header minimized">
+                <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
+                <div className="chat-controls">
+                  <button
+                    className="minimize-button"
+                    onClick={handleMinimizeToggle}
+                    title="Restore"
+                    aria-label="Restore chat"
+                  >
+                    🗖
+                  </button>
+                  <button
+                    className="maximize-button"
+                    onClick={handleMaximizeToggle}
+                    title={isMaximized ? "Restore" : "Maximize"}
+                    aria-label={isMaximized ? "Restore chat" : "Maximize chat"}
+                  >
+                    {isMaximized ? "🗗" : "🗖"}
+                  </button>
+                  <button
+                    className="close-button"
+                    onClick={handleChatToggle}
+                    title="Close chat"
+                    aria-label="Close chat"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            ) : (
               <>
                 <div className="chat-header">
                   <div>
