@@ -3,6 +3,8 @@
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 /* --- CSS Variables --- */
@@ -21,11 +23,11 @@
 
 /* --- Global Styles --- */
 body {
-  margin: 0;
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
   color: #333;
   background-color: var(--bg-light);
+  overflow-x: hidden; /* Prevent horizontal overflow */
 }
 
 /* --- Chat Bubble Container --- */
@@ -33,7 +35,7 @@ body {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 10000;
+  z-index: 10001; /* Increased to ensure visibility */
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -124,24 +126,10 @@ body {
 .chat-container.minimized {
   height: 50px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 10px;
   background-color: var(--primary-color);
-  color: var(--bg-white);
   border-radius: 10px 10px 0 0;
   cursor: pointer;
-}
-
-.chat-container.minimized h4 {
-  font-size: 1rem;
-  margin: 0;
-  flex-grow: 1;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  transition: height var(--transition-speed) ease;
 }
 
 /* --- Chat Header --- */
@@ -153,6 +141,11 @@ body {
   color: var(--bg-white);
   padding: 10px;
   border-radius: 10px 10px 0 0;
+}
+
+.chat-header.minimized {
+  width: 100%;
+  height: 100%;
 }
 
 .chat-header h4 {
@@ -244,7 +237,7 @@ body {
   background: none;
   border: none;
   color: var(--bg-white);
-  font-size: 1.5rem;
+  font-size: 1.25rem; /* Slightly smaller for minimized state */
   cursor: pointer;
   width: 30px;
   height: 30px;
@@ -373,6 +366,22 @@ body {
   content: "⬇";
   font-size: 1.25rem;
   font-weight: bold;
+}
+
+/* --- Admin Offline Notice --- */
+.admin-offline-notice {
+  position: absolute;
+  bottom: 100px;
+  right: 10px;
+  background-color: var(--secondary-color);
+  color: var(--bg-white);
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.625rem;
+  font-weight: bold;
+  box-shadow: var(--shadow);
+  max-width: 130px;
+  text-align: center;
 }
 
 /* --- Screen Reader Only --- */
@@ -527,7 +536,8 @@ body {
     max-height: 200px;
   }
 
-  .chat-info {
+  .chat-info,
+  .admin-offline-notice {
     bottom: 80px;
     right: 10px;
     font-size: 0.625rem;
@@ -541,7 +551,8 @@ body {
 }
 
 @media (max-width: 320px) {
-  .chat-info {
+  .chat-info,
+  .admin-offline-notice {
     bottom: 80px;
     right: 5px;
     font-size: 0.625rem;
