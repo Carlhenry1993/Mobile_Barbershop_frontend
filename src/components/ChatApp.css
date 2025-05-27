@@ -627,6 +627,18 @@ body {
   font-size: var(--font-size-small);
 }
 
+.video-muted-overlay.local {
+  top: 10%;
+  right: 10%;
+  transform: translate(0, 0);
+}
+
+.video-muted-overlay.remote {
+  top: 50%;
+  left: 25%;
+  transform: translate(-50%, -50%);
+}
+
 .audio-container {
   text-align: center;
   padding: var(--spacing-unit);
