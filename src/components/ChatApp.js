@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } from "react";
 import io from "socket.io-client";
 import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
@@ -65,6 +65,26 @@ const videoConstraints = {
   },
 };
 
+// Reducer for call state management
+const callReducer = (state, action) => {
+  switch (action.type) {
+    case "SET_IN_CALL":
+      return { ...state, inCall: action.payload };
+    case "SET_CALL_CONNECTED":
+      return { ...state, callConnected: action.payload };
+    case "SET_CALL_TYPE":
+      return { ...state, callType: action.payload };
+    case "SET_INCOMING_CALL":
+      return { ...state, incomingCall: action.payload };
+    case "SET_LOCAL_STREAM":
+      return { ...state, localStream: action.payload };
+    case "SET_CALL_DURATION":
+      return { ...state, callDuration: action.payload };
+    default:
+      return state;
+  }
+};
+
 const ChatApp = ({ clientId, isAdmin }) => {
   // Chat states
   const [message, setMessage] = useState("");
@@ -82,13 +102,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [adminOnline, setAdminOnline] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
-  // Call states
-  const [inCall, setInCall] = useState(false);
-  const [callConnected, setCallConnected] = useState(false);
-  const [callType, setCallType] = useState(null); // "audio" or "video"
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [localStream, setLocalStream] = useState(null);
-  const [callDuration, setCallDuration] = useState(0);
+  // Call states managed by reducer
+  const [callState, dispatch] = useReducer(callReducer, {
+    inCall: false,
+    callConnected: false,
+    callType: null,
+    incomingCall: null,
+    localStream: null,
+    callDuration: 0,
+  });
 
   // Refs for DOM elements and persistent values
   const messagesEndRef = useRef(null);
@@ -101,12 +123,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const reconnectTimeoutRef = useRef(null);
 
   // Mirror state values for event handlers
-  const inCallRef = useRef(inCall);
+  const inCallRef = useRef(callState.inCall);
   const selectedClientIdRef = useRef(selectedClientId);
-  const callTypeRef = useRef(callType);
-  useEffect(() => { inCallRef.current = inCall; }, [inCall]);
+  const callTypeRef = useRef(callState.callType);
+  useEffect(() => { inCallRef.current = callState.inCall; }, [callState.inCall]);
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
-  useEffect(() => { callTypeRef.current = callType; }, [callType]);
+  useEffect(() => { callTypeRef.current = callState.callType; }, [callState.callType]);
 
   // Determine call partner ID
   const getCallPartnerId = useCallback(() => {
@@ -216,12 +238,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
   );
 
   useEffect(() => {
-    if (incomingCall) {
+    if (callState.incomingCall) {
       audioManager.startRingtone();
     } else {
       audioManager.stopRingtone();
     }
-  }, [incomingCall, audioManager]);
+  }, [callState.incomingCall, audioManager]);
 
   // Helper to stop media tracks
   const stopMediaTracks = useCallback((stream) => {
@@ -237,13 +259,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const endCall = useCallback(() => {
     console.log("Ending call...");
     try {
-      audioManager.stopRingtone();
+      audioManager.stopsignatureRingtone();
       if (pcRef.current) {
         pcRef.current.close();
         pcRef.current = null;
       }
-      stopMediaTracks(localStream);
-      setLocalStream(null);
+      stopMediaTracks(callState.localStream);
+      dispatch({ type: "SET_LOCAL_STREAM", payload: null });
       if (remoteAudioRef.current?.srcObject) {
         stopMediaTracks(remoteAudioRef.current.srcObject);
         remoteAudioRef.current.srcObject = null;
@@ -256,10 +278,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
         stopMediaTracks(localVideoRef.current.srcObject);
         localVideoRef.current.srcObject = null;
       }
-      setInCall(false);
-      setCallConnected(false);
-      setCallType(null);
-      setIncomingCall(null);
+      dispatch({ type: "SET_IN_CALL", payload: false });
+      dispatch({ type: "SET_CALL_CONNECTED", payload: false });
+      dispatch({ type: "SET_CALL_TYPE", payload: null });
+      dispatch({ type: "SET_INCOMING_CALL", payload: null });
       pendingCandidatesRef.current = [];
       if (inCallRef.current) {
         socketRef.current?.emit("call_end", { to: getCallPartnerId() });
@@ -269,7 +291,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       console.error("Error during call cleanup:", error);
       toast.error("Error ending call.");
     }
-  }, [localStream, getCallPartnerId, stopMediaTracks, audioManager]);
+  }, [callState.localStream, getCallPartnerId, stopMediaTracks, audioManager]);
 
   // Fetch initial messages from Supabase
   useEffect(() => {
@@ -323,7 +345,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         if (isAdmin) {
           socket.emit("admin_status", { adminId: clientId, online: false });
         }
-        if (inCallRef.current) endCall();
+        if (callState.inCall) endCall();
         if (reason !== "io client disconnect") {
           const attempts = reconnectAttempts + 1;
           setReconnectAttempts(attempts);
@@ -395,15 +417,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
       socket.on("call_offer", (data) => {
         console.log("Received call offer:", data);
-        if (!inCallRef.current) {
-          setIncomingCall(data);
+        if (!callState.inCall) {
+          dispatch({ type: "SET_INCOMING_CALL", payload: data });
         } else {
           socket.emit("call_busy", { to: data.from });
         }
       });
 
       socket.on("call_answer", async (data) => {
-        if (pcRef.current && inCallRef.current) {
+        if (pcRef.current && callState.inCall) {
           try {
             await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
             console.log("Remote description set.");
@@ -464,23 +486,23 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socketRef.current.disconnect();
       }
     };
-  }, [isAdmin, clientId, selectedClientId, endCall, isChatOpen, isMinimized, audioManager, reconnectAttempts, getCallPartnerId]);
+  }, [isAdmin, clientId, selectedClientId, endCall, isChatOpen, isMinimized, audioManager, reconnectAttempts, getCallPartnerId, callState.inCall]);
 
   // Call timer
   const callTimerRef = useRef(null);
   useEffect(() => {
-    if (inCall && callConnected) {
+    if (callState.inCall && callState.callConnected) {
       callTimerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
+        dispatch({ type: "SET_CALL_DURATION", payload: callState.callDuration + 1 });
       }, 1000);
     } else {
-      setCallDuration(0);
+      dispatch({ type: "SET_CALL_DURATION", payload: 0 });
       if (callTimerRef.current) clearInterval(callTimerRef.current);
     }
     return () => {
       if (callTimerRef.current) clearInterval(callTimerRef.current);
     };
-  }, [inCall, callConnected]);
+  }, [callState.inCall, callState.callConnected, callState.callDuration]);
 
   const formatDuration = useCallback((duration) => {
     const minutes = Math.floor(duration / 60);
@@ -509,7 +531,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     pc.onconnectionstatechange = () => {
       console.log("WebRTC connection state:", pc.connectionState);
       if (["connected", "completed"].includes(pc.connectionState)) {
-        setCallConnected(true);
+        dispatch({ type: "SET_CALL_CONNECTED", payload: true });
       }
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
         endCall();
@@ -558,7 +580,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           }
           throw error;
         });
-        setLocalStream(stream);
+        dispatch({ type: "SET_LOCAL_STREAM", payload: stream });
         if (localVideoRef.current && type === "video") {
           localVideoRef.current.srcObject = stream;
           localVideoRef.current.play().catch((err) => console.error("Local video play error:", err));
@@ -574,10 +596,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
           callType: type,
           offer,
         });
-        setCallType(type);
-        setInCall(true);
+        dispatch({ type: "SET_CALL_TYPE", payload: type });
+        dispatch({ type: "SET_IN_CALL", payload: true });
         setTimeout(() => {
-          if (inCallRef.current && !callConnected) {
+          if (inCallRef.current && !callState.callConnected) {
             toast.info("Call timeout - recipient didn't answer");
             endCall();
           }
@@ -592,18 +614,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
         toast.error(errorMessages[error.name] || "Error starting call.");
       }
     },
-    [isAdmin, selectedClientId, isConnected, createPeerConnection, getCallPartnerId, callConnected, endCall]
+    [isAdmin, selectedClientId, isConnected, createPeerConnection, getCallPartnerId, callState.callConnected, endCall]
   );
 
   // Accept an incoming call
   const handleAcceptCall = useCallback(async () => {
-    if (!incomingCall) return;
+    if (!callState.incomingCall) return;
     audioManager.stopRingtone();
     try {
-      const constraints = incomingCall.callType === "audio" ? audioConstraints : videoConstraints;
+      const constraints = callState.incomingCall.callType === "audio" ? audioConstraints : videoConstraints;
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      setLocalStream(stream);
-      if (localVideoRef.current && incomingCall.callType === "video") {
+      dispatch({ type: "SET_LOCAL_STREAM", payload: stream });
+      if (localVideoRef.current && callState.incomingCall.callType === "video") {
         localVideoRef.current.srcObject = stream;
         localVideoRef.current.play().catch((err) => console.error("Local video play error:", err));
       }
@@ -611,7 +633,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       stream.getTracks().forEach((track) => {
         pcRef.current.addTrack(track, stream);
       });
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+      await pcRef.current.setRemoteDescription(new RTCSessionDescription(callState.incomingCall.offer));
       for (const candidate of pendingCandidatesRef.current) {
         try {
           await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
@@ -623,28 +645,28 @@ const ChatApp = ({ clientId, isAdmin }) => {
       const answer = await pcRef.current.createAnswer();
       await pcRef.current.setLocalDescription(answer);
       socketRef.current?.emit("call_answer", {
-        to: incomingCall.from,
+        to: callState.incomingCall.from,
         answer,
       });
-      setCallType(incomingCall.callType);
-      setInCall(true);
-      setIncomingCall(null);
+      dispatch({ type: "SET_CALL_TYPE", payload: callState.incomingCall.callType });
+      dispatch({ type: "SET_IN_CALL", payload: true });
+      dispatch({ type: "SET_INCOMING_CALL", payload: null });
     } catch (error) {
       console.error("Error accepting call:", error);
       toast.error("Error accepting call.");
       endCall();
     }
-  }, [incomingCall, createPeerConnection, audioManager, endCall]);
+  }, [callState.incomingCall, createPeerConnection, audioManager, endCall]);
 
   // Reject an incoming call
   const handleRejectCall = useCallback(() => {
-    if (incomingCall) {
-      socketRef.current?.emit("call_reject", { to: incomingCall.from });
+    if (callState.incomingCall) {
+      socketRef.current?.emit("call_reject", { to: callState.incomingCall.from });
       audioManager.stopRingtone();
       toast.info("You rejected the call.");
-      setIncomingCall(null);
+      dispatch({ type: "SET_INCOMING_CALL", payload: null });
     }
-  }, [incomingCall, audioManager]);
+  }, [callState.incomingCall, audioManager]);
 
   // Mark messages as read
   const handleMarkMessagesAsRead = useCallback(async () => {
@@ -917,7 +939,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="call-button audio"
                         onClick={() => initiateCall("audio")}
-                        disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        disabled={callState.inCall || !isConnected || (isAdmin && !selectedClientId)}
                         title="Start audio call"
                         aria-label="Start audio call"
                       >
@@ -926,7 +948,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="call-button video"
                         onClick={() => initiateCall("video")}
-                        disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        disabled={callState.inCall || !isConnected || (isAdmin && !selectedClientId)}
                         title="Start video call"
                         aria-label="Start video call"
                       >
@@ -995,50 +1017,50 @@ const ChatApp = ({ clientId, isAdmin }) => {
           </div>
         )}
 
-        {inCall && (
+        {callState.inCall && (
           <div className="call-container">
             <h4>
-              {callConnected
-                ? `${callType === "audio" ? "Audio" : "Video"} Call`
+              {callState.callConnected
+                ? `${callState.callType === "audio" ? "Audio" : "Video"} Call`
                 : "Connecting..."}
             </h4>
-            {callType === "video" && (
+            {callState.callType === "video" && (
               <div className="video-container">
                 <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
                 <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
               </div>
             )}
             <audio ref={remoteAudioRef} autoPlay style={{ display: "none" }} />
-            {callType === "audio" && (
+            {callState.callType === "audio" && (
               <div className="audio-container">
                 <p>Audio call in progress...</p>
               </div>
             )}
-            <div className="call-timer">Call Duration: {formatDuration(callDuration)}</div>
+            <div className="call-timer">Call Duration: {formatDuration(callState.callDuration)}</div>
             <div className="call-controls">
               <button
                 onClick={() => {
-                  if (localStream) {
-                    localStream.getAudioTracks().forEach((track) => {
+                  if (callState.localStream) {
+                    callState.localStream.getAudioTracks().forEach((track) => {
                       track.enabled = !track.enabled;
                     });
-                    toast.info(localStream.getAudioTracks()[0].enabled ? "Microphone unmuted" : "Microphone muted");
+                    toast.info(callState.localStream.getAudioTracks()[0].enabled ? "Microphone unmuted" : "Microphone muted");
                   }
                 }}
-                aria-label={localStream?.getAudioTracks()[0]?.enabled ? "Mute microphone" : "Unmute microphone"}
+                aria-label={callState.localStream?.getAudioTracks()[0]?.enabled ? "Mute microphone" : "Unmute microphone"}
               >
-                {localStream?.getAudioTracks()[0]?.enabled ? "Mute" : "Unmute"}
+                {callState.localStream?.getAudioTracks()[0]?.enabled ? "Mute" : "Unmute"}
               </button>
               <button onClick={endCall} aria-label="End call">End Call</button>
             </div>
           </div>
         )}
 
-        {incomingCall && (
+        {callState.incomingCall && (
           <div className="incoming-call-modal">
             <p>
-              Incoming {incomingCall.callType === "audio" ? "Audio" : "Video"} Call from{" "}
-              {incomingCall.from || "Unknown User"}
+              Incoming {callState.incomingCall.callType === "audio" ? "Audio" : "Video"} Call from{" "}
+              {callState.incomingCall.from || "Unknown User"}
             </p>
             <button onClick={handleAcceptCall} aria-label="Accept incoming call">Accept</button>
             <button onClick={handleRejectCall} aria-label="Reject incoming call">Reject</button>
