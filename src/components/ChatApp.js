@@ -130,9 +130,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
   useEffect(() => { callTypeRef.current = callState.callType; }, [callState.callType]);
 
-  // Déterminer l'ID du partenaire d'appel
+  // Déterminer l'ID du partenaire d'appel avec validation
   const getCallPartnerId = useCallback(() => {
-    return isAdmin ? selectedClientIdRef.current : "admin";
+    if (isAdmin) {
+      if (!selectedClientIdRef.current) {
+        console.error("Aucun client sélectionné pour l'appel.");
+        toast.error("Veuillez sélectionner un client avant d'appeler.");
+        return null;
+      }
+      return selectedClientIdRef.current;
+    }
+    return "admin";
   }, [isAdmin]);
 
   // Faire défiler vers le bas lors de la mise à jour des messages
@@ -284,8 +292,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
       dispatch({ type: "SET_INCOMING_CALL", payload: null });
       pendingCandidatesRef.current = [];
       if (inCallRef.current) {
-        socketRef.current?.emit("call_end", { to: getCallPartnerId() });
-        toast.info("L'appel a été terminé.");
+        const partnerId = getCallPartnerId();
+        if (partnerId) {
+          socketRef.current?.emit("call_end", { to: partnerId });
+          toast.info("L'appel a été terminé.");
+        } else {
+          console.error("Impossible d'obtenir l'ID du partenaire pour terminer l'appel.");
+        }
       }
     } catch (error) {
       console.error("Erreur lors de la terminaison de l'appel :", error);
@@ -366,7 +379,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       });
 
       socket.on("new_message", (data) => {
-        console.log("Nouveau message :", data);
+        console.log("Nouveau message reçu :", data);
         const newMessage = {
           id: Date.now() + Math.random(),
           sender: data.sender || "Utilisateur inconnu",
@@ -421,6 +434,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           dispatch({ type: "SET_INCOMING_CALL", payload: data });
         } else {
           socket.emit("call_busy", { to: data.from });
+          console.log("Utilisateur occupé, signal envoyé à :", data.from);
         }
       });
 
@@ -428,17 +442,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
         if (pcRef.current && callState.inCall) {
           try {
             await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-            console.log("Description distante définie.");
+            console.log("Description distante définie avec succès.");
             for (const candidate of pendingCandidatesRef.current) {
               try {
                 await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+                console.log("Candidat ICE en attente ajouté.");
               } catch (err) {
-                console.error("Erreur lors de l'ajout du candidat en file d'attente :", err);
+                console.error("Erreur lors de l'ajout du candidat en attente :", err);
               }
             }
             pendingCandidatesRef.current = [];
           } catch (error) {
-            console.error("Erreur dans call_answer :", error);
+            console.error("Erreur lors de la réception de call_answer :", error);
             endCall();
           }
         }
@@ -449,30 +464,31 @@ const ChatApp = ({ clientId, isAdmin }) => {
           if (pcRef.current.remoteDescription?.type) {
             try {
               await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-              console.log("Candidat ICE ajouté");
+              console.log("Candidat ICE ajouté avec succès.");
             } catch (error) {
               console.error("Erreur lors de l'ajout du candidat ICE :", error);
             }
           } else {
             pendingCandidatesRef.current.push(data.candidate);
+            console.log("Candidat ICE mis en attente :", data.candidate);
           }
         }
       });
 
       socket.on("call_reject", () => {
-        console.log("Appel rejeté");
+        console.log("Appel rejeté par le destinataire.");
         toast.info("Appel rejeté par le destinataire.");
         endCall();
       });
 
       socket.on("call_busy", () => {
-        console.log("Le destinataire est occupé");
+        console.log("Destinataire occupé.");
         toast.info("Le destinataire est actuellement occupé.");
         endCall();
       });
 
       socket.on("call_end", () => {
-        console.log("Appel terminé par l'autre partie");
+        console.log("Appel terminé par l'autre partie.");
         toast.info("Appel terminé par l'autre partie.");
         endCall();
       });
@@ -521,11 +537,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log("Candidat ICE généré");
-        socketRef.current?.emit("call_candidate", {
-          to: getCallPartnerId(),
-          candidate: event.candidate,
-        });
+        console.log("Candidat ICE généré :", event.candidate);
+        const partnerId = getCallPartnerId();
+        if (partnerId) {
+          socketRef.current?.emit("call_candidate", {
+            to: partnerId,
+            candidate: event.candidate,
+          });
+        } else {
+          console.error("Échec de l'envoi du candidat ICE : ID du partenaire invalide.");
+        }
       }
     };
     pc.onconnectionstatechange = () => {
@@ -563,10 +584,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Initier un appel sortant
   const initiateCall = useCallback(
     async (type) => {
-      if (isAdmin && !selectedClientId) {
-        toast.error("Veuillez sélectionner un client à appeler.");
-        return;
-      }
+      const partnerId = getCallPartnerId();
+      if (!partnerId) return; // Arrête si l'ID du partenaire est invalide
       if (!isConnected) {
         toast.error("Non connecté au serveur.");
         return;
@@ -591,8 +610,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
         });
         const offer = await pcRef.current.createOffer();
         await pcRef.current.setLocalDescription(offer);
+        console.log("Émission de call_offer vers :", partnerId);
         socketRef.current?.emit("call_offer", {
-          to: getCallPartnerId(),
+          to: partnerId,
           callType: type,
           offer,
         });
@@ -614,7 +634,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         toast.error(errorMessages[error.name] || "Erreur lors du démarrage de l'appel.");
       }
     },
-    [isAdmin, selectedClientId, isConnected, createPeerConnection, getCallPartnerId, callState.callConnected, endCall]
+    [isConnected, createPeerConnection, getCallPartnerId, callState.callConnected, endCall]
   );
 
   // Accepter un appel entrant
@@ -638,12 +658,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
         try {
           await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
-          console.error("Erreur lors de l'ajout du candidat en file d'attente :", err);
+          console.error("Erreur lors de l'ajout du candidat en attente :", err);
         }
       }
       pendingCandidatesRef.current = [];
       const answer = await pcRef.current.createAnswer();
       await pcRef.current.setLocalDescription(answer);
+      console.log("Émission de call_answer vers :", callState.incomingCall.from);
       socketRef.current?.emit("call_answer", {
         to: callState.incomingCall.from,
         answer,
@@ -661,6 +682,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // Rejeter un appel entrant
   const handleRejectCall = useCallback(() => {
     if (callState.incomingCall) {
+      console.log("Rejet de l'appel de :", callState.incomingCall.from);
       socketRef.current?.emit("call_reject", { to: callState.incomingCall.from });
       audioManager.stopRingtone();
       toast.info("Vous avez rejeté l'appel.");
