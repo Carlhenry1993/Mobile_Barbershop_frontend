@@ -13,8 +13,7 @@ const ADDRESS =
 
 const PHONE = "514-778-8318";
 
-const MAP_QUERY =
-  "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
+const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
 
 const ErrorFallback = ({ error, resetErrorBoundary }) => (
   <div className="p-4 bg-red-100 text-red-700 rounded-lg mx-4 my-8">
@@ -42,12 +41,12 @@ const HomePage = () => {
 
   return (
     <>
-      {/* SEO PREMIUM LOCAL */}
+      {/* SEO LOCAL PREMIUM */}
       <Helmet>
         <title>Mr. Renaudin Barbershop | Shawinigan QC</title>
         <meta
           name="description"
-          content="Barbershop premium à Shawinigan. Coupes modernes, dégradés propres et soins de barbe. Situé au 462 4e Rue de la Pointe."
+          content="Barbershop premium à Shawinigan. Coupes modernes, fades propres, barbe et rasage professionnel. Situé au 462 4e Rue de la Pointe."
         />
       </Helmet>
 
@@ -82,7 +81,7 @@ const HomePage = () => {
 
           <p className="mt-2 text-sm text-gray-300">{ADDRESS}</p>
 
-          {/* CONTACT STRIP */}
+          {/* ACTION BUTTONS */}
           <div className="mt-6 flex flex-col md:flex-row gap-3 justify-center">
             <ButtonHome
               text="📅 Réserver"
@@ -111,39 +110,66 @@ const HomePage = () => {
         </div>
       </motion.section>
 
-      {/* ABOUT PREMIUM */}
+      {/* VISIT OUR SHOP SECTION (NEW PREMIUM BLOCK) */}
       <section className="py-20 bg-white text-center px-4">
-        <h2 className="text-3xl md:text-4xl font-bold mb-4">
-          Expérience Barbershop Premium
+        <h2 className="text-3xl md:text-4xl font-bold">
+          Visit Our Shop
         </h2>
 
-        <p className="max-w-3xl mx-auto text-gray-600 text-lg leading-relaxed">
-          Chez Mr. Renaudin Barbershop, nous offrons une expérience moderne et
-          professionnelle centrée sur la précision, le style et le confort. Chaque
-          coupe est réalisée avec attention aux détails pour un résultat propre et
-          élégant.
+        <p className="mt-3 text-gray-600 max-w-2xl mx-auto">
+          Come visit us in person for a premium barbershop experience.
+          Walk-ins and appointments available.
         </p>
+
+        <p className="mt-4 font-semibold text-gray-800">{ADDRESS}</p>
+        <p className="text-gray-700">{PHONE}</p>
+
+        {/* MAP */}
+        <div className="mt-8 max-w-5xl mx-auto rounded-xl overflow-hidden shadow-lg">
+          <iframe
+            title="Barbershop Location"
+            src={`https://www.google.com/maps?q=${encodeURIComponent(
+              MAP_QUERY
+            )}&output=embed`}
+            width="100%"
+            height="380"
+            style={{ border: 0 }}
+            loading="lazy"
+          />
+        </div>
+
+        {/* MAP BUTTON */}
+        <a
+          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+            MAP_QUERY
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg"
+        >
+          Open in Google Maps 📍
+        </a>
       </section>
 
-      {/* SERVICES PREMIUM GRID */}
+      {/* SERVICES */}
       <section className="py-20 bg-gray-100 px-4">
         <h2 className="text-3xl font-bold text-center mb-10">
-          Nos services
+          Services Premium
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {[
             {
               title: "Fade & Dégradé",
-              text: "Transitions propres et modernes adaptées à votre style.",
+              text: "Transitions modernes propres et précises.",
             },
             {
               title: "Barbe & Line-up",
-              text: "Contours précis et entretien de barbe professionnel.",
+              text: "Contours nets et style professionnel.",
             },
             {
-              title: "Rasage classique",
-              text: "Expérience traditionnelle avec finition parfaite.",
+              title: "Rasage Classique",
+              text: "Expérience traditionnelle premium.",
             },
           ].map((s, i) => (
             <div
@@ -157,51 +183,20 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* LOCATION PREMIUM */}
-      <section className="py-20 text-center px-4">
-        <h2 className="text-3xl font-bold mb-3">Notre emplacement</h2>
-
-        <p className="text-gray-700 font-medium">{ADDRESS}</p>
-
-        <div className="mt-8 max-w-5xl mx-auto rounded-xl overflow-hidden shadow-lg">
-          <iframe
-            title="Barbershop Map"
-            src={`https://www.google.com/maps?q=${encodeURIComponent(
-              MAP_QUERY
-            )}&output=embed`}
-            width="100%"
-            height="380"
-            style={{ border: 0 }}
-            loading="lazy"
-          />
-        </div>
-
-        <a
-          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-            MAP_QUERY
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-3 rounded-lg"
-        >
-          Open in Google Maps 📍
-        </a>
-      </section>
-
-      {/* CTA PREMIUM */}
+      {/* CTA */}
       <section className="py-20 bg-black text-white text-center px-4">
-        <h2 className="text-3xl font-bold mb-3">
-          Prêt pour une coupe premium ?
+        <h2 className="text-3xl font-bold">
+          Ready for your cut?
         </h2>
 
-        <p className="text-gray-300 mb-6">
-          Réservez votre rendez-vous maintenant
+        <p className="mt-2 text-gray-300">
+          Book your appointment today
         </p>
 
         <ButtonHome
           text="Réserver maintenant"
           onClick={() => navigate("/booking")}
-          className="bg-yellow-500 text-black font-bold px-8 py-3 rounded-lg"
+          className="mt-6 bg-yellow-500 text-black font-bold px-8 py-3 rounded-lg"
         />
       </section>
 
