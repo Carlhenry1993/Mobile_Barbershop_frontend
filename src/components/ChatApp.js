@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } from "react";
 import io from "socket.io-client";
 import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-// Error Boundary Component
+// Composant Error Boundary
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null };
 
@@ -13,15 +13,15 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error("ErrorBoundary caught:", error, errorInfo);
+    console.error("ErrorBoundary a capturé :", error, errorInfo);
   }
 
   render() {
     if (this.state.hasError) {
       return (
         <div style={{ padding: "20px", color: "red" }}>
-          <h2>Something went wrong.</h2>
-          <p>{this.state.error?.message || "Please refresh the page."}</p>
+          <h2>Quelque chose s'est mal passé.</h2>
+          <p>{this.state.error?.message || "Veuillez rafraîchir la page."}</p>
         </div>
       );
     }
@@ -29,7 +29,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Audio setup with Supabase-hosted files
+// Configuration audio avec fichiers hébergés sur Supabase
 const createAudioElement = (src, options = {}) => {
   const audio = new Audio(src);
   audio.crossOrigin = "anonymous";
@@ -44,7 +44,7 @@ const ringtoneAudio = createAudioElement(ringtoneURL, { loop: true });
 
 const SOCKET_SERVER_URL = "https://api.mrrenaudinbarbershop.com";
 
-// Media constraints for improved audio/video quality
+// Contraintes média pour une meilleure qualité audio/vidéo
 const audioConstraints = {
   audio: {
     echoCancellation: true,
@@ -65,8 +65,28 @@ const videoConstraints = {
   },
 };
 
+// Réducteur pour la gestion de l'état des appels
+const callReducer = (state, action) => {
+  switch (action.type) {
+    case "SET_IN_CALL":
+      return { ...state, inCall: action.payload };
+    case "SET_CALL_CONNECTED":
+      return { ...state, callConnected: action.payload };
+    case "SET_CALL_TYPE":
+      return { ...state, callType: action.payload };
+    case "SET_INCOMING_CALL":
+      return { ...state, incomingCall: action.payload };
+    case "SET_LOCAL_STREAM":
+      return { ...state, localStream: action.payload };
+    case "SET_CALL_DURATION":
+      return { ...state, callDuration: action.payload };
+    default:
+      return state;
+  }
+};
+
 const ChatApp = ({ clientId, isAdmin }) => {
-  // Chat states
+  // États pour le chat
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -77,20 +97,22 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
 
-  // Connection status states
+  // États pour le statut de connexion
   const [isConnected, setIsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
-  // Call states
-  const [inCall, setInCall] = useState(false);
-  const [callConnected, setCallConnected] = useState(false);
-  const [callType, setCallType] = useState(null); // "audio" or "video"
-  const [incomingCall, setIncomingCall] = useState(null);
-  const [localStream, setLocalStream] = useState(null);
-  const [callDuration, setCallDuration] = useState(0);
+  // États des appels gérés par le réducteur
+  const [callState, dispatch] = useReducer(callReducer, {
+    inCall: false,
+    callConnected: false,
+    callType: null,
+    incomingCall: null,
+    localStream: null,
+    callDuration: 0,
+  });
 
-  // Refs for DOM elements and persistent values
+  // Références pour les éléments DOM et les valeurs persistantes
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -100,20 +122,28 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const pendingCandidatesRef = useRef([]);
   const reconnectTimeoutRef = useRef(null);
 
-  // Mirror state values for event handlers
-  const inCallRef = useRef(inCall);
+  // Références pour refléter les états dans les gestionnaires d'événements
+  const inCallRef = useRef(callState.inCall);
   const selectedClientIdRef = useRef(selectedClientId);
-  const callTypeRef = useRef(callType);
-  useEffect(() => { inCallRef.current = inCall; }, [inCall]);
+  const callTypeRef = useRef(callState.callType);
+  useEffect(() => { inCallRef.current = callState.inCall; }, [callState.inCall]);
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
-  useEffect(() => { callTypeRef.current = callType; }, [callType]);
+  useEffect(() => { callTypeRef.current = callState.callType; }, [callState.callType]);
 
-  // Determine call partner ID
+  // Déterminer l'ID du partenaire d'appel avec validation
   const getCallPartnerId = useCallback(() => {
-    return isAdmin ? selectedClientIdRef.current : "admin";
+    if (isAdmin) {
+      if (!selectedClientIdRef.current) {
+        console.error("Aucun client sélectionné pour l'appel.");
+        toast.error("Veuillez sélectionner un client avant d'appeler.");
+        return null;
+      }
+      return selectedClientIdRef.current;
+    }
+    return "admin";
   }, [isAdmin]);
 
-  // Scroll to bottom when messages update
+  // Faire défiler vers le bas lors de la mise à jour des messages
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
@@ -122,7 +152,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return () => clearTimeout(timeoutId);
   }, [messages, scrollToBottom]);
 
-  // Initialize audio with error handling
+  // Initialiser l'audio avec gestion des erreurs
   const initializeAudio = useCallback(async () => {
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -147,11 +177,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
           : Promise.resolve(),
       ]);
     } catch (error) {
-      console.warn("Audio initialization warning:", error);
+      console.warn("Avertissement d'initialisation audio :", error);
     }
   }, []);
 
-  // iOS Autoplay workaround
+  // Contournement pour l'autoplay sur iOS
   useEffect(() => {
     const enableAudio = async () => {
       try {
@@ -160,7 +190,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         ringtoneAudio.currentTime = 0;
         await initializeAudio();
       } catch (error) {
-        console.warn("Audio unlock failed:", error);
+        console.warn("Échec du déverrouillage audio :", error);
       }
     };
     document.addEventListener("click", enableAudio, { once: true });
@@ -171,21 +201,21 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [initializeAudio]);
 
-  // Request notification permission
+  // Demander la permission pour les notifications
   useEffect(() => {
     const requestNotificationPermission = async () => {
       if ("Notification" in window && Notification.permission === "default") {
         try {
           await Notification.requestPermission();
         } catch (error) {
-          console.warn("Notification permission request failed:", error);
+          console.warn("Échec de la demande de permission de notification :", error);
         }
       }
     };
     requestNotificationPermission();
   }, []);
 
-  // Ringtone control functions
+  // Fonctions de contrôle de la sonnerie
   const audioManager = useMemo(
     () => ({
       startRingtone: async () => {
@@ -195,7 +225,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
             await ringtoneAudio.play();
           }
         } catch (error) {
-          console.error("Ringtone play error:", error);
+          console.error("Erreur de lecture de la sonnerie :", error);
         }
       },
       stopRingtone: () => {
@@ -208,7 +238,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           notificationAudio.currentTime = 0;
           await notificationAudio.play();
         } catch (error) {
-          console.warn("Notification sound failed:", error);
+          console.warn("Échec du son de notification :", error);
         }
       },
     }),
@@ -216,34 +246,34 @@ const ChatApp = ({ clientId, isAdmin }) => {
   );
 
   useEffect(() => {
-    if (incomingCall) {
+    if (callState.incomingCall) {
       audioManager.startRingtone();
     } else {
       audioManager.stopRingtone();
     }
-  }, [incomingCall, audioManager]);
+  }, [callState.incomingCall, audioManager]);
 
-  // Helper to stop media tracks
+  // Fonction pour arrêter les pistes média
   const stopMediaTracks = useCallback((stream) => {
     if (stream) {
       stream.getTracks().forEach((track) => {
         track.stop();
-        console.log(`Stopped ${track.kind} track`);
+        console.log(`Piste ${track.kind} arrêtée`);
       });
     }
   }, []);
 
-  // End call with cleanup
+  // Terminer l'appel avec nettoyage
   const endCall = useCallback(() => {
-    console.log("Ending call...");
+    console.log("Terminaison de l'appel...");
     try {
       audioManager.stopRingtone();
       if (pcRef.current) {
         pcRef.current.close();
         pcRef.current = null;
       }
-      stopMediaTracks(localStream);
-      setLocalStream(null);
+      stopMediaTracks(callState.localStream);
+      dispatch({ type: "SET_LOCAL_STREAM", payload: null });
       if (remoteAudioRef.current?.srcObject) {
         stopMediaTracks(remoteAudioRef.current.srcObject);
         remoteAudioRef.current.srcObject = null;
@@ -256,29 +286,34 @@ const ChatApp = ({ clientId, isAdmin }) => {
         stopMediaTracks(localVideoRef.current.srcObject);
         localVideoRef.current.srcObject = null;
       }
-      setInCall(false);
-      setCallConnected(false);
-      setCallType(null);
-      setIncomingCall(null);
+      dispatch({ type: "SET_IN_CALL", payload: false });
+      dispatch({ type: "SET_CALL_CONNECTED", payload: false });
+      dispatch({ type: "SET_CALL_TYPE", payload: null });
+      dispatch({ type: "SET_INCOMING_CALL", payload: null });
       pendingCandidatesRef.current = [];
       if (inCallRef.current) {
-        socketRef.current?.emit("call_end", { to: getCallPartnerId() });
-        toast.info("Call has been ended.");
+        const partnerId = getCallPartnerId();
+        if (partnerId) {
+          socketRef.current?.emit("call_end", { to: partnerId });
+          toast.info("L'appel a été terminé.");
+        } else {
+          console.error("Impossible d'obtenir l'ID du partenaire pour terminer l'appel.");
+        }
       }
     } catch (error) {
-      console.error("Error during call cleanup:", error);
-      toast.error("Error ending call.");
+      console.error("Erreur lors de la terminaison de l'appel :", error);
+      toast.error("Erreur lors de la terminaison de l'appel.");
     }
-  }, [localStream, getCallPartnerId, stopMediaTracks, audioManager]);
+  }, [callState.localStream, getCallPartnerId, stopMediaTracks, audioManager]);
 
-  // Fetch initial messages from Supabase
+  // Récupérer les messages initiaux depuis Supabase
   useEffect(() => {
     const fetchMessages = async () => {
       try {
         const response = await fetch(`${SOCKET_SERVER_URL}/api/messages`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok) throw new Error(`Erreur HTTP ! statut : ${response.status}`);
         const data = await response.json();
         setMessages(data.map((msg) => ({
           id: msg.id,
@@ -288,14 +323,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
           timestamp: msg.timestamp,
         })));
       } catch (error) {
-        console.error("Error fetching messages:", error);
-        toast.error("Failed to load messages.");
+        console.error("Erreur lors du chargement des messages :", error);
+        toast.error("Échec du chargement des messages.");
       }
     };
     fetchMessages();
   }, [clientId]);
 
-  // Socket.IO connection with reconnection logic
+  // Connexion Socket.IO avec logique de reconnexion
   useEffect(() => {
     reconnectTimeoutRef.current = null;
 
@@ -309,7 +344,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       const socket = socketRef.current;
 
       socket.on("connect", () => {
-        console.log("Connected to signaling server:", SOCKET_SERVER_URL);
+        console.log("Connecté au serveur de signalisation :", SOCKET_SERVER_URL);
         setIsConnected(true);
         setReconnectAttempts(0);
         if (isAdmin) {
@@ -318,12 +353,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
       });
 
       socket.on("disconnect", (reason) => {
-        console.log("Socket disconnected:", reason);
+        console.log("Socket déconnecté :", reason);
         setIsConnected(false);
         if (isAdmin) {
           socket.emit("admin_status", { adminId: clientId, online: false });
         }
-        if (inCallRef.current) endCall();
+        if (callState.inCall) endCall();
         if (reason !== "io client disconnect") {
           const attempts = reconnectAttempts + 1;
           setReconnectAttempts(attempts);
@@ -332,22 +367,22 @@ const ChatApp = ({ clientId, isAdmin }) => {
             if (attempts < 5) {
               connectSocket();
             } else {
-              toast.error("Connection failed. Please refresh the page.");
+              toast.error("Échec de la connexion. Veuillez rafraîchir la page.");
             }
           }, delay);
         }
       });
 
       socket.on("connect_error", (error) => {
-        console.error("Connection error:", error);
-        toast.error("Failed to connect to server.");
+        console.error("Erreur de connexion :", error);
+        toast.error("Échec de la connexion au serveur.");
       });
 
       socket.on("new_message", (data) => {
-        console.log("New message:", data);
+        console.log("Nouveau message reçu :", data);
         const newMessage = {
           id: Date.now() + Math.random(),
-          sender: data.sender || "Unknown User",
+          sender: data.sender || "Utilisateur inconnu",
           message: data.message,
           senderId: data.senderId,
           timestamp: data.timestamp || new Date().toISOString(),
@@ -355,7 +390,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         setMessages((prev) => [...prev, newMessage]);
         audioManager.playNotification();
         if (Notification.permission === "granted" && (!isChatOpen || isMinimized)) {
-          const notification = new Notification(`Message from ${data.sender || "User"}`, {
+          const notification = new Notification(`Message de ${data.sender || "Utilisateur"}`, {
             body: data.message,
             icon: "/favicon.ico",
           });
@@ -383,40 +418,42 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
       if (isAdmin) {
         socket.on("update_client_list", (clientList) => {
-          console.log("Client list updated:", clientList);
+          console.log("Liste des clients mise à jour :", clientList);
           setClients(clientList);
         });
       } else {
         socket.on("admin_status", (data) => {
-          console.log("Received admin status:", data);
+          console.log("Statut de l'administrateur reçu :", data);
           setAdminOnline(data.online);
         });
       }
 
       socket.on("call_offer", (data) => {
-        console.log("Received call offer:", data);
-        if (!inCallRef.current) {
-          setIncomingCall(data);
+        console.log("Offre d'appel reçue :", data);
+        if (!callState.inCall) {
+          dispatch({ type: "SET_INCOMING_CALL", payload: data });
         } else {
           socket.emit("call_busy", { to: data.from });
+          console.log("Utilisateur occupé, signal envoyé à :", data.from);
         }
       });
 
       socket.on("call_answer", async (data) => {
-        if (pcRef.current && inCallRef.current) {
+        if (pcRef.current && callState.inCall) {
           try {
             await pcRef.current.setRemoteDescription(new RTCSessionDescription(data.answer));
-            console.log("Remote description set.");
+            console.log("Description distante définie avec succès.");
             for (const candidate of pendingCandidatesRef.current) {
               try {
                 await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
+                console.log("Candidat ICE en attente ajouté.");
               } catch (err) {
-                console.error("Error adding queued candidate:", err);
+                console.error("Erreur lors de l'ajout du candidat en attente :", err);
               }
             }
             pendingCandidatesRef.current = [];
           } catch (error) {
-            console.error("Error in call_answer:", error);
+            console.error("Erreur lors de la réception de call_answer :", error);
             endCall();
           }
         }
@@ -427,31 +464,32 @@ const ChatApp = ({ clientId, isAdmin }) => {
           if (pcRef.current.remoteDescription?.type) {
             try {
               await pcRef.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-              console.log("Added ICE candidate");
+              console.log("Candidat ICE ajouté avec succès.");
             } catch (error) {
-              console.error("Error adding ICE candidate:", error);
+              console.error("Erreur lors de l'ajout du candidat ICE :", error);
             }
           } else {
             pendingCandidatesRef.current.push(data.candidate);
+            console.log("Candidat ICE mis en attente :", data.candidate);
           }
         }
       });
 
       socket.on("call_reject", () => {
-        console.log("Call rejected");
-        toast.info("Call rejected by the recipient.");
+        console.log("Appel rejeté par le destinataire.");
+        toast.info("Appel rejeté par le destinataire.");
         endCall();
       });
 
       socket.on("call_busy", () => {
-        console.log("Recipient is busy");
-        toast.info("Recipient is currently busy.");
+        console.log("Destinataire occupé.");
+        toast.info("Le destinataire est actuellement occupé.");
         endCall();
       });
 
       socket.on("call_end", () => {
-        console.log("Call ended by remote party");
-        toast.info("Call ended by remote party.");
+        console.log("Appel terminé par l'autre partie.");
+        toast.info("Appel terminé par l'autre partie.");
         endCall();
       });
     };
@@ -464,23 +502,23 @@ const ChatApp = ({ clientId, isAdmin }) => {
         socketRef.current.disconnect();
       }
     };
-  }, [isAdmin, clientId, selectedClientId, endCall, isChatOpen, isMinimized, audioManager, reconnectAttempts, getCallPartnerId]);
+  }, [isAdmin, clientId, selectedClientId, endCall, isChatOpen, isMinimized, audioManager, reconnectAttempts, getCallPartnerId, callState.inCall]);
 
-  // Call timer
+  // Minuteur d'appel
   const callTimerRef = useRef(null);
   useEffect(() => {
-    if (inCall && callConnected) {
+    if (callState.inCall && callState.callConnected) {
       callTimerRef.current = setInterval(() => {
-        setCallDuration((prev) => prev + 1);
+        dispatch({ type: "SET_CALL_DURATION", payload: callState.callDuration + 1 });
       }, 1000);
     } else {
-      setCallDuration(0);
+      dispatch({ type: "SET_CALL_DURATION", payload: 0 });
       if (callTimerRef.current) clearInterval(callTimerRef.current);
     }
     return () => {
       if (callTimerRef.current) clearInterval(callTimerRef.current);
     };
-  }, [inCall, callConnected]);
+  }, [callState.inCall, callState.callConnected, callState.callDuration]);
 
   const formatDuration = useCallback((duration) => {
     const minutes = Math.floor(duration / 60);
@@ -488,7 +526,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }, []);
 
-  // Create RTCPeerConnection
+  // Créer une connexion RTCPeerConnection
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({
       iceServers: [
@@ -499,69 +537,72 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
     pc.onicecandidate = (event) => {
       if (event.candidate) {
-        console.log("ICE candidate generated");
-        socketRef.current?.emit("call_candidate", {
-          to: getCallPartnerId(),
-          candidate: event.candidate,
-        });
+        console.log("Candidat ICE généré :", event.candidate);
+        const partnerId = getCallPartnerId();
+        if (partnerId) {
+          socketRef.current?.emit("call_candidate", {
+            to: partnerId,
+            candidate: event.candidate,
+          });
+        } else {
+          console.error("Échec de l'envoi du candidat ICE : ID du partenaire invalide.");
+        }
       }
     };
     pc.onconnectionstatechange = () => {
-      console.log("WebRTC connection state:", pc.connectionState);
+      console.log("État de la connexion WebRTC :", pc.connectionState);
       if (["connected", "completed"].includes(pc.connectionState)) {
-        setCallConnected(true);
+        dispatch({ type: "SET_CALL_CONNECTED", payload: true });
       }
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
         endCall();
       }
     };
     pc.oniceconnectionstatechange = () => {
-      console.log("ICE connection state:", pc.iceConnectionState);
+      console.log("État de la connexion ICE :", pc.iceConnectionState);
       if (pc.iceConnectionState === "failed") {
-        toast.error("Failed to establish a stable connection.");
+        toast.error("Échec de l'établissement d'une connexion stable.");
         endCall();
       }
     };
     pc.ontrack = (event) => {
-      console.log("Received remote track:", event.track.kind);
+      console.log("Piste distante reçue :", event.track.kind);
       let stream = event.streams[0] || new MediaStream();
       if (event.track.kind === "audio" && remoteAudioRef.current) {
         stream.addTrack(event.track);
         remoteAudioRef.current.srcObject = stream;
-        remoteAudioRef.current.play().catch((err) => console.error("Error playing remote audio:", err));
+        remoteAudioRef.current.play().catch((err) => console.error("Erreur de lecture de l'audio distant :", err));
       } else if (event.track.kind === "video" && remoteVideoRef.current) {
         stream.addTrack(event.track);
         remoteVideoRef.current.srcObject = stream;
-        remoteVideoRef.current.play().catch((err) => console.error("Error playing remote video:", err));
+        remoteVideoRef.current.play().catch((err) => console.error("Erreur de lecture de la vidéo distante :", err));
       }
     };
     return pc;
   }, [getCallPartnerId, endCall]);
 
-  // Initiate an outgoing call
+  // Initier un appel sortant
   const initiateCall = useCallback(
     async (type) => {
-      if (isAdmin && !selectedClientId) {
-        toast.error("Please select a client to call.");
-        return;
-      }
+      const partnerId = getCallPartnerId();
+      if (!partnerId) return; // Arrête si l'ID du partenaire est invalide
       if (!isConnected) {
-        toast.error("Not connected to server.");
+        toast.error("Non connecté au serveur.");
         return;
       }
       try {
         const constraints = type === "audio" ? audioConstraints : videoConstraints;
         const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(async (error) => {
           if (type === "video" && error.name === "NotFoundError") {
-            toast.warn("Video device not found, falling back to audio-only call.");
+            toast.warn("Appareil vidéo non trouvé, basculement vers un appel audio uniquement.");
             return await navigator.mediaDevices.getUserMedia(audioConstraints);
           }
           throw error;
         });
-        setLocalStream(stream);
+        dispatch({ type: "SET_LOCAL_STREAM", payload: stream });
         if (localVideoRef.current && type === "video") {
           localVideoRef.current.srcObject = stream;
-          localVideoRef.current.play().catch((err) => console.error("Local video play error:", err));
+          localVideoRef.current.play().catch((err) => console.error("Erreur de lecture de la vidéo locale :", err));
         }
         pcRef.current = createPeerConnection();
         stream.getTracks().forEach((track) => {
@@ -569,84 +610,87 @@ const ChatApp = ({ clientId, isAdmin }) => {
         });
         const offer = await pcRef.current.createOffer();
         await pcRef.current.setLocalDescription(offer);
+        console.log("Émission de call_offer vers :", partnerId);
         socketRef.current?.emit("call_offer", {
-          to: getCallPartnerId(),
+          to: partnerId,
           callType: type,
           offer,
         });
-        setCallType(type);
-        setInCall(true);
+        dispatch({ type: "SET_CALL_TYPE", payload: type });
+        dispatch({ type: "SET_IN_CALL", payload: true });
         setTimeout(() => {
-          if (inCallRef.current && !callConnected) {
-            toast.info("Call timeout - recipient didn't answer");
+          if (inCallRef.current && !callState.callConnected) {
+            toast.info("Délai d'attente de l'appel - le destinataire n'a pas répondu.");
             endCall();
           }
         }, 30000);
       } catch (error) {
-        console.error("Error initiating call:", error);
+        console.error("Erreur lors de l'initiation de l'appel :", error);
         const errorMessages = {
-          NotFoundError: "No microphone or camera found.",
-          NotAllowedError: "Permission denied for microphone or camera.",
-          NotReadableError: "Camera or microphone is in use.",
+          NotFoundError: "Aucun microphone ou caméra trouvé.",
+          NotAllowedError: "Permission refusée pour le microphone ou la caméra.",
+          NotReadableError: "La caméra ou le microphone est en cours d'utilisation.",
         };
-        toast.error(errorMessages[error.name] || "Error starting call.");
+        toast.error(errorMessages[error.name] || "Erreur lors du démarrage de l'appel.");
       }
     },
-    [isAdmin, selectedClientId, isConnected, createPeerConnection, getCallPartnerId, callConnected, endCall]
+    [isConnected, createPeerConnection, getCallPartnerId, callState.callConnected, endCall]
   );
 
-  // Accept an incoming call
+  // Accepter un appel entrant
   const handleAcceptCall = useCallback(async () => {
-    if (!incomingCall) return;
+    if (!callState.incomingCall) return;
     audioManager.stopRingtone();
     try {
-      const constraints = incomingCall.callType === "audio" ? audioConstraints : videoConstraints;
+      const constraints = callState.incomingCall.callType === "audio" ? audioConstraints : videoConstraints;
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      setLocalStream(stream);
-      if (localVideoRef.current && incomingCall.callType === "video") {
+      dispatch({ type: "SET_LOCAL_STREAM", payload: stream });
+      if (localVideoRef.current && callState.incomingCall.callType === "video") {
         localVideoRef.current.srcObject = stream;
-        localVideoRef.current.play().catch((err) => console.error("Local video play error:", err));
+        localVideoRef.current.play().catch((err) => console.error("Erreur de lecture de la vidéo locale :", err));
       }
       pcRef.current = createPeerConnection();
       stream.getTracks().forEach((track) => {
         pcRef.current.addTrack(track, stream);
       });
-      await pcRef.current.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+      await pcRef.current.setRemoteDescription(new RTCSessionDescription(callState.incomingCall.offer));
       for (const candidate of pendingCandidatesRef.current) {
         try {
           await pcRef.current.addIceCandidate(new RTCIceCandidate(candidate));
         } catch (err) {
-          console.error("Error adding queued candidate:", err);
+          console.error("Erreur lors de l'ajout du candidat en attente :", err);
         }
       }
       pendingCandidatesRef.current = [];
       const answer = await pcRef.current.createAnswer();
       await pcRef.current.setLocalDescription(answer);
+      console.log("Émission de call_answer vers :", callState.incomingCall.from);
       socketRef.current?.emit("call_answer", {
-        to: incomingCall.from,
+        to: callState.incomingCall.from,
         answer,
       });
-      setCallType(incomingCall.callType);
-      setInCall(true);
-      setIncomingCall(null);
+      dispatch({ type: "SET_CALL_TYPE", payload: callState.incomingCall.callType });
+      dispatch({ type: "SET_IN_CALL", payload: true });
+      dispatch({ type: "SET_INCOMING_CALL", payload: null });
     } catch (error) {
-      console.error("Error accepting call:", error);
-      toast.error("Error accepting call.");
+      console.error("Erreur lors de l'acceptation de l'appel :", error);
+      toast.error("Erreur lors de l'acceptation de l'appel.");
       endCall();
     }
-  }, [incomingCall, createPeerConnection, audioManager, endCall]);
+  }, [callState.incomingCall, createPeerConnection, audioManager, endCall]);
 
-  // Reject an incoming call
+  // Rejeter un appel entrant
   const handleRejectCall = useCallback(() => {
-    if (incomingCall) {
-      socketRef.current?.emit("call_reject", { to: incomingCall.from });
+    if (callState.incomingCall) {
+      console.log("Rejet de l'appel de :", callState.incomingCall.from);
+      socketRef.current?.emit("call_reject", { to: callState.incomingCall.from });
       audioManager.stopRingtone();
-      toast.info("You rejected the call.");
-      setIncomingCall(null);
+      toast.info("Vous avez rejeté l'appel.");
+      dispatch({ type: "SET_INCOMING_CALL", payload: null });
     }
-  }, [incomingCall, audioManager]);
+  }, [callState.incomingCall, audioManager]);
 
-  // Mark messages as read
+  // Marquer les messages comme lus
   const handleMarkMessagesAsRead = useCallback(async () => {
     const targetUserId = isAdmin ? selectedClientId : clientId;
     if (!targetUserId) return;
@@ -660,19 +704,19 @@ const ChatApp = ({ clientId, isAdmin }) => {
         body: JSON.stringify({ userId: targetUserId }),
       });
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Erreur HTTP ! statut : ${response.status}`);
       }
     } catch (error) {
-      console.error("Error marking messages as read:", error);
+      console.error("Erreur lors du marquage des messages comme lus :", error);
     }
   }, [clientId, isAdmin, selectedClientId]);
 
-  // Toggle chat window
+  // Basculer la fenêtre de chat
   const handleChatToggle = useCallback(
     (event) => {
       event.preventDefault();
       event.stopPropagation();
-      console.log("Chat toggle clicked", {
+      console.log("Bascule du chat cliquée", {
         isChatOpen: !isChatOpen,
         eventTarget: event.target.tagName,
         eventCurrentTarget: event.currentTarget.tagName,
@@ -695,35 +739,35 @@ const ChatApp = ({ clientId, isAdmin }) => {
     [isChatOpen, isAdmin, selectedClientId, handleMarkMessagesAsRead]
   );
 
-  // Toggle minimize chat
+  // Basculer la minimisation du chat
   const handleMinimizeToggle = useCallback(() => {
     setIsMinimized((prev) => !prev);
-    setIsMaximized(false); // Reset maximize state when minimizing
+    setIsMaximized(false);
     if (!isMinimized && !isAdmin) {
       setUnreadCount(0);
       handleMarkMessagesAsRead();
     }
   }, [isMinimized, isAdmin, handleMarkMessagesAsRead]);
 
-  // Toggle maximize/restore chat
+  // Basculer maximisation/restauration du chat
   const handleMaximizeToggle = useCallback(() => {
     setIsMaximized((prev) => !prev);
-    setIsMinimized(false); // Ensure not minimized when toggling maximize
+    setIsMinimized(false);
   }, []);
 
-  // Send a chat message
+  // Envoyer un message de chat
   const handleSendMessage = useCallback(() => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage) {
-      toast.error("Message cannot be empty!");
+      toast.error("Le message ne peut pas être vide !");
       return;
     }
     if (isAdmin && !selectedClientId) {
-      toast.error("No client selected.");
+      toast.error("Aucun client sélectionné.");
       return;
     }
     if (!isConnected) {
-      toast.error("Not connected to server.");
+      toast.error("Non connecté au serveur.");
       return;
     }
     const newMessage = {
@@ -746,17 +790,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
       );
       setMessage("");
     } catch (error) {
-      console.error("Error sending message:", error);
+      console.error("Erreur lors de l'envoi du message :", error);
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === newMessage.id ? { ...msg, status: "failed" } : msg
         )
       );
-      toast.error("Failed to send message.");
+      toast.error("Échec de l'envoi du message.");
     }
   }, [message, isAdmin, selectedClientId, isConnected]);
 
-  // Render client list
+  // Rendre la liste des clients
   const renderClientList = useCallback(
     () => (
       <select
@@ -775,15 +819,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
         value={selectedClientId || ""}
         className="client-selector"
         disabled={!isConnected}
-        aria-label="Select a client to chat with"
+        aria-label="Sélectionnez un client pour discuter"
       >
-        <option value="">Select a client</option>
+        <option value="">Sélectionnez un client</option>
         {clients.length === 0 ? (
-          <option disabled>No clients connected</option>
+          <option disabled>Aucun client connecté</option>
         ) : (
           clients.map((client) => (
             <option key={client.id} value={client.id}>
-              {client.name || "Unknown Client"}
+              {client.name || "Client inconnu"}
               {unreadCounts[client.id] ? ` (${unreadCounts[client.id]})` : ""}
               {client.online ? " 🟢" : " 🔴"}
             </option>
@@ -794,19 +838,19 @@ const ChatApp = ({ clientId, isAdmin }) => {
     [clients, selectedClientId, unreadCounts, isConnected, handleMarkMessagesAsRead]
   );
 
-  // Render messages with timestamps
+  // Rendre les messages avec horodatages
   const renderMessages = useMemo(() => {
     try {
       return (
         <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`} aria-live="polite">
           {messages.length === 0 ? (
             <div className="no-messages">
-              <p>No messages yet. Start a conversation!</p>
+              <p>Pas encore de messages. Commencez une conversation !</p>
             </div>
           ) : (
             messages.map((msg) => (
               <div key={msg.id} className={`message ${msg.sender} ${msg.status || ""}`}>
-                <span className="message-author">{msg.sender || "Unknown User"}:</span>
+                <span className="message-author">{msg.sender || "Utilisateur inconnu"}:</span>
                 <p>{msg.message}</p>
                 <span className="message-timestamp">
                   {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -825,12 +869,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
         </div>
       );
     } catch (error) {
-      console.error("Render messages error:", error);
-      return <div>Error rendering messages. Please refresh.</div>;
+      console.error("Erreur de rendu des messages :", error);
+      return <div>Erreur de rendu des messages. Veuillez rafraîchir la page.</div>;
     }
   }, [messages, isAdmin]);
 
-  // Calculate total unread messages
+  // Calculer le total des messages non lus
   const totalUnreadMessages = isAdmin
     ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
     : unreadCount;
@@ -841,29 +885,29 @@ const ChatApp = ({ clientId, isAdmin }) => {
         {isAdmin && (
           <div className="status-indicator">
             <span>
-              You are {isConnected ? "Online 🟢" : "Offline 🔴"}
-              {reconnectAttempts > 0 && ` (Reconnecting: ${reconnectAttempts}/5)`}
+              Vous êtes {isConnected ? "en ligne 🟢" : "hors ligne 🔴"}
+              {reconnectAttempts > 0 && ` (Reconnexion : ${reconnectAttempts}/5)`}
             </span>
           </div>
         )}
         {!isChatOpen ? (
           <div className="chat-bubble-container">
-            <p className="chat-info">Chat with us!</p>
+            <p className="chat-info">Discutez avec nous !</p>
             {!isAdmin && !adminOnline && (
-              <p className="admin-offline-notice">Admin is currently offline</p>
+              <p className="admin-offline-notice">L'administrateur est actuellement hors ligne</p>
             )}
             <button
               type="button"
               className="chat-bubble-icon"
               onClick={handleChatToggle}
               disabled={!isConnected}
-              title={isConnected ? "Open chat" : "Connecting..."}
-              aria-label={isConnected ? "Open chat window" : "Chat is connecting"}
+              title={isConnected ? "Ouvrir le chat" : "Connexion en cours..."}
+              aria-label={isConnected ? "Ouvrir la fenêtre de chat" : "Le chat est en cours de connexion"}
               aria-expanded={isChatOpen}
             >
               💬
               {totalUnreadMessages > 0 && (
-                <span className="unread-count" aria-label={`${totalUnreadMessages} unread messages`}>
+                <span className="unread-count" aria-label={`${totalUnreadMessages} messages non lus`}>
                   {totalUnreadMessages > 99 ? "99+" : totalUnreadMessages}
                 </span>
               )}
@@ -873,29 +917,29 @@ const ChatApp = ({ clientId, isAdmin }) => {
           <div className={`chat-container ${isMinimized ? "minimized" : ""} ${isMaximized ? "maximized" : ""}`}>
             {isMinimized ? (
               <div className="chat-header minimized">
-                <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
+                <h4>Chat {isAdmin ? "Administrateur" : "Client"}</h4>
                 <div className="chat-controls">
                   <button
                     className="minimize-button"
                     onClick={handleMinimizeToggle}
-                    title="Restore"
-                    aria-label="Restore chat"
+                    title="Restaurer"
+                    aria-label="Restaurer le chat"
                   >
                     🗖
                   </button>
                   <button
                     className="maximize-button"
                     onClick={handleMaximizeToggle}
-                    title={isMaximized ? "Restore" : "Maximize"}
-                    aria-label={isMaximized ? "Restore chat" : "Maximize chat"}
+                    title={isMaximized ? "Restaurer" : "Maximiser"}
+                    aria-label={isMaximized ? "Restaurer le chat" : "Maximiser le chat"}
                   >
                     {isMaximized ? "🗗" : "🗖"}
                   </button>
                   <button
                     className="close-button"
                     onClick={handleChatToggle}
-                    title="Close chat"
-                    aria-label="Close chat"
+                    title="Fermer le chat"
+                    aria-label="Fermer le chat"
                   >
                     ✕
                   </button>
@@ -905,10 +949,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
               <>
                 <div className="chat-header">
                   <div>
-                    <h4>Chat {isAdmin ? "Admin" : "Client"}</h4>
+                    <h4>Chat {isAdmin ? "Administrateur" : "Client"}</h4>
                     {!isAdmin && (
                       <div className="admin-status">
-                        Admin is {adminOnline ? "Online 🟢" : "Offline 🔴"}
+                        L'administrateur est {adminOnline ? "en ligne 🟢" : "hors ligne 🔴"}
                       </div>
                     )}
                   </div>
@@ -917,18 +961,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="call-button audio"
                         onClick={() => initiateCall("audio")}
-                        disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
-                        title="Start audio call"
-                        aria-label="Start audio call"
+                        disabled={callState.inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        title="Démarrer un appel audio"
+                        aria-label="Démarrer un appel audio"
                       >
                         📞
                       </button>
                       <button
                         className="call-button video"
                         onClick={() => initiateCall("video")}
-                        disabled={inCall || !isConnected || (isAdmin && !selectedClientId)}
-                        title="Start video call"
-                        aria-label="Start video call"
+                        disabled={callState.inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        title="Démarrer un appel vidéo"
+                        aria-label="Démarrer un appel vidéo"
                       >
                         📹
                       </button>
@@ -937,24 +981,24 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="minimize-button"
                         onClick={handleMinimizeToggle}
-                        title={isMinimized ? "Restore" : "Minimize"}
-                        aria-label={isMinimized ? "Restore chat" : "Minimize chat"}
+                        title={isMinimized ? "Restaurer" : "Minimiser"}
+                        aria-label={isMinimized ? "Restaurer le chat" : "Minimiser le chat"}
                       >
                         _
                       </button>
                       <button
                         className="maximize-button"
                         onClick={handleMaximizeToggle}
-                        title={isMaximized ? "Restore" : "Maximize"}
-                        aria-label={isMaximized ? "Restore chat" : "Maximize chat"}
+                        title={isMaximized ? "Restaurer" : "Maximiser"}
+                        aria-label={isMaximized ? "Restaurer le chat" : "Maximiser le chat"}
                       >
                         {isMaximized ? "🗗" : "🗖"}
                       </button>
                       <button
                         className="close-button"
                         onClick={handleChatToggle}
-                        title="Close chat"
-                        aria-label="Close chat"
+                        title="Fermer le chat"
+                        aria-label="Fermer le chat"
                       >
                         ✕
                       </button>
@@ -967,7 +1011,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                   <textarea
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Type your message..."
+                    placeholder="Tapez votre message..."
                     maxLength={1000}
                     disabled={!isConnected || (isAdmin && !selectedClientId)}
                     onKeyDown={(e) => {
@@ -976,18 +1020,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
                         handleSendMessage();
                       }
                     }}
-                    aria-label="Message input"
+                    aria-label="Entrée de message"
                     aria-describedby="chat-input-instructions"
                   />
                   <span id="chat-input-instructions" className="sr-only">
-                    Type your message and press Enter to send. Shift + Enter for a new line.
+                    Tapez votre message et appuyez sur Entrée pour envoyer. Shift + Entrée pour une nouvelle ligne.
                   </span>
                   <button
                     onClick={handleSendMessage}
                     disabled={!message.trim() || !isConnected || (isAdmin && !selectedClientId)}
-                    aria-label="Send message"
+                    aria-label="Envoyer le message"
                   >
-                    Send
+                    Envoyer
                   </button>
                 </div>
               </>
@@ -995,53 +1039,53 @@ const ChatApp = ({ clientId, isAdmin }) => {
           </div>
         )}
 
-        {inCall && (
+        {callState.inCall && (
           <div className="call-container">
             <h4>
-              {callConnected
-                ? `${callType === "audio" ? "Audio" : "Video"} Call`
-                : "Connecting..."}
+              {callState.callConnected
+                ? `${callState.callType === "audio" ? "Appel Audio" : "Appel Vidéo"}`
+                : "Connexion en cours..."}
             </h4>
-            {callType === "video" && (
+            {callState.callType === "video" && (
               <div className="video-container">
                 <video ref={remoteVideoRef} autoPlay playsInline className="remote-video" />
                 <video ref={localVideoRef} autoPlay playsInline muted className="local-video" />
               </div>
             )}
             <audio ref={remoteAudioRef} autoPlay style={{ display: "none" }} />
-            {callType === "audio" && (
+            {callState.callType === "audio" && (
               <div className="audio-container">
-                <p>Audio call in progress...</p>
+                <p>Appel audio en cours...</p>
               </div>
             )}
-            <div className="call-timer">Call Duration: {formatDuration(callDuration)}</div>
+            <div className="call-timer">Durée de l'appel : {formatDuration(callState.callDuration)}</div>
             <div className="call-controls">
               <button
                 onClick={() => {
-                  if (localStream) {
-                    localStream.getAudioTracks().forEach((track) => {
+                  if (callState.localStream) {
+                    callState.localStream.getAudioTracks().forEach((track) => {
                       track.enabled = !track.enabled;
                     });
-                    toast.info(localStream.getAudioTracks()[0].enabled ? "Microphone unmuted" : "Microphone muted");
+                    toast.info(callState.localStream.getAudioTracks()[0].enabled ? "Microphone activé" : "Microphone coupé");
                   }
                 }}
-                aria-label={localStream?.getAudioTracks()[0]?.enabled ? "Mute microphone" : "Unmute microphone"}
+                aria-label={callState.localStream?.getAudioTracks()[0]?.enabled ? "Couper le microphone" : "Activer le microphone"}
               >
-                {localStream?.getAudioTracks()[0]?.enabled ? "Mute" : "Unmute"}
+                {callState.localStream?.getAudioTracks()[0]?.enabled ? "Couper" : "Activer"}
               </button>
-              <button onClick={endCall} aria-label="End call">End Call</button>
+              <button onClick={endCall} aria-label="Terminer l'appel">Terminer l'appel</button>
             </div>
           </div>
         )}
 
-        {incomingCall && (
+        {callState.incomingCall && (
           <div className="incoming-call-modal">
             <p>
-              Incoming {incomingCall.callType === "audio" ? "Audio" : "Video"} Call from{" "}
-              {incomingCall.from || "Unknown User"}
+              Appel {callState.incomingCall.callType === "audio" ? "audio" : "vidéo"} entrant de{" "}
+              {callState.incomingCall.from || "Utilisateur inconnu"}
             </p>
-            <button onClick={handleAcceptCall} aria-label="Accept incoming call">Accept</button>
-            <button onClick={handleRejectCall} aria-label="Reject incoming call">Reject</button>
+            <button onClick={handleAcceptCall} aria-label="Accepter l'appel entrant">Accepter</button>
+            <button onClick={handleRejectCall} aria-label="Rejeter l'appel entrant">Rejeter</button>
           </div>
         )}
 
