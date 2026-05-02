@@ -1,149 +1,145 @@
 import React from "react";
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
 
+const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
+const PHONE = "514-778-8318";
+const EMAIL = "mrrenaudinbarber@gmail.com";
+
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-gray-900 text-white py-10">
-      <div className="container mx-auto px-4 lg:px-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
-        {/* Section 1: Contactez-Nous */}
+    <footer className="bg-gradient-to-b from-gray-900 to-black text-white pt-16 pb-10">
+      
+      {/* TOP CTA STRIP */}
+      <div className="max-w-6xl mx-auto px-4 mb-12 text-center">
+        <h2 className="text-2xl md:text-3xl font-bold">
+          Mr. Renaudin Barbershop — Shawinigan
+        </h2>
+        <p className="text-gray-400 mt-2">
+          Barbershop physique • Coupe moderne • Dégradé propre • Expérience premium
+        </p>
+      </div>
+
+      {/* GRID */}
+      <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+        {/* VISIT */}
         <div>
-          <h3 className="text-xl font-semibold mb-4">Contactez-Nous</h3>
-          <p className="text-gray-300 text-sm mb-4">
-            Prêt à transformer votre look ? Parlons-en !
+          <h3 className="text-lg font-semibold mb-4">📍 Visitez le shop</h3>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            {ADDRESS}
           </p>
+
           <a
-            href="/contact"
-            className="bg-blue-600 text-white px-6 py-2 rounded-md text-sm inline-block hover:bg-blue-500 transition-all duration-300"
+            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              ADDRESS
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-sm font-semibold transition"
           >
-            Contactez-nous →
+            Ouvrir sur Google Maps
           </a>
         </div>
 
-        {/* Section 2: Nos Services */}
+        {/* SERVICES */}
         <div>
-          <h3 className="text-xl font-semibold mb-4">Nos Services</h3>
-          <ul className="text-gray-300 text-sm space-y-2">
-            <li>
-              <a href="/services" className="hover:text-blue-400 transition-all duration-300">
-                Coupe Classique
-              </a>
-            </li>
-            <li>
-              <a href="/services" className="hover:text-blue-400 transition-all duration-300">
-                Rasage de la Barbe
-              </a>
-            </li>
-            <li>
-              <a href="/services" className="hover:text-blue-400 transition-all duration-300">
-                Rasage Complet
-              </a>
-            </li>
-            <li>
-              <a href="/services" className="hover:text-blue-400 transition-all duration-300">
-                Dégradé Moderne
-              </a>
-            </li>
+          <h3 className="text-lg font-semibold mb-4">✂️ Services</h3>
+          <ul className="text-gray-400 text-sm space-y-2">
+            <li>Coupe moderne</li>
+            <li>Fade / Dégradé</li>
+            <li>Barbe & lineup</li>
+            <li>Rasage classique</li>
           </ul>
         </div>
 
-        {/* Section 3: Informations de Contact */}
+        {/* CONTACT */}
         <div>
-          <h3 className="text-xl font-semibold mb-4">Informations de Contact</h3>
-          <p className="text-gray-300 text-sm mb-2">Envoyez-nous un courriel :</p>
+          <h3 className="text-lg font-semibold mb-4">📞 Contact</h3>
+
+          <p className="text-gray-400 text-sm mb-2">{PHONE}</p>
+
           <a
-            href="mailto:mrrenaudinbarber@gmail.com"
-            className="text-blue-400 hover:underline mb-2 inline-block"
+            href={`tel:${PHONE}`}
+            className="text-blue-400 hover:underline block mb-3"
           >
-            mrrenaudinbarber@gmail.com
+            Appeler maintenant
           </a>
-          <p className="text-gray-300 text-sm mb-2">Appelez-nous :</p>
-          <p className="text-blue-400 mb-2">514-778-8318</p>
-          <p className="text-gray-300 text-sm">Adresse :</p>
-          <p className="text-gray-400">Trois-Rivières, Shawinigan, QC, Canada</p>
+
+          <a
+            href={`mailto:${EMAIL}`}
+            className="text-blue-400 hover:underline block"
+          >
+            {EMAIL}
+          </a>
         </div>
 
-        {/* Section 4: Réservez Maintenant */}
+        {/* BOOKING */}
         <div>
-          <h3 className="text-xl font-semibold mb-4">Réservez Maintenant</h3>
-          <p className="text-gray-300 text-sm mb-4">
-            Prenez rendez-vous en ligne et offrez-vous une expérience de soin unique.
+          <h3 className="text-lg font-semibold mb-4">📅 Réservation</h3>
+
+          <p className="text-gray-400 text-sm mb-4">
+            Réserve ton rendez-vous en ligne et viens directement au shop.
           </p>
+
           <a
             href="/booking"
-            className="bg-green-600 text-white px-6 py-3 rounded-md text-sm inline-block hover:bg-green-500 transition-all duration-300"
+            className="bg-yellow-500 text-black px-5 py-2 rounded-lg font-bold hover:bg-yellow-400 transition inline-block"
           >
-            Réserver maintenant →
+            Réserver maintenant
           </a>
-        </div>
-
-        {/* Section 5: Suivez-nous */}
-        <div>
-          <h3 className="text-xl font-semibold mb-4">Suivez-nous</h3>
-          <div className="flex space-x-4 mb-4">
-            <a
-              href="https://www.facebook.com"
-              className="text-blue-400 hover:text-white transition-all duration-300"
-              aria-label="Facebook"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaFacebook size={24} />
-            </a>
-            <a
-              href="https://www.instagram.com"
-              className="text-blue-400 hover:text-white transition-all duration-300"
-              aria-label="Instagram"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaInstagram size={24} />
-            </a>
-            <a
-              href="https://www.twitter.com"
-              className="text-blue-400 hover:text-white transition-all duration-300"
-              aria-label="Twitter"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaTwitter size={24} />
-            </a>
-            <a
-              href="https://www.youtube.com"
-              className="text-blue-400 hover:text-white transition-all duration-300"
-              aria-label="YouTube"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <FaYoutube size={24} />
-            </a>
-          </div>
         </div>
       </div>
 
-      {/* Footer Bottom */}
-      <div className="border-t border-gray-700 mt-8 pt-4 text-center">
-        <p className="text-gray-400 text-sm">
-          &copy; {currentYear} Tous droits réservés - Mr. Renaudin Barbershop.
+      {/* SOCIAL */}
+      <div className="max-w-6xl mx-auto px-4 mt-12 flex justify-center space-x-6">
+        <a
+          href="https://www.facebook.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Facebook"
+        >
+          <FaFacebook size={22} />
+        </a>
+
+        <a
+          href="https://www.instagram.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Instagram"
+        >
+          <FaInstagram size={22} />
+        </a>
+
+        <a
+          href="https://www.twitter.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Twitter"
+        >
+          <FaTwitter size={22} />
+        </a>
+
+        <a
+          href="https://www.youtube.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="YouTube"
+        >
+          <FaYoutube size={22} />
+        </a>
+      </div>
+
+      {/* BOTTOM */}
+      <div className="border-t border-gray-800 mt-10 pt-6 text-center text-gray-500 text-sm px-4">
+        <p>
+          © {currentYear} Mr. Renaudin Barbershop — Shawinigan, QC
         </p>
-        <p className="text-gray-400 text-sm mt-2">
-          Développé par Carl Henry Fortunat - Expert Web.
+
+        <p className="mt-2">
+          Développé avec passion pour une expérience client premium.
         </p>
-        <div className="mt-2 space-x-4">
-          <a
-            href="/privacy"
-            className="text-gray-400 hover:text-blue-400 transition-all duration-300 text-sm"
-          >
-            Politique de confidentialité
-          </a>
-          <a
-            href="/terms"
-            className="text-gray-400 hover:text-blue-400 transition-all duration-300 text-sm"
-          >
-            Conditions Générales
-          </a>
-        </div>
       </div>
     </footer>
   );
