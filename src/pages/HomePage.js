@@ -1,11 +1,48 @@
 import React, { Suspense, lazy, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
+import { ErrorBoundary } from "react-error-boundary";
 import { motion } from "framer-motion";
 import ButtonHome from "../components/ButtonHome";
 
+// Lazy-loaded components
 const Header = lazy(() => import("../components/Header"));
 const Footer = lazy(() => import("../components/Footer"));
+
+// Error fallback
+const ErrorFallback = ({ error, resetErrorBoundary }) => {
+  return (
+    <div role="alert" className="p-4 bg-red-100 text-red-700 rounded-lg mx-4 my-8">
+      <p className="font-bold">Une erreur est survenue :</p>
+      <pre className="text-sm mt-2">{error.message}</pre>
+
+      <ButtonHome
+        text="Réessayer"
+        onClick={resetErrorBoundary}
+        className="mt-4 bg-red-600 text-white px-6 py-2 rounded"
+        ariaLabel="Réessayer"
+      />
+    </div>
+  );
+};
+
+// Animations
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15, delayChildren: 0.2 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 25 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { type: "spring", stiffness: 90, damping: 18 },
+  },
+};
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -20,128 +57,122 @@ const HomePage = () => {
 
   return (
     <>
+      {/* SEO (IMPORTANT for physical business) */}
       <Helmet>
-        <title>Mr. Renaudin Barbershop - Shawinigan</title>
+        <title>Mr. Renaudin Barbershop | Shawinigan Barber Shop</title>
         <meta
           name="description"
-          content="Barbershop professionnel à Shawinigan. Coupe moderne, barbe, dégradé et service à domicile. Réservez maintenant."
+          content="Barbershop professionnel à Shawinigan, QC. Coupe de cheveux moderne, rasage et soins de barbe. Adresse : 462 4e Rue de la Pointe, Shawinigan."
         />
+        <meta
+          name="keywords"
+          content="barbershop Shawinigan, barber Shawinigan, coupe de cheveux QC, rasage barbe Canada"
+        />
+        <meta name="geo.region" content="CA-QC" />
+        <meta name="geo.placename" content="Shawinigan" />
       </Helmet>
 
-      <Suspense fallback={<div>Chargement...</div>}>
-        <Header />
-      </Suspense>
+      {/* Header */}
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <Suspense fallback={<div className="text-center py-6">Chargement...</div>}>
+          <Header />
+        </Suspense>
+      </ErrorBoundary>
 
-      {/* 🔥 HERO PREMIUM */}
-      <section className="relative min-h-screen flex items-center justify-center text-center">
-        <div
-          className="absolute inset-0 bg-cover bg-center brightness-75"
-          style={{ backgroundImage: "url('/Photos/rasage12.jpg')" }}
-        />
+      {/* MAIN CONTENT */}
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        {/* HERO SECTION */}
+        <motion.section
+          variants={itemVariants}
+          className="relative min-h-screen flex items-center justify-center text-center px-4"
+        >
+          <div
+            className="absolute inset-0 bg-cover bg-center"
+            style={{
+              backgroundImage: "url('/Photos/rasage12.jpg')",
+            }}
+          />
 
-        <div className="relative z-10 text-white px-4">
-          <h1 className="text-5xl md:text-6xl font-extrabold mb-6">
-            L’Excellence du Style à Shawinigan
-          </h1>
+          <div className="absolute inset-0 bg-black/40" />
 
-          <p className="text-xl max-w-2xl mx-auto mb-6">
-            💈 Barbershop professionnel + service à domicile  
-            ✂️ Coupe moderne, barbe et dégradé  
-            📍 462 4e Rue de la Pointe
+          <div className="relative z-10 text-white max-w-4xl">
+            <h1 className="text-4xl md:text-6xl font-extrabold mb-6">
+              Mr. Renaudin Barbershop
+            </h1>
+
+            <p className="text-lg md:text-xl font-medium mb-6">
+              Barbershop professionnel à Shawinigan, QC
+            </p>
+
+            <div className="mb-6 text-sm md:text-base opacity-90">
+              📍 462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada
+            </div>
+
+            <ButtonHome
+              text="Réserver maintenant"
+              onClick={handleBookNowClick}
+              className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-8 py-3 rounded-lg"
+            />
+          </div>
+        </motion.section>
+
+        {/* VALUE SECTION */}
+        <motion.section
+          variants={itemVariants}
+          className="py-16 bg-white text-center px-4"
+        >
+          <h2 className="text-3xl font-bold mb-10">Pourquoi nous choisir</h2>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[
+              {
+                title: "Expertise",
+                text: "Coiffure professionnelle avec précision et style moderne.",
+              },
+              {
+                title: "Confort",
+                text: "Service flexible en salon ou à domicile selon vos besoins.",
+              },
+              {
+                title: "Rapidité",
+                text: "Service efficace sans compromis sur la qualité.",
+              },
+            ].map((item, index) => (
+              <div key={index} className="p-6 shadow-md rounded-lg">
+                <h3 className="font-bold text-xl mb-2">{item.title}</h3>
+                <p className="text-gray-600">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+
+        {/* ADDRESS SECTION */}
+        <motion.section
+          variants={itemVariants}
+          className="py-16 bg-gray-100 text-center px-4"
+        >
+          <h2 className="text-3xl font-bold mb-4">Notre emplacement</h2>
+
+          <p className="text-lg">
+            📍 462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada
           </p>
 
-          <button
-            onClick={handleBookNowClick}
-            className="bg-yellow-500 hover:bg-yellow-600 px-8 py-4 text-xl font-bold rounded-lg shadow-lg"
-          >
-            🔥 Prendre rendez-vous maintenant
-          </button>
-        </div>
-      </section>
+          <p className="text-gray-600 mt-2">
+            Venez directement en salon ou réservez en ligne.
+          </p>
+        </motion.section>
+      </motion.div>
 
-      {/* 💰 PRIX */}
-      <section className="py-16 bg-white text-center">
-        <h2 className="text-4xl font-bold mb-10">Nos Tarifs</h2>
-
-        <div className="grid md:grid-cols-3 gap-8 px-6">
-          <div className="shadow-lg p-6 rounded-lg">
-            <h3 className="text-2xl font-bold mb-2">Coupe</h3>
-            <p className="text-3xl font-bold text-yellow-500">$30</p>
-          </div>
-
-          <div className="shadow-lg p-6 rounded-lg">
-            <h3 className="text-2xl font-bold mb-2">Coupe + Barbe</h3>
-            <p className="text-3xl font-bold text-yellow-500">$45</p>
-          </div>
-
-          <div className="shadow-lg p-6 rounded-lg">
-            <h3 className="text-2xl font-bold mb-2">Déplacement</h3>
-            <p className="text-3xl font-bold text-yellow-500">+$10</p>
-          </div>
-        </div>
-      </section>
-
-      {/* ⭐ AVIS CLIENTS */}
-      <section className="py-16 bg-blue-50 text-center">
-        <h2 className="text-4xl font-bold mb-10">Avis Clients</h2>
-
-        <div className="grid md:grid-cols-2 gap-8 px-6">
-          <div className="bg-white p-6 shadow-lg rounded-lg">
-            ⭐⭐⭐⭐⭐  
-            <p className="mt-4">
-              “Service incroyable, très professionnel. Je recommande à 100%.”
-            </p>
-            <p className="mt-2 font-bold">— Jean</p>
-          </div>
-
-          <div className="bg-white p-6 shadow-lg rounded-lg">
-            ⭐⭐⭐⭐⭐  
-            <p className="mt-4">
-              “Le meilleur barber à Shawinigan. Résultat parfait.”
-            </p>
-            <p className="mt-2 font-bold">— Marc</p>
-          </div>
-        </div>
-      </section>
-
-      {/* 📍 LOCALISATION + MAP */}
-      <section className="py-16 bg-white text-center">
-        <h2 className="text-4xl font-bold mb-6">Nous trouver</h2>
-
-        <p className="mb-6 text-lg">
-          📍 462 4e Rue de la Pointe  
-          <br />
-          Shawinigan, QC G9N 1G7
-        </p>
-
-        <div className="max-w-4xl mx-auto">
-          <iframe
-            title="Google Maps"
-            src="https://www.google.com/maps?q=462+4e+Rue+de+la+Pointe+Shawinigan&output=embed"
-            className="w-full h-80 rounded-lg shadow-lg"
-            allowFullScreen=""
-            loading="lazy"
-          ></iframe>
-        </div>
-      </section>
-
-      {/* 🎯 CTA FINAL */}
-      <section className="py-16 bg-blue-200 text-center">
-        <h2 className="text-4xl font-bold mb-4">
-          Prêt pour une nouvelle coupe ?
-        </h2>
-
-        <button
-          onClick={handleBookNowClick}
-          className="bg-yellow-500 hover:bg-yellow-600 px-8 py-4 text-xl font-bold rounded-lg"
-        >
-          Réserver maintenant
-        </button>
-      </section>
-
-      <Suspense fallback={<div>Chargement...</div>}>
-        <Footer />
-      </Suspense>
+      {/* FOOTER */}
+      <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <Suspense fallback={<div className="text-center py-6">Chargement...</div>}>
+          <Footer />
+        </Suspense>
+      </ErrorBoundary>
     </>
   );
 };
