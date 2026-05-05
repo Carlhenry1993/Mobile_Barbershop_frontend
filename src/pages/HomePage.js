@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { ErrorBoundary } from "react-error-boundary";
 import { motion, useInView } from "framer-motion";
-import ButtonHome from "../components/ButtonHome";
 
 const Header = lazy(() => import("../components/Header"));
 const Footer = lazy(() => import("../components/Footer"));
@@ -238,10 +237,10 @@ const FontLink = () => (
 /* ─── Error fallback ──────────────────────────────────────────── */
 const ErrorFallback = ({ error, resetErrorBoundary }) => (
   <div style={{ padding: "2rem", background: "#1a0000", color: "#ff6b6b", borderRadius: "8px", margin: "2rem" }}>
-    <p style={{ fontWeight: "bold" }}>Something went wrong:</p>
+    <p style={{ fontWeight: "bold" }}>Une erreur est survenue :</p>
     <pre style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>{error.message}</pre>
     <button onClick={resetErrorBoundary} style={{ marginTop: "1rem", padding: "0.5rem 1.25rem", background: "#c9a84c", color: "#000", border: "none", cursor: "pointer" }}>
-      Retry
+      Réessayer
     </button>
   </div>
 );
@@ -277,47 +276,47 @@ const FadeIn = ({ children, delay = 0, className = "" }) => {
 const SERVICES = [
   {
     icon: "✦",
-    title: "Signature Fade",
-    desc: "Precision skin-to-length fades with razor-sharp lines that define your silhouette.",
+    title: "Fade Signature",
+    desc: "Dégradés précis de la peau jusqu'à la longueur voulue, avec des lignes nettes qui définissent votre silhouette.",
   },
   {
     icon: "✦",
-    title: "Classic Cut",
-    desc: "Timeless scissor work shaped to your face, lifestyle, and personal aesthetic.",
+    title: "Coupe Classique",
+    desc: "Travail aux ciseaux intemporel, façonné selon votre visage, votre style de vie et votre esthétique personnelle.",
   },
   {
     icon: "✦",
-    title: "Beard Sculpting",
-    desc: "Expert contouring and detailing to keep your beard clean, shaped, and intentional.",
+    title: "Sculpture de Barbe",
+    desc: "Contourage et finition experts pour une barbe propre, bien formée et pleinement assumée.",
   },
   {
     icon: "✦",
-    title: "Hot Towel Shave",
-    desc: "A traditional straight-razor experience with hot towels, shave cream, and aftercare.",
+    title: "Rasage à la Serviette Chaude",
+    desc: "Une expérience traditionnelle au rasoir droit avec serviettes chaudes, crème à raser et soin après-rasage.",
   },
   {
     icon: "✦",
-    title: "Hair & Beard Combo",
-    desc: "The full treatment — cut and beard together for a completely polished look.",
+    title: "Combo Cheveux & Barbe",
+    desc: "Le traitement complet — coupe et barbe ensemble pour un look parfaitement soigné de la tête aux pieds.",
   },
   {
     icon: "✦",
-    title: "Lineup & Edge-Up",
-    desc: "Crisp hairline definition and temple shaping that frames your face perfectly.",
+    title: "Contour & Mise en Forme",
+    desc: "Définition précise de la ligne de cheveux et galbe des tempes pour encadrer votre visage à la perfection.",
   },
 ];
 
 const TESTIMONIALS = [
   {
-    quote: "Best fade I've ever had. The attention to detail is unmatched — I won't go anywhere else.",
+    quote: "Le meilleur fade que j'aie jamais eu. L'attention aux détails est incomparable — je n'irai nulle part ailleurs.",
     author: "Marc-André T.",
   },
   {
-    quote: "Professional, precise, and the atmosphere is outstanding. Feels like a proper grooming experience.",
+    quote: "Professionnel, précis, et l'ambiance est exceptionnelle. On se sent vraiment dans un vrai barbershop haut de gamme.",
     author: "Dominic R.",
   },
   {
-    quote: "They took their time to understand exactly what I wanted. Left looking and feeling sharper than ever.",
+    quote: "Ils ont pris le temps de comprendre exactement ce que je voulais. Je suis reparti avec un look au-dessus de mes attentes.",
     author: "Kevin L.",
   },
 ];
@@ -335,10 +334,10 @@ const HomePage = () => {
       <FontLink />
 
       <Helmet>
-        <title>Mr. Renaudin Barbershop | Premium Barber — Shawinigan, QC</title>
+        <title>Mr. Renaudin Barbershop | Barbier Premium — Shawinigan, QC</title>
         <meta
           name="description"
-          content="Mr. Renaudin Barbershop — Shawinigan's premier barbershop. Expert fades, classic cuts, beard sculpting, and traditional hot towel shaves. Book your appointment today."
+          content="Mr. Renaudin Barbershop — le barbershop premium de Shawinigan. Fades experts, coupes classiques, sculpture de barbe et rasage traditionnel au coupe-chou. Prenez rendez-vous dès aujourd'hui."
         />
       </Helmet>
 
@@ -389,7 +388,7 @@ const HomePage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
           >
-            Established in Shawinigan, Québec
+            Établi à Shawinigan, Québec
           </motion.p>
 
           <motion.h1
@@ -418,7 +417,7 @@ const HomePage = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
-            Where precision meets tradition. A premium grooming experience crafted for the modern gentleman.
+            Là où la précision rencontre la tradition. Une expérience de toilettage premium, pensée pour l'homme moderne.
           </motion.p>
 
           <motion.div
@@ -428,10 +427,10 @@ const HomePage = () => {
             transition={{ duration: 0.7, delay: 0.8 }}
           >
             <button className="btn-gold" onClick={() => navigate("/booking")}>
-              Book an Appointment
+              Prendre rendez-vous
             </button>
             <a href={`tel:${PHONE}`} className="btn-outline">
-              Call Us
+              Nous appeler
             </a>
             <a
               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}`}
@@ -439,7 +438,7 @@ const HomePage = () => {
               rel="noopener noreferrer"
               className="btn-outline"
             >
-              Get Directions
+              Itinéraire
             </a>
           </motion.div>
         </div>
@@ -493,10 +492,10 @@ const HomePage = () => {
           }}
         >
           {[
-            { n: "10+", label: "Years of Experience" },
-            { n: "5★", label: "Client Rating" },
-            { n: "6", label: "Signature Services" },
-            { n: "100%", label: "Satisfaction Focused" },
+            { n: "10+", label: "Années d'expérience" },
+            { n: "5★", label: "Note clientèle" },
+            { n: "6", label: "Services signature" },
+            { n: "100%", label: "Axé satisfaction" },
           ].map(({ n, label }, i) => (
             <FadeIn key={label} delay={i * 0.1}>
               <div className="stat-number">{n}</div>
@@ -511,21 +510,21 @@ const HomePage = () => {
       ══════════════════════════════════════════════ */}
       <section className="section-pad" style={{ background: "var(--black)", textAlign: "center" }}>
         <FadeIn>
-          <p className="eyebrow">Our Philosophy</p>
+          <p className="eyebrow">Notre philosophie</p>
           <span className="gold-rule" />
           <h2
             className="display"
             style={{ fontSize: "clamp(2.2rem, 5vw, 3.75rem)", maxWidth: "700px", margin: "0 auto 2rem" }}
           >
-            More than a haircut.<br />An identity.
+            Plus qu'une coupe.<br />Une identité.
           </h2>
         </FadeIn>
         <FadeIn delay={1}>
           <p className="serif-body" style={{ maxWidth: "680px", margin: "0 auto" }}>
-            At Mr. Renaudin Barbershop, every appointment is a deliberate ritual. We believe 
-            great grooming is the foundation of confidence — and confidence opens every door. 
-            Our barbers are trained in both modern technique and classic craft, delivering results 
-            worthy of the best shops in Montréal, Toronto, and beyond.
+            Chez Mr. Renaudin Barbershop, chaque rendez-vous est un rituel réfléchi. Nous croyons qu'un 
+            excellent soin de la personne est le fondement de la confiance — et la confiance ouvre toutes 
+            les portes. Nos barbiers maîtrisent autant les techniques modernes que l'artisanat classique, 
+            pour des résultats dignes des meilleurs établissements de Montréal, Toronto et au-delà.
           </p>
         </FadeIn>
       </section>
@@ -537,13 +536,13 @@ const HomePage = () => {
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-              <p className="eyebrow">What We Offer</p>
+              <p className="eyebrow">Ce que nous offrons</p>
               <span className="gold-rule" />
               <h2
                 className="display"
                 style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)" }}
               >
-                Our Services
+                Nos Services
               </h2>
             </div>
           </FadeIn>
@@ -569,7 +568,7 @@ const HomePage = () => {
           <FadeIn delay={0.5}>
             <div style={{ textAlign: "center", marginTop: "3.5rem" }}>
               <button className="btn-gold" onClick={() => navigate("/booking")}>
-                Reserve Your Seat
+                Réserver votre place
               </button>
             </div>
           </FadeIn>
@@ -626,7 +625,7 @@ const HomePage = () => {
                     lineHeight: 1.6,
                   }}
                 >
-                  "Every detail is deliberate.<br />Every cut is a statement."
+                  "Chaque détail est intentionnel.<br />Chaque coupe est une affirmation."
                 </p>
               </div>
               <div
@@ -654,28 +653,28 @@ const HomePage = () => {
 
           {/* Right: copy */}
           <FadeIn delay={1}>
-            <p className="eyebrow">Why Choose Us</p>
+            <p className="eyebrow">Pourquoi nous choisir</p>
             <span className="gold-rule" style={{ margin: "0 0 1.5rem" }} />
             <h2
               className="display"
               style={{ fontSize: "clamp(1.9rem, 3.5vw, 2.9rem)", marginBottom: "1.75rem", lineHeight: 1.1 }}
             >
-              The standard of a luxury barbershop, right here in Shawinigan.
+              Le standard d'un barbershop de luxe, ici même à Shawinigan.
             </h2>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
               {[
                 {
-                  title: "Consistent Precision",
-                  body: "Every visit delivers the same exacting quality. No guesswork — just reliable, repeatable excellence.",
+                  title: "Précision constante",
+                  body: "Chaque visite offre la même qualité irréprochable. Aucune approximation — juste une excellence fiable et répétable.",
                 },
                 {
-                  title: "Personalized Service",
-                  body: "We listen first. Your face shape, lifestyle, and preferences guide every decision we make.",
+                  title: "Service personnalisé",
+                  body: "Nous écoutons d'abord. La forme de votre visage, votre mode de vie et vos préférences guident chacune de nos décisions.",
                 },
                 {
-                  title: "Premium Atmosphere",
-                  body: "A clean, professional environment that respects your time and elevates the entire experience.",
+                  title: "Atmosphère premium",
+                  body: "Un environnement propre et professionnel qui respecte votre temps et élève l'ensemble de l'expérience.",
                 },
               ].map(({ title, body }) => (
                 <div key={title} style={{ display: "flex", gap: "1.25rem", alignItems: "flex-start" }}>
@@ -708,10 +707,10 @@ const HomePage = () => {
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-              <p className="eyebrow">Client Testimonials</p>
+              <p className="eyebrow">Témoignages clients</p>
               <span className="gold-rule" />
               <h2 className="display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}>
-                What Our Clients Say
+                Ce que disent nos clients
               </h2>
             </div>
           </FadeIn>
@@ -743,10 +742,10 @@ const HomePage = () => {
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeIn>
             <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-              <p className="eyebrow">Find Us</p>
+              <p className="eyebrow">Nous trouver</p>
               <span className="gold-rule" />
               <h2 className="display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "0.75rem" }}>
-                Visit the Shop
+                Visitez notre boutique
               </h2>
               <p style={{ color: "var(--muted)", fontSize: "0.9rem", letterSpacing: "0.05em" }}>{ADDRESS}</p>
               <p style={{ color: "var(--gold)", fontWeight: 500, marginTop: "0.35rem", fontSize: "0.95rem" }}>
@@ -774,7 +773,7 @@ const HomePage = () => {
                 rel="noopener noreferrer"
                 className="btn-outline"
               >
-                Open in Google Maps
+                Ouvrir dans Google Maps
               </a>
             </div>
           </FadeIn>
@@ -816,21 +815,21 @@ const HomePage = () => {
         </div>
 
         <FadeIn>
-          <p className="eyebrow">Ready?</p>
+          <p className="eyebrow">Prêt ?</p>
           <span className="gold-rule" />
           <h2
             className="display"
             style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", maxWidth: "600px", margin: "0 auto 1.5rem" }}
           >
-            Your best look starts here.
+            Votre meilleur look commence ici.
           </h2>
           <p className="serif-body" style={{ maxWidth: "480px", margin: "0 auto 2.5rem" }}>
-            Book your appointment online or give us a call — we're ready to deliver a cut worth remembering.
+            Réservez votre rendez-vous en ligne ou appelez-nous directement — nous sommes prêts à vous offrir une coupe dont vous vous souviendrez.
           </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
             <button className="btn-gold" onClick={() => navigate("/booking")}>
-              Book an Appointment
+              Prendre rendez-vous
             </button>
             <a href={`tel:${PHONE}`} className="btn-outline">
               {PHONE}
