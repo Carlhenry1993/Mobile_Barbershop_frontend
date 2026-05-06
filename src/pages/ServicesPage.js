@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
@@ -438,7 +436,7 @@ const FadeIn = ({ children, delay = 0, className = "" }) => {
       ref={ref}
       className={className}
       initial="hidden"
-      animate={inView? "show" : "hidden"}
+      animate={inView ? "show" : "hidden"}
       custom={delay}
       variants={fadeUp}
     >
@@ -458,7 +456,6 @@ const ServicesPage = () => {
 
   return (
     <div className="sv-root">
-      <Header />
       <div className="sv-inner">
         
         {/* Hero */}
@@ -467,7 +464,7 @@ const ServicesPage = () => {
           <div className="relative z-10 max-w-4xl mx-auto">
             <motion.p
               className="sv-eyebrow"
-              initial={shouldReduceMotion? {} : { opacity: 0, y: 20 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
@@ -477,7 +474,7 @@ const ServicesPage = () => {
             <motion.h1
               className="sv-display"
               style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", marginBottom: "1.5rem" }}
-              initial={shouldReduceMotion? {} : { opacity: 0, y: 40 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
@@ -488,7 +485,7 @@ const ServicesPage = () => {
             <motion.p
               className="sv-serif-body"
               style={{ maxWidth: "680px", margin: "0 auto 1.5rem" }}
-              initial={shouldReduceMotion? {} : { opacity: 0 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
@@ -497,7 +494,7 @@ const ServicesPage = () => {
             </motion.p>
 
             <motion.div
-              initial={shouldReduceMotion? {} : { opacity: 0, y: 20 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.8 }}
             >
@@ -507,7 +504,7 @@ const ServicesPage = () => {
             </motion.div>
 
             <motion.div
-              initial={shouldReduceMotion? {} : { opacity: 0 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 1 }}
             >
@@ -561,7 +558,7 @@ const ServicesPage = () => {
                       <p className="sv-service-desc">{service.desc}</p>
                       <button
                         className="sv-btn-gold"
-                        onClick={() => navigate("/booking")}
+                        onClick={() => navigate("/reserver")}
                         aria-label={`Réserver ${service.title}`}
                       >
                         Réserver
@@ -654,7 +651,7 @@ const ServicesPage = () => {
             </p>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
-              <button className="sv-btn-gold" onClick={() => navigate("/booking")}>
+              <button className="sv-btn-gold" onClick={() => navigate("/reserver")}>
                 Prendre rendez-vous
               </button>
               <a href={`tel:${PHONE}`} className="sv-btn-outline">
@@ -665,7 +662,6 @@ const ServicesPage = () => {
         </section>
 
       </div>
-      <Footer />
     </div>
   );
 };
