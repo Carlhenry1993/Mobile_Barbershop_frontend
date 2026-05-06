@@ -436,8 +436,9 @@ const ContactPage = () => {
                     <div>
                       <p className="ct-label">Horaires</p>
                       <p className="ct-contact-link" style={{ color: "var(--ct-light)" }}>
-                        Lundi - Samedi : 9h00 - 19h00<br />
-                        Dimanche : Fermé
+                        Lundi - Vendredi : 11h00 - 19h00<br />
+                        Samedi : 12h00 - 19h00<br />
+                        Dimanche : 11h00 - 17h00
                       </p>
                     </div>
                   </div>
