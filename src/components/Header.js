@@ -22,7 +22,7 @@ const useHeaderStyles = () => {
         --hd-light: #b8c8da;
         --hd-muted: #7888a0;
 
-        background: rgba(22, 27, 36, 0.85);
+        background: rgba(22, 27, 36, 0.95);
         color: var(--hd-cream);
         font-family: 'DM Sans', sans-serif;
         position: sticky;
@@ -38,7 +38,7 @@ const useHeaderStyles = () => {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 1.5rem;
+        padding: 0.75rem 1.5rem;
       }
 
    .hd-logo-wrap {
@@ -48,31 +48,12 @@ const useHeaderStyles = () => {
         gap: 0.75rem;
       }
 
-   .hd-logo-svg {
-        height: 48px;
-        width: 48px;
-        min-width: 48px;
-        color: var(--hd-gold);
+   .hd-logo-img {
+        height: 56px;
+        width: auto;
+        max-width: 200px;
+        object-fit: contain;
         display: block;
-        flex-shrink: 0;
-      }
-
-   .hd-logo-text {
-        display: flex;
-        flex-direction: column;
-        line-height: 1;
-      }
-
-   .hd-logo-name {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.1rem;
-        font-weight: 900;
-        color: var(--hd-cream);
-        letter-spacing: 0.02em;
-      }
-
-   .hd-logo-name span {
-        color: var(--hd-gold);
       }
 
    .hd-tagline {
@@ -80,13 +61,13 @@ const useHeaderStyles = () => {
         font-weight: 500;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: var(--hd-muted);
+        color: var(--hd-gold);
         margin-top: 0.15rem;
         display: none;
       }
 
       @media (min-width: 768px) {
-     .hd-tagline { display: block; }
+    .hd-tagline { display: block; }
       }
 
    .hd-menu-btn {
@@ -116,7 +97,7 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 1024px) {
-     .hd-menu-btn { display: none; }
+    .hd-menu-btn { display: none; }
       }
 
    .hd-links {
@@ -126,7 +107,7 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 1024px) {
-     .hd-links { display: flex; }
+    .hd-links { display: flex; }
       }
 
    .hd-link {
@@ -179,7 +160,7 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 1024px) {
-     .hd-mobile-menu { display: none; }
+    .hd-mobile-menu { display: none; }
       }
     `;
     document.head.appendChild(style);
@@ -191,41 +172,11 @@ const useHeaderStyles = () => {
   }, []);
 };
 
-// SVG Logo avec dimensions fixes
-const LogoSVG = () => (
-  <svg
-    className="hd-logo-svg"
-    viewBox="0 0 120 120"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-  >
-    <circle cx="60" cy="60" r="58" stroke="currentColor" strokeWidth="3" />
-    <path
-      d="M35 45L60 60L35 75M85 45L60 60L85 75"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-    <circle cx="35" cy="45" r="6" fill="currentColor" />
-    <circle cx="35" cy="75" r="6" fill="currentColor" />
-    <circle cx="85" cy="45" r="6" fill="currentColor" />
-    <circle cx="85" cy="75" r="6" fill="currentColor" />
-    <path
-      d="M45 68 Q60 78 75 68"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      fill="none"
-    />
-  </svg>
-);
-
 const Header = () => {
   useHeaderStyles();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [role, setRole] = useState(null);
+  const [logoError, setLogoError] = useState(false);
   const location = useLocation();
   const menuRef = useRef(null);
   const btnRef = useRef(null);
@@ -247,9 +198,9 @@ const Header = () => {
       if (
         isMenuOpen &&
         menuRef.current &&
-     !menuRef.current.contains(e.target) &&
+    !menuRef.current.contains(e.target) &&
         btnRef.current &&
-     !btnRef.current.contains(e.target)
+    !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -273,7 +224,7 @@ const Header = () => {
       { path: "/about", label: "À Propos" },
       { path: "/annonces", label: "Annonces" },
       { path: "/contact", label: "Contact" },
-   ...(role === "admin"? [{ path: "/admin", label: "Espace Admin" }] : []),
+  ...(role === "admin"? [{ path: "/admin", label: "Espace Admin" }] : []),
     ],
     [role]
   );
@@ -296,13 +247,24 @@ const Header = () => {
     <header className="hd-root" role="banner">
       <nav className="hd-nav">
         <Link to="/" className="hd-logo-wrap" aria-label="Mr. Renaudin Barbershop - Accueil">
-          <LogoSVG />
-          <div className="hd-logo-text">
-            <div className="hd-logo-name">
-              Mr. Renaudin <span>Barbershop</span>
+          {!logoError? (
+            <img
+              src="/Photos/Logo5.png"
+              alt="Logo Mr. Renaudin Barbershop"
+              className="hd-logo-img"
+              onError={() => setLogoError(true)}
+            />
+          ) : (
+            <div style={{
+              fontFamily: "'Playfair Display', serif",
+              fontSize: "1.1rem",
+              fontWeight: 900,
+              color: "var(--hd-gold)"
+            }}>
+              MR. RENAUDIN
             </div>
-            <div className="hd-tagline">Votre style, notre passion</div>
-          </div>
+          )}
+          <div className="hd-tagline">Votre style, notre passion</div>
         </Link>
 
         <button
