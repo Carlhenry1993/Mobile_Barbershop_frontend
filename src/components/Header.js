@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { GiHamburgerMenu } from "react-icons/gi";
 import { VscClose } from "react-icons/vsc";
 
@@ -11,9 +11,9 @@ const useHeaderStyles = () => {
     const style = document.createElement("style");
     style.id = styleId;
     style.innerHTML = `
-  .hd-root {
+     .hd-root {
         --hd-black: #0e1015;
-        --hd-charcoal:#161b24;
+        --hd-charcoal: #161b24;
         --hd-card: #1e2535;
         --hd-border: #2a3348;
         --hd-gold: #d4a843;
@@ -32,8 +32,8 @@ const useHeaderStyles = () => {
         backdrop-filter: blur(12px);
       }
 
-  .hd-nav {
-        max-width: 1100px;
+     .hd-nav {
+        max-width: 1200px;
         margin: 0 auto;
         display: flex;
         justify-content: space-between;
@@ -41,14 +41,14 @@ const useHeaderStyles = () => {
         padding: 0.75rem 1.5rem;
       }
 
-  .hd-logo-wrap {
+     .hd-logo-wrap {
         display: flex;
         align-items: center;
         text-decoration: none;
         gap: 0.75rem;
       }
 
-  .hd-logo-img {
+     .hd-logo-img {
         height: 48px;
         width: auto;
         max-width: 160px;
@@ -56,16 +56,16 @@ const useHeaderStyles = () => {
         display: block;
       }
       @media (max-width: 540px) {
-    .hd-logo-img { height: 44px; }
+       .hd-logo-img { height: 44px; }
       }
 
-  .hd-logo-text-wrap {
+     .hd-logo-text-wrap {
         display: flex;
         flex-direction: column;
         line-height: 1.1;
       }
 
-  .hd-tagline {
+     .hd-tagline {
         font-size: 0.6rem;
         font-weight: 500;
         letter-spacing: 0.15em;
@@ -74,10 +74,16 @@ const useHeaderStyles = () => {
         margin-top: 0.2rem;
       }
       @media (min-width: 768px) {
-    .hd-tagline { font-size: 0.65rem; }
+       .hd-tagline { font-size: 0.65rem; }
       }
 
-  .hd-menu-btn {
+     .hd-right {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+     .hd-menu-btn {
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -90,13 +96,13 @@ const useHeaderStyles = () => {
         transition: border-color 0.2s, color 0.2s;
       }
 
-  .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
+     .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
         border-color: var(--hd-gold);
         color: var(--hd-gold);
         outline: none;
       }
 
-  .hd-menu-btn-text {
+     .hd-menu-btn-text {
         font-size: 0.75rem;
         letter-spacing: 0.15em;
         text-transform: uppercase;
@@ -104,20 +110,21 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 1024px) {
-   .hd-menu-btn { display: none; }
+       .hd-menu-btn { display: none; }
       }
 
-  .hd-links {
+     .hd-links {
         display: none;
         list-style: none;
         gap: 0.25rem;
+        align-items: center;
       }
 
       @media (min-width: 1024px) {
-   .hd-links { display: flex; }
+       .hd-links { display: flex; }
       }
 
-  .hd-link {
+     .hd-link {
         display: block;
         font-size: 0.82rem;
         font-weight: 500;
@@ -130,23 +137,53 @@ const useHeaderStyles = () => {
         transition: color 0.2s, border-color 0.2s, background 0.2s;
       }
 
-  .hd-link:hover,.hd-link:focus-visible {
+     .hd-link:hover,.hd-link:focus-visible {
         color: var(--hd-gold);
         border-color: var(--hd-gold);
         outline: none;
       }
 
-  .hd-link.active {
+     .hd-link.active {
         color: var(--hd-black);
         background: var(--hd-gold);
         border-color: var(--hd-gold);
       }
 
-  .hd-link.active:hover {
+     .hd-link.active:hover {
         background: var(--hd-gold-lt);
       }
 
-  .hd-mobile-menu {
+     .hd-cta-btn {
+        font-size: 0.78rem;
+        font-weight: 600;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 0.6rem 1.2rem;
+        border: 1px solid var(--hd-gold);
+        background: var(--hd-gold);
+        color: var(--hd-black);
+        cursor: pointer;
+        transition: background 0.2s, transform 0.2s;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+     .hd-cta-btn:hover {
+        background: var(--hd-gold-lt);
+        transform: translateY(-1px);
+      }
+
+     .hd-cta-btn-outline {
+        background: transparent;
+        color: var(--hd-gold);
+      }
+
+     .hd-cta-btn-outline:hover {
+        background: var(--hd-gold);
+        color: var(--hd-black);
+      }
+
+     .hd-mobile-menu {
         background: var(--hd-charcoal);
         border-top: 1px solid var(--hd-border);
         padding: 1rem 1.5rem 1.5rem;
@@ -161,13 +198,19 @@ const useHeaderStyles = () => {
         to { opacity: 1; transform: translateY(0); }
       }
 
-  .hd-mobile-menu.hd-link {
+     .hd-mobile-menu.hd-link {
         text-align: center;
         padding: 0.9rem 1rem;
       }
 
+     .hd-mobile-cta {
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid var(--hd-border);
+      }
+
       @media (min-width: 1024px) {
-   .hd-mobile-menu { display: none; }
+       .hd-mobile-menu { display: none; }
       }
     `;
     document.head.appendChild(style);
@@ -179,19 +222,14 @@ const useHeaderStyles = () => {
   }, []);
 };
 
-const Header = () => {
+const Header = ({ role, onLogout }) => {
   useHeaderStyles();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [role, setRole] = useState(null);
   const [logoError, setLogoError] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const menuRef = useRef(null);
   const btnRef = useRef(null);
-
-  useEffect(() => {
-    const userRole = localStorage.getItem("role");
-    setRole(userRole);
-  }, []);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -205,9 +243,9 @@ const Header = () => {
       if (
         isMenuOpen &&
         menuRef.current &&
-   !menuRef.current.contains(e.target) &&
+  !menuRef.current.contains(e.target) &&
         btnRef.current &&
-   !btnRef.current.contains(e.target)
+  !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -227,14 +265,22 @@ const Header = () => {
     () => [
       { path: "/", label: "Accueil" },
       { path: "/services", label: "Nos Services" },
-      { path: "/booking", label: "Réservez" },
-      { path: "/about", label: "À Propos" },
+      { path: "/a-propos", label: "À Propos" },
       { path: "/annonces", label: "Annonces" },
       { path: "/contact", label: "Contact" },
- ...(role === "admin"? [{ path: "/admin", label: "Espace Admin" }] : []),
     ],
-    [role]
+    []
   );
+
+  const handleBookingClick = () => {
+    navigate('/reserver');
+    setIsMenuOpen(false);
+  };
+
+  const handleLoginClick = () => {
+    navigate('/login');
+    setIsMenuOpen(false);
+  };
 
   const renderLinks = (onClick) =>
     navLinks.map((link) => (
@@ -276,24 +322,60 @@ const Header = () => {
           </div>
         </Link>
 
-        <button
-          ref={btnRef}
-          className="hd-menu-btn"
-          onClick={toggleMenu}
-          aria-label={isMenuOpen? "Fermer le menu" : "Ouvrir le menu"}
-          aria-expanded={isMenuOpen}
-          aria-controls="mobile-menu"
-        >
-          <span className="hd-menu-btn-text">{isMenuOpen? "Fermer" : "Menu"}</span>
-          {isMenuOpen? <VscClose /> : <GiHamburgerMenu />}
-        </button>
+        <div className="hd-right">
+          <ul className="hd-links">
+            {renderLinks()}
+            <li>
+              <button onClick={handleBookingClick} className="hd-cta-btn">
+                Réserver
+              </button>
+            </li>
+            <li>
+              {role? (
+                <button onClick={onLogout} className="hd-cta-btn hd-cta-btn-outline">
+                  Déconnexion
+                </button>
+              ) : (
+                <button onClick={handleLoginClick} className="hd-cta-btn hd-cta-btn-outline">
+                  Connexion
+                </button>
+              )}
+            </li>
+          </ul>
 
-        <ul className="hd-links">{renderLinks()}</ul>
+          <button
+            ref={btnRef}
+            className="hd-menu-btn"
+            onClick={toggleMenu}
+            aria-label={isMenuOpen? "Fermer le menu" : "Ouvrir le menu"}
+            aria-expanded={isMenuOpen}
+            aria-controls="mobile-menu"
+          >
+            <span className="hd-menu-btn-text">{isMenuOpen? "Fermer" : "Menu"}</span>
+            {isMenuOpen? <VscClose /> : <GiHamburgerMenu />}
+          </button>
+        </div>
       </nav>
 
       {isMenuOpen && (
         <ul id="mobile-menu" ref={menuRef} className="hd-mobile-menu">
           {renderLinks(toggleMenu)}
+          <li className="hd-mobile-cta">
+            <button onClick={handleBookingClick} className="hd-cta-btn" style={{ width: '100%' }}>
+              Réserver
+            </button>
+          </li>
+          <li>
+            {role? (
+              <button onClick={() => { onLogout(); toggleMenu(); }} className="hd-cta-btn hd-cta-btn-outline" style={{ width: '100%' }}>
+                Déconnexion
+              </button>
+            ) : (
+              <button onClick={handleLoginClick} className="hd-cta-btn hd-cta-btn-outline" style={{ width: '100%' }}>
+                Connexion
+              </button>
+            )}
+          </li>
         </ul>
       )}
     </header>
