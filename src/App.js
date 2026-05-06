@@ -30,6 +30,17 @@ const ScrollToTop = () => {
   return null;
 };
 
+// Charger les fonts du thème Mr. Renaudin
+const FontLoader = () => {
+  useEffect(() => {
+    const link = document.createElement("link");
+    link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap";
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+  }, []);
+  return null;
+};
+
 const App = () => {
   const [role, setRole] = useState(null); // "client" or "admin"
   const [clientId, setClientId] = useState(null);
@@ -49,9 +60,18 @@ const App = () => {
       try {
         const [, payload] = token.split(".");
         const decodedToken = JSON.parse(atob(payload));
+
+        // Vérifier expiration
+        if (decodedToken.exp && decodedToken.exp * 1000 < Date.now()) {
+          console.warn("Token expiré");
+          handleLogout();
+          return;
+        }
+
         setRole(decodedToken.role);
         if (decodedToken.role === "client") {
-          setClientId(decodedToken.id);
+          // IMPORTANT: convertir en string pour matcher la DB VARCHAR
+          setClientId(decodedToken.id.toString());
         }
       } catch (error) {
         console.error("Erreur lors du décodage du token :", error);
@@ -66,14 +86,15 @@ const App = () => {
     setToken(userToken);
     localStorage.setItem("token", userToken);
     if (userRole === "client" && userId) {
-      setClientId(userId);
+      setClientId(userId.toString()); // IMPORTANT: string
     }
   }, []);
 
   return (
     <Router>
+      <FontLoader />
       <ScrollToTop />
-      {!role ? (
+      {!role? (
         <Login onLogin={handleLogin} />
       ) : (
         <div>
@@ -87,11 +108,11 @@ const App = () => {
             </button>
           </div>
 
-          {/* ChatApp for clients and admins */}
+          {/* ChatApp for clients and admins - key pour éviter re-mount */}
           {role === "client" && clientId && (
-            <ChatApp clientId={clientId} isAdmin={false} />
+            <ChatApp key={clientId} clientId={clientId} isAdmin={false} />
           )}
-          {role === "admin" && <ChatApp clientId={null} isAdmin={true} />}
+          {role === "admin" && <ChatApp key="admin" clientId={null} isAdmin={true} />}
 
           <Routes>
             {/* Common Routes */}
