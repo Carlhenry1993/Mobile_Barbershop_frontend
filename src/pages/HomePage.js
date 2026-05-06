@@ -745,7 +745,7 @@ const HomePage = () => {
               <p className="eyebrow">Nous trouver</p>
               <span className="gold-rule" />
               <h2 className="display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "0.75rem" }}>
-                Visitez notre boutique
+                Visitez notre barber
               </h2>
               <p style={{ color: "var(--light)", fontSize: "0.92rem", letterSpacing: "0.05em" }}>{ADDRESS}</p>
               <p style={{ color: "var(--gold)", fontWeight: 500, marginTop: "0.35rem", fontSize: "0.95rem" }}>
