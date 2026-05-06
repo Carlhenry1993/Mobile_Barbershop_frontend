@@ -494,16 +494,18 @@ const Footer = () => {
             <div className="ft-contact-row" style={{ marginTop: "1rem" }}>
               <span className="ft-contact-icon" aria-hidden="true">✦</span>
               <span className="ft-contact-text">
-                Mar – Ven<br />
-                9h00 – 19h00
+                Lun – Ven<br />
+                11h00 – 19h00
               </span>
             </div>
 
             <div className="ft-contact-row">
               <span className="ft-contact-icon" aria-hidden="true">✦</span>
               <span className="ft-contact-text">
-                Samedi : 9h00 – 17h00<br />
-                Dimanche : Fermé
+                Samedi : 12h00 – 19h00<br />
+                <span className="ft-contact-icon" aria-hidden="true">✦</span>
+              <span className="ft-contact-text"></span>
+                Dimanche : 11h00 - 17h00
               </span>
             </div>
           </div>
