@@ -1,259 +1,672 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, useInView, useReducedMotion } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { ParallaxProvider, Parallax } from 'react-scroll-parallax';
+
+const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
+const PHONE = "514-778-8318";
+const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
+
+const SERVICES = [
+  {
+    id: "boule-zero",
+    title: "Boule à Zéro",
+    desc: "Rasage total de la tête réalisé au salon pour un rendu net, propre et assumé. Serviette chaude incluse.",
+    img: "/Photos/BouleZero.jpg",
+    icon: "◉",
+  },
+  {
+    id: "flat-top",
+    title: "Flat Top",
+    desc: "La coiffure iconique à sommet plat — taillée avec précision dans notre fauteuil de barbier traditionnel.",
+    img: "/Photos/FlatTop.jpg",
+    icon: "▬",
+  },
+  {
+    id: "dreadlocks",
+    title: "Dreadlocks",
+    desc: "Création et entretien de locks authentiques. Espace dédié au tressage, ambiance détendue.",
+    img: "/Photos/Dreadlocks.jpg",
+    icon: "⟁",
+  },
+  {
+    id: "mini-afro",
+    title: "Mini Afro",
+    desc: "Un afro compact et bien défini — volume maîtrisé, texture valorisée. Consultation style incluse.",
+    img: "/Photos/MiniAfro.jpg",
+    icon: "◎",
+  },
+  {
+    id: "afro-naturelle",
+    title: "Afro Naturelle",
+    desc: "La pleine expression de votre texture naturelle, façonnée et volumisée par nos mains expertes au salon.",
+    img: "/Photos/AfroNaturelle.jpg",
+    icon: "❋",
+  },
+  {
+    id: "nattes",
+    title: "Nattes & Tresses Collées",
+    desc: "Tressage serré et précis, plaqué au crâne. Réalisé en salon avec produits pros pour tenue longue durée.",
+    img: "/Photos/Nattes.jpg",
+    icon: "≋",
+  },
+  {
+    id: "coupe-classique",
+    title: "Coupe Ultra Courte Classique",
+    desc: "La coupe intemporelle — courte, nette, professionnelle. Rasage nuque + finition à la lame.",
+    img: "/Photos/CoupeClassique.jpg",
+    icon: "✂",
+  },
+  {
+    id: "courte-degradee",
+    title: "Courte Dégradée",
+    desc: "Longueur conservée sur le dessus avec dégradé subtil. Travail aux ciseaux et tondeuse de précision.",
+    img: "/Photos/CourteDegradee.jpg",
+    icon: "◌",
+  },
+  {
+    id: "fade",
+    title: "Fade (Dégradé)",
+    desc: "Notre spécialité — dégradé de la peau vers la longueur. Transitions parfaitement fondues au salon.",
+    img: "/Photos/Fade.jpg",
+    icon: "▽",
+  },
+  {
+    id: "afro-taper",
+    title: "Afro Taper",
+    desc: "Volume afro préservé sur le dessus, effilé avec précision sur les côtés. Style moderne structuré.",
+    img: "/Photos/AfroTaper.jpg",
+    icon: "◈",
+  },
+  {
+    id: "waves-360",
+    title: "Waves 360",
+    desc: "Technique de brossage et compression en salon. Conseils produits + suivi pour waves uniformes.",
+    img: "/Photos/Waves360.jpg",
+    icon: "〜",
+  },
+];
+
+const GALLERY = [
+  { src: "/Photos/salon1.jpg", alt: "Intérieur du barbershop Mr. Renaudin - fauteuils" },
+  { src: "/Photos/salon2.jpg", alt: "Poste de barbier professionnel" },
+  { src: "/Photos/salon3.jpg", alt: "Espace d'attente du salon" },
+];
+
+const TESTIMONIALS = [
+  {
+    quote: "Le meilleur fade que j'aie jamais eu. L'ambiance du salon est exceptionnelle — on se sent vraiment dans un vrai barbershop haut de gamme.",
+    author: "Marc-André T.",
+  },
+  {
+    quote: "Professionnel, précis, et le lieu est impeccable. Je viens de Trois-Rivières juste pour me faire couper ici.",
+    author: "Dominic R.",
+  },
+  {
+    quote: "Ils ont pris le temps de comprendre exactement ce que je voulais. Le salon est propre, moderne, et l'accueil est top.",
+    author: "Kevin L.",
+  },
+];
+
+const useServicesStyles = () => {
+  useEffect(() => {
+    const styleId = "mr-renaudin-services-styles";
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+    .sv-root {
+        --sv-black: #0e1015;
+        --sv-charcoal: #161b24;
+        --sv-card: #1e2535;
+        --sv-border: #2a3348;
+        --sv-gold: #d4a843;
+        --sv-gold-lt: #f0c96a;
+        --sv-gold-dim: rgba(212,168,67,0.13);
+        --sv-steel: #8ba8c8;
+        --sv-cream: #eef2f7;
+        --sv-light: #b8c8da;
+        --sv-muted: #7888a0;
+
+        background: var(--sv-black);
+        color: var(--sv-cream);
+        font-family: 'DM Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+    .sv-root::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        opacity: 0.035;
+      }
+
+    .sv-inner { position: relative; z-index: 1; }
+
+    .sv-eyebrow {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--sv-gold);
+        margin-bottom: 1rem;
+      }
+
+    .sv-display {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-weight: 900;
+        line-height: 1.05;
+        color: var(--sv-cream);
+      }
+
+    .sv-serif-body {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-weight: 300;
+        font-size: 1.25rem;
+        line-height: 1.85;
+        color: var(--sv-light);
+      }
+      @media (max-width: 768px) {
+    .sv-serif-body { font-size: 1.15rem; }
+      }
+
+    .sv-gold-rule {
+        display: block;
+        width: 60px;
+        height: 2px;
+        background: var(--sv-gold);
+        margin: 0 auto 1.5rem;
+      }
+
+    .sv-section-pad { padding: 7rem 1.5rem; }
+      @media (max-width: 768px) {
+    .sv-section-pad { padding: 5rem 1.25rem; }
+      }
+
+    .sv-btn-gold, .sv-btn-outline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 500;
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 1rem 2rem;
+        border: none;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s, border-color 0.3s, color 0.3s;
+        text-decoration: none;
+        will-change: transform;
+      }
+    .sv-btn-gold {
+        background: var(--sv-gold);
+        color: var(--sv-black);
+      }
+    .sv-btn-gold:hover, .sv-btn-gold:focus-visible { 
+        background: var(--sv-gold-lt); 
+        transform: translateY(-2px);
+        outline: 2px solid var(--sv-gold-lt);
+        outline-offset: 2px;
+      }
+    .sv-btn-outline {
+        background: transparent;
+        color: var(--sv-cream);
+        border: 1px solid rgba(184,200,218,0.3);
+      }
+    .sv-btn-outline:hover, .sv-btn-outline:focus-visible { 
+        border-color: var(--sv-gold); 
+        color: var(--sv-gold); 
+        transform: translateY(-2px);
+        outline: 2px solid var(--sv-gold);
+        outline-offset: 2px;
+      }
+
+    .sv-hero {
+        position: relative;
+        min-height: 90svh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+        padding: 0 1.5rem;
+        background: var(--sv-black);
+      }
+
+    .sv-hero-bg {
+        position: absolute;
+        inset: 0;
+        background-image: url('/Photos/salon-hero.jpg');
+        background-size: cover;
+        background-position: center;
+        opacity: 0.4;
+      }
+    .sv-hero-bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to top, rgba(14,16,21,0.97) 0%, rgba(14,16,21,0.6) 50%, rgba(14,16,21,0.85) 100%);
+      }
+
+    .sv-address-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--sv-gold);
+        background: rgba(212,168,67,0.1);
+        border: 1px solid rgba(212,168,67,0.3);
+        padding: 0.6rem 1.25rem;
+        margin-top: 1.5rem;
+      }
+
+    .sv-service-card {
+        background: var(--sv-card);
+        border: 1px solid var(--sv-border);
+        overflow: hidden;
+        transition: border-color 0.35s, transform 0.35s, background 0.35s;
+        will-change: transform;
+      }
+    .sv-service-card:hover { 
+        border-color: var(--sv-gold); 
+        transform: translateY(-8px); 
+        background: #222e42; 
+      }
+
+    .sv-service-img-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4/3;
+        overflow: hidden;
+        background: var(--sv-black);
+      }
+    .sv-service-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+      }
+    .sv-service-card:hover .sv-service-img {
+        transform: scale(1.05);
+      }
+
+    .sv-service-icon {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+        font-size: 1.75rem;
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(14,16,21,0.85);
+        border: 1px solid var(--sv-gold);
+        color: var(--sv-gold);
+        backdrop-filter: blur(8px);
+      }
+
+    .sv-service-body {
+        padding: 2rem;
+      }
+
+    .sv-service-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: var(--sv-cream);
+        letter-spacing: 0.01em;
+      }
+
+    .sv-service-desc {
+        font-size: 0.92rem;
+        color: var(--sv-light);
+        line-height: 1.75;
+        margin-bottom: 1.5rem;
+      }
+
+    .sv-gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 3rem;
+      }
+
+    .sv-gallery-item {
+        position: relative;
+        aspect-ratio: 4/3;
+        overflow: hidden;
+        border: 1px solid var(--sv-border);
+        transition: border-color 0.3s;
+      }
+    .sv-gallery-item:hover {
+        border-color: var(--sv-gold);
+      }
+    .sv-gallery-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.6s ease;
+      }
+    .sv-gallery-item:hover .sv-gallery-img {
+        transform: scale(1.05);
+      }
+
+    .sv-testimonial-card {
+        background: var(--sv-card);
+        border: 1px solid var(--sv-border);
+        padding: 2.5rem 2rem;
+        height: 100%;
+      }
+    .sv-testimonial-quote {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 1.15rem;
+        font-style: italic;
+        color: var(--sv-cream);
+        line-height: 1.8;
+        margin-bottom: 1.25rem;
+      }
+    .sv-testimonial-author {
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--sv-gold);
+      }
+
+    .sv-ornament {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        justify-content: center;
+        margin: 0.5rem 0 2rem;
+        color: var(--sv-gold);
+        font-size: 1.1rem;
+      }
+    .sv-ornament::before,
+    .sv-ornament::after {
+        content: '';
+        flex: 1;
+        max-width: 80px;
+        height: 1px;
+        background: var(--sv-border);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  show: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.75, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
+
+const FadeIn = ({ children, delay = 0, className = "" }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const shouldReduceMotion = useReducedMotion();
+  
+  if (shouldReduceMotion) return <div className={className}>{children}</div>;
+  
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial="hidden"
+      animate={inView? "show" : "hidden"}
+      custom={delay}
+      variants={fadeUp}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 const ServicesPage = () => {
-  // Initialize AOS animations
-  useEffect(() => {
-    AOS.init({
-      duration: 1000,
-      easing: 'ease-in-out',
-      once: true,
-    });
-  }, []);
+  useServicesStyles();
+  const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
 
-  // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   return (
-    <ParallaxProvider>
-      <div className="bg-gray-100">
-        <Header />
+    <div className="sv-root">
+      <Header />
+      <div className="sv-inner">
+        
+        {/* Hero */}
+        <section className="sv-hero">
+          <div className="sv-hero-bg" />
+          <div className="relative z-10 max-w-4xl mx-auto">
+            <motion.p
+              className="sv-eyebrow"
+              initial={shouldReduceMotion? {} : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Shawinigan, Québec
+            </motion.p>
 
-        {/* Hero Section with Parallax */}
-        <section className="relative py-24 md:py-32 bg-gradient-to-r from-[#00A8CC] to-[#1ABC9C] text-white text-center overflow-hidden">
-          <Parallax speed={-10}>
-            <video autoPlay loop muted className="absolute inset-0 w-full h-full object-cover">
-              <source src="/videos/service-background.mp4" type="video/mp4" />
-            </video>
-          </Parallax>
-          <div className="relative z-10 container mx-auto px-4">
-            <h1 
-              className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-6 drop-shadow-lg" 
-              data-aos="fade-up" 
-              data-aos-delay="200"
+            <motion.h1
+              className="sv-display"
+              style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", marginBottom: "1.5rem" }}
+              initial={shouldReduceMotion? {} : { opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
-              Offrez-vous l'Expérience du Rasage d'Exception à Domicile
-            </h1>
-            <p 
-              className="text-base sm:text-lg md:text-xl mb-8 max-w-2xl mx-auto drop-shadow-sm" 
-              data-aos="fade-up" 
-              data-aos-delay="400"
+              L'Expérience<br />
+              <span style={{ color: "var(--sv-gold)" }}>Barbershop Premium</span>
+            </motion.h1>
+
+            <motion.p
+              className="sv-serif-body"
+              style={{ maxWidth: "680px", margin: "0 auto 1.5rem" }}
+              initial={shouldReduceMotion? {} : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Redécouvrez le plaisir d’un rasage professionnel, dans le confort de votre foyer. Nos experts passionnés transforment chaque séance en un moment unique de bien-être et de sophistication. Vous méritez le meilleur !
-            </p>
-            <a
-              href="#services"
-              className="inline-block bg-white text-[#00A8CC] px-6 sm:px-8 py-3 rounded-full text-base sm:text-xl font-semibold hover:bg-[#F1C40F] transition-all"
-              aria-label="Découvrez nos services"
-              data-aos="fade-up" 
-              data-aos-delay="600"
+              Entrez dans notre salon où tradition et modernité se rencontrent. Fauteuils en cuir, serviettes chaudes, 
+              produits haut de gamme — chaque détail est pensé pour votre confort et votre style.
+            </motion.p>
+
+            <motion.div
+              initial={shouldReduceMotion? {} : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.8 }}
             >
-              Explorer nos prestations
-            </a>
+              <a href="#services" className="sv-btn-gold" aria-label="Découvrez nos services">
+                Voir nos prestations
+              </a>
+            </motion.div>
+
+            <motion.div
+              initial={shouldReduceMotion? {} : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 1 }}
+            >
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="sv-address-badge"
+              >
+                📍 {ADDRESS}
+              </a>
+            </motion.div>
           </div>
         </section>
 
-        {/* Services Section */}
-        <section id="services" className="py-16 md:py-20 bg-white" data-aos="zoom-in-up">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12 md:mb-16">
-              <h2 
-                className="text-3xl sm:text-4xl font-extrabold text-[#00A8CC] mb-4" 
-                data-aos="fade-up"
-              >
-                Nos Services de Rasage : L'Art du Soin Personnalisé
-              </h2>
-              <p 
-                className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto" 
-                data-aos="fade-up" 
-                data-aos-delay="200"
-              >
-                Chaque prestation est conçue pour sublimer votre style et votre confort. Que vous optiez pour un rasage complet, un dégradé moderne, ou un soin sur-mesure, nos experts mettent leur savoir-faire à votre service pour révéler le meilleur de vous-même.
-              </p>
+        {/* Services Grid */}
+        <section id="services" className="sv-section-pad" style={{ background: "var(--sv-charcoal)" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <FadeIn>
+              <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+                <p className="sv-eyebrow">11 Services Signature</p>
+                <span className="sv-gold-rule" />
+                <h2 className="sv-display" style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)", marginBottom: "1rem" }}>
+                  Nos Prestations au Salon
+                </h2>
+                <p className="sv-serif-body" style={{ maxWidth: "680px", margin: "0 auto" }}>
+                  Chaque service est réalisé dans notre espace dédié à Shawinigan. Réservation en ligne ou par téléphone.
+                </p>
+              </div>
+            </FadeIn>
+
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "2rem",
+            }}>
+              {SERVICES.map((service, i) => (
+                <FadeIn key={service.id} delay={i * 0.06}>
+                  <div className="sv-service-card">
+                    <div className="sv-service-img-wrap">
+                      <img 
+                        src={service.img} 
+                        alt={service.title}
+                        className="sv-service-img"
+                        loading="lazy"
+                      />
+                      <div className="sv-service-icon" aria-hidden="true">{service.icon}</div>
+                    </div>
+                    <div className="sv-service-body">
+                      <h3 className="sv-service-title">{service.title}</h3>
+                      <p className="sv-service-desc">{service.desc}</p>
+                      <button
+                        className="sv-btn-gold"
+                        onClick={() => navigate("/booking")}
+                        aria-label={`Réserver ${service.title}`}
+                      >
+                        Réserver
+                      </button>
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
             </div>
+          </div>
+        </section>
 
-            {/* Service Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-12">
-              {/* Rasage Complet */}
-              <div
-                className="bg-white p-6 sm:p-8 rounded-lg shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 hover:scale-105"
-                role="region"
-                aria-labelledby="service1"
-                data-aos="fade-up"
-              >
-                <div className="w-full h-72 sm:h-96 flex justify-center items-center rounded-lg mb-4 overflow-hidden">
-                  <img 
-                    src="/Photos/RasageComplet.jpg" 
-                    alt="Rasage Complet – Soin Total" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h3 id="service1" className="text-xl sm:text-2xl font-semibold text-[#00A8CC] mb-3">
-                  Rasage Complet : Le Rituel Ultime
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3">
-                  Offrez-vous un soin complet qui conjugue tradition et innovation. Profitez d’un rasage précis, d’une peau sublimée et d’une sensation de fraîcheur incomparable.
-                </p>
-                <a
-                  href="/booking"
-                  className="inline-block bg-[#00A8CC] text-white px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold hover:bg-[#F1C40F] transition-all"
-                >
-                  Réservez dès maintenant
-                </a>
-                <p className="text-xs sm:text-sm text-gray-500 mt-3 italic">
-                  Un instant de détente et de raffinement, rien que pour vous.
+        {/* Galerie Salon */}
+        <section className="sv-section-pad" style={{ background: "var(--sv-black)" }}>
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <FadeIn>
+              <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+                <p className="sv-eyebrow">Notre espace</p>
+                <span className="sv-gold-rule" />
+                <h2 className="sv-display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "1rem" }}>
+                  Bienvenue au Salon
+                </h2>
+                <p className="sv-serif-body" style={{ maxWidth: "600px", margin: "0 auto" }}>
+                  Un lieu propre, moderne et accueillant. 3 fauteuils, produits Redken & American Crew, café offert.
                 </p>
               </div>
+            </FadeIn>
 
-              {/* Dégradé Moderne */}
-              <div
-                className="bg-white p-6 sm:p-8 rounded-lg shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 hover:scale-105"
-                role="region"
-                aria-labelledby="service2"
-                data-aos="fade-up"
-                data-aos-delay="200"
-              >
-                <div className="w-full h-72 sm:h-96 flex justify-center items-center rounded-lg mb-4 overflow-hidden">
-                  <img 
-                    src="/Photos/DegradeModerne.jpg" 
-                    alt="Dégradé Moderne – Style Audacieux" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h3 id="service2" className="text-xl sm:text-2xl font-semibold text-[#00A8CC] mb-3">
-                  Dégradé Moderne : L'Élégance Réinventée
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3">
-                  Sublimez votre style avec un dégradé moderne, taillé avec précision pour mettre en lumière votre personnalité. Osez l'audace et la sophistication en toute simplicité.
-                </p>
-                <a
-                  href="/booking"
-                  className="inline-block bg-[#00A8CC] text-white px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold hover:bg-[#F1C40F] transition-all"
-                >
-                  Adoptez votre style
-                </a>
-                <p className="text-xs sm:text-sm text-gray-500 mt-3 italic">
-                  Un look moderne, pour une allure inoubliable.
-                </p>
+            <FadeIn delay={0.2}>
+              <div className="sv-gallery-grid">
+                {GALLERY.map((img, i) => (
+                  <div key={i} className="sv-gallery-item">
+                    <img src={img.src} alt={img.alt} className="sv-gallery-img" loading="lazy" />
+                  </div>
+                ))}
               </div>
-
-              {/* Coupe Classique */}
-              <div
-                className="bg-white p-6 sm:p-8 rounded-lg shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 hover:scale-105"
-                role="region"
-                aria-labelledby="service3"
-                data-aos="fade-up"
-                data-aos-delay="400"
-              >
-                <div className="w-full h-72 sm:h-96 flex justify-center items-center rounded-lg mb-4 overflow-hidden">
-                  <img 
-                    src="/Photos/CoupeClassique.jpg" 
-                    alt="Coupe Classique – Élégance Intemporelle" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h3 id="service3" className="text-xl sm:text-2xl font-semibold text-[#00A8CC] mb-3">
-                  Coupe Classique : L'Intemporel Revisité
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3">
-                  Alliez élégance et tradition avec notre coupe classique. Une prestation soignée qui garantit une finition nette et un style résolument raffiné.
-                </p>
-                <a
-                  href="/booking"
-                  className="inline-block bg-[#00A8CC] text-white px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold hover:bg-[#F1C40F] transition-all"
-                >
-                  Réservez votre séance
-                </a>
-                <p className="text-xs sm:text-sm text-gray-500 mt-3 italic">
-                  Un style qui traverse le temps, pour une confiance renouvelée.
-                </p>
-              </div>
-
-              {/* Rasage de la Barbe */}
-              <div
-                className="bg-white p-6 sm:p-8 rounded-lg shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 hover:scale-105"
-                role="region"
-                aria-labelledby="service4"
-                data-aos="fade-up"
-                data-aos-delay="600"
-              >
-                <div className="w-full h-72 sm:h-96 flex justify-center items-center rounded-lg mb-4 overflow-hidden">
-                  <img 
-                    src="/Photos/RasageBarbe.jpg" 
-                    alt="Rasage de la Barbe – Soin Personnalisé" 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-                <h3 id="service4" className="text-xl sm:text-2xl font-semibold text-[#00A8CC] mb-3">
-                  Rasage de la Barbe : Votre Signature de Style
-                </h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3">
-                  Offrez à votre barbe un soin sur mesure. Que vous souhaitiez une taille classique ou une mise en forme audacieuse, nos experts sculptent votre barbe pour révéler votre caractère.
-                </p>
-                <a
-                  href="/booking"
-                  className="inline-block bg-[#00A8CC] text-white px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold hover:bg-[#F1C40F] transition-all"
-                >
-                  Réservez votre soin
-                </a>
-                <p className="text-xs sm:text-sm text-gray-500 mt-3 italic">
-                  Un rasage impeccable pour une allure qui fait sensation.
-                </p>
-              </div>
-            </div>
+            </FadeIn>
           </div>
         </section>
 
         {/* Testimonials */}
-        <section className="py-16 md:py-20 bg-[#f9f9f9]" data-aos="fade-up">
-          <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#00A8CC] mb-6">
-              Nos Clients Témoignent de Leur Expérience
-            </h2>
-            <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-4">
-              <div className="max-w-sm w-full p-4 sm:p-6 bg-white rounded-lg shadow-md">
-                <p className="text-base sm:text-lg text-gray-600 mb-4">
-                  "Un service exceptionnel ! J'ai redécouvert le plaisir d'un rasage de qualité – chaque détail compte. Une expérience vraiment unique !"
-                </p>
-                <p className="font-semibold text-[#00A8CC]">Marc D.</p>
-                <p className="text-gray-500">Client fidèle</p>
+        <section className="sv-section-pad" style={{ background: "var(--sv-charcoal)" }}>
+          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+            <FadeIn>
+              <div style={{ textAlign: "center", marginBottom: "4rem" }}>
+                <p className="sv-eyebrow">Témoignages clients</p>
+                <span className="sv-gold-rule" />
+                <h2 className="sv-display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)" }}>
+                  Ce qu'ils disent du salon
+                </h2>
               </div>
-              <div className="max-w-sm w-full p-4 sm:p-6 bg-white rounded-lg shadow-md">
-                <p className="text-base sm:text-lg text-gray-600 mb-4">
-                  "Le dégradé moderne réalisé par l'équipe a complètement transformé mon look. Un résultat impeccable et un service aux petits soins."
-                </p>
-                <p className="font-semibold text-[#00A8CC]">David L.</p>
-                <p className="text-gray-500">Client satisfait</p>
-              </div>
+            </FadeIn>
+
+            <div style={{ 
+              display: "grid", 
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
+              gap: "2rem" 
+            }}>
+              {TESTIMONIALS.map((t, i) => (
+                <FadeIn key={i} delay={i * 0.1}>
+                  <div className="sv-testimonial-card">
+                    <p className="sv-testimonial-quote">"{t.quote}"</p>
+                    <div className="sv-ornament" aria-hidden="true">✦</div>
+                    <span className="sv-testimonial-author">— {t.author}</span>
+                  </div>
+                </FadeIn>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Call-to-Action */}
-        <section className="bg-[#00A8CC] py-16 md:py-20 text-white text-center">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-4">
-            Prêt à Révéler Votre Style ?
-          </h2>
-          <p className="text-base sm:text-lg md:text-xl mb-6 max-w-2xl mx-auto">
-            Réservez dès maintenant et offrez-vous le luxe d’un rasage professionnel chez vous. Laissez-vous séduire par une expérience de soin personnalisée, pensée pour vous.
-          </p>
-          <a
-            href="/booking"
-            className="inline-block bg-[#F1C40F] text-[#333] px-6 sm:px-8 py-3 rounded-full text-base sm:text-xl font-semibold hover:bg-[#F1C40F] transition-all"
-          >
-            Réservez votre rendez-vous
-          </a>
+        {/* Final CTA */}
+        <section className="sv-section-pad" style={{ 
+          background: "var(--sv-black)",
+          borderTop: "1px solid var(--sv-border)",
+          textAlign: "center"
+        }}>
+          <FadeIn>
+            <p className="sv-eyebrow">Prêt ?</p>
+            <span className="sv-gold-rule" />
+            <h2 className="sv-display" style={{ 
+              fontSize: "clamp(2.5rem, 6vw, 4.5rem)", 
+              maxWidth: "600px", 
+              margin: "0 auto 1.5rem" 
+            }}>
+              Passez au salon
+            </h2>
+            <p className="sv-serif-body" style={{ maxWidth: "480px", margin: "0 auto 2.5rem" }}>
+              Réservez en ligne ou passez nous voir au {ADDRESS}. Walk-ins acceptés selon disponibilité.
+            </p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
+              <button className="sv-btn-gold" onClick={() => navigate("/booking")}>
+                Prendre rendez-vous
+              </button>
+              <a href={`tel:${PHONE}`} className="sv-btn-outline">
+                {PHONE}
+              </a>
+            </div>
+          </FadeIn>
         </section>
 
-        <Footer />
       </div>
-    </ParallaxProvider>
+      <Footer />
+    </div>
   );
 };
 
