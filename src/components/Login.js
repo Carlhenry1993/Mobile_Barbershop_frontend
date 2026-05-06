@@ -9,25 +9,25 @@ const PHONE = "514-778-8318";
 
 const WelcomeMessage = ({ scrollToForm }) => (
   <div style={styles.welcomeContainer}>
-    <div style={styles.badge}>Barbier Expert à Shawinigan</div>
+    <div style={styles.badge}>Barbershop Premium • Shawinigan</div>
     <h2 style={styles.welcomeTitle}>
-      L'Art de la Coiffure Masculine
+      L'Excellence du Grooming Masculin
     </h2>
     <p style={styles.welcomeText}>
-      Chez <strong>Mr. Renaudin Barbershop</strong>, chaque coupe est un rituel.
-      Situé au <strong>{ADDRESS}</strong>, Carl Fortunat
-      allie techniques traditionnelles françaises et tendances actuelles pour révéler votre style.
+      <strong>Mr. Renaudin Barbershop</strong> — L’excellence du barbier traditionnel au cœur de Shawinigan.
+      Situé au <strong>{ADDRESS}</strong>, notre équipe maîtrise l’art du fade, du rasage à l’ancienne et des coupes signature.
+      Techniques françaises, précision québécoise. Votre style mérite mieux que l’ordinaire.
     </p>
     <div style={styles.features}>
-      <div style={styles.feature}>✂️ Fades & Dégradés Experts</div>
-      <div style={styles.feature}>🪒 Rasage Traditionnel</div>
-      <div style={styles.feature}>⭐ 4.9/5 - 500+ Clients Satisfaits</div>
+      <div style={styles.feature}>✂️ Fades & Dégradés Haute Précision</div>
+      <div style={styles.feature}>🪒 Rasage Traditionnel au Coupe-Chou</div>
+      <div style={styles.feature}>⭐ Noté 4.9/5 par nos clients</div>
     </div>
     <button
       style={styles.welcomeButton}
       onClick={scrollToForm}
     >
-      Réserver ma place
+      Réserver maintenant
     </button>
     <p style={styles.smallText}>
       {ADDRESS}<br />
@@ -51,12 +51,12 @@ const LoginForm = ({
   <div ref={formRef} id="login-form" style={styles.formContainer}>
     <div style={styles.form}>
       <h1 style={styles.title}>
-        {isLogin? "Espace Client" : "Créer mon compte"}
+        {isLogin? "Espace Membre" : "Rejoindre Mr. Renaudin"}
       </h1>
       <p style={styles.subtitle}>
         {isLogin
-    ? "Retrouvez vos rendez-vous et messages"
-          : "Accès prioritaire aux créneaux Shawinigan"}
+   ? "Gérez vos rendez-vous en ligne"
+          : "Accédez aux créneaux prioritaires"}
       </p>
 
       <form onSubmit={handleSubmit} style={styles.formContent}>
@@ -64,7 +64,7 @@ const LoginForm = ({
           <label style={styles.label}>Nom d'utilisateur</label>
           <input
             type="text"
-            placeholder="ex: carl.shawinigan"
+            placeholder="ex: client.shawinigan"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={styles.input}
@@ -87,24 +87,24 @@ const LoginForm = ({
         <button
           type="submit"
           style={{
-    ...styles.button,
-    ...(loading? styles.buttonDisabled : {})
+   ...styles.button,
+   ...(loading? styles.buttonDisabled : {})
           }}
           disabled={loading}
         >
-          {loading? "Connexion..." : isLogin? "Accéder à mon compte" : "Créer mon compte"}
+          {loading? "Connexion..." : isLogin? "Me connecter" : "Créer mon compte"}
         </button>
 
         <div style={styles.switchContainer}>
           <p style={styles.switchText}>
-            {isLogin? "Première visite au salon?" : "Déjà client?"}
+            {isLogin? "Nouveau chez Mr. Renaudin?" : "Déjà membre?"}
           </p>
           <button
             type="button"
             onClick={() => setIsLogin((prev) =>!prev)}
             style={styles.switchLink}
           >
-            {isLogin? "Créer un compte gratuitement" : "Je me connecte"}
+            {isLogin? "Créer un compte" : "Me connecter"}
           </button>
         </div>
 
@@ -140,7 +140,7 @@ const Login = ({ onLogin }) => {
     localStorage.removeItem("token");
     setToken(null);
     onLogin(null, null, null);
-    toast.info("À bientôt!");
+    toast.info("À bientôt chez Mr. Renaudin!");
   }, [onLogin]);
 
   useEffect(() => {
@@ -201,7 +201,7 @@ const Login = ({ onLogin }) => {
         setToken(userToken);
         onLogin(userRole, userId, userToken);
 
-        toast.success(isLogin? "Bon retour à Shawinigan!" : "Bienvenue chez Mr. Renaudin!");
+        toast.success(isLogin? "Bon retour chez Mr. Renaudin!" : "Bienvenue chez Mr. Renaudin!");
         setErrorMessage("");
       } catch (error) {
         console.error("Erreur:", error);
@@ -229,7 +229,7 @@ const Login = ({ onLogin }) => {
           {token? (
             <div style={styles.loggedInContainer}>
               <h2 style={styles.loggedInTitle}>
-                Vous êtes connecté!
+                Bienvenue chez Mr. Renaudin
               </h2>
               <button
                 onClick={handleLogout}
@@ -238,7 +238,7 @@ const Login = ({ onLogin }) => {
                 Se déconnecter
               </button>
               <div style={styles.loggedInText}>
-                Accédez à vos rendez-vous et messages privés.
+                Gérez vos rendez-vous et votre profil.
               </div>
             </div>
           ) : (
