@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } 
 import io from "socket.io-client";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./ChatApp.css";
 
-// Composant Error Boundary
 class ErrorBoundary extends React.Component {
   state = { hasError: false, error: null };
 
@@ -28,530 +28,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Styles injectés pour match le thème noir/gold
-const useChatStyles = () => {
-  useEffect(() => {
-    const styleId = "mr-renaudin-chat-styles";
-    if (document.getElementById(styleId)) return;
-
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.innerHTML = `
-.chat-app {
-        --chat-black: #0e1015;
-        --chat-charcoal: #161b24;
-        --chat-card: #1e2535;
-        --chat-border: #2a3348;
-        --chat-gold: #d4a843;
-        --chat-gold-lt: #f0c96a;
-        --chat-steel: #8ba8c8;
-        --chat-cream: #eef2f7;
-        --chat-light: #b8c8da;
-        --chat-muted: #7888a0;
-        --chat-danger: #e74c3c;
-        --chat-success: #27ae60;
-        font-family: 'DM Sans', sans-serif;
-        -webkit-font-smoothing: antialiased;
-      }
-
-.chat-bubble-container {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        z-index: 9998;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 8px;
-      }
-
-.chat-info {
-        background: var(--chat-card);
-        color: var(--chat-light);
-        padding: 8px 14px;
-        font-size: 0.8rem;
-        border: 1px solid var(--chat-border);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-      }
-
-.admin-offline-notice {
-        background: rgba(231,76,60,0.1);
-        border: 1px solid rgba(231,76,60,0.3);
-        color: #ff8a7a;
-        padding: 6px 12px;
-        font-size: 0.75rem;
-      }
-
-.chat-bubble-icon {
-        width: 56px;
-        height: 56px;
-        background: var(--chat-gold);
-        color: var(--chat-black);
-        border: none;
-        cursor: pointer;
-        font-size: 1.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.3s, transform 0.2s;
-        position: relative;
-      }
-.chat-bubble-icon:hover {
-        background: var(--chat-gold-lt);
-        transform: scale(1.05);
-      }
-.chat-bubble-icon:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-.unread-count {
-        position: absolute;
-        top: -6px;
-        right: -6px;
-        background: var(--chat-danger);
-        color: white;
-        font-size: 0.7rem;
-        font-weight: 700;
-        min-width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 6px;
-      }
-
-.chat-container {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        width: 380px;
-        max-height: 600px;
-        background: var(--chat-card);
-        border: 1px solid var(--chat-border);
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-        transition: all 0.3s ease;
-      }
-      @media (max-width: 480px) {
-.chat-container { width: calc(100vw - 32px); right: 16px; }
-      }
-
-.chat-container.minimized {
-        height: 48px;
-        overflow: hidden;
-      }
-
-.chat-container.maximized {
-        width: 90vw;
-        max-width: 900px;
-        height: 85vh;
-        max-height: none;
-        bottom: 50%;
-        right: 50%;
-        transform: translate(50%, 50%);
-      }
-
-.chat-header {
-        background: var(--chat-charcoal);
-        border-bottom: 1px solid var(--chat-border);
-        padding: 12px 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-shrink: 0;
-      }
-.chat-header.minimized {
-        border-bottom: none;
-      }
-
-.chat-header h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: var(--chat-cream);
-        margin: 0;
-      }
-
-.admin-status {
-        font-size: 0.75rem;
-        color: var(--chat-muted);
-        margin-top: 2px;
-      }
-
-.header-buttons {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-.call-buttons-container {
-        display: flex;
-        gap: 8px;
-      }
-
-.call-button {
-        width: 32px;
-        height: 32px;
-        background: transparent;
-        border: 1px solid rgba(184,200,218,0.2);
-        color: var(--chat-light);
-        cursor: pointer;
-        font-size: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-      }
-.call-button:hover:not(:disabled) {
-        border-color: var(--chat-gold);
-        color: var(--chat-gold);
-        background: rgba(212,168,67,0.1);
-      }
-.call-button:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-      }
-
-.chat-controls {
-        display: flex;
-        gap: 4px;
-      }
-
-.minimize-button,.maximize-button,.close-button {
-        width: 28px;
-        height: 28px;
-        background: transparent;
-        border: none;
-        color: var(--chat-muted);
-        cursor: pointer;
-        font-size: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: color 0.2s, background 0.2s;
-      }
-.minimize-button:hover,.maximize-button:hover {
-        background: rgba(184,200,218,0.1);
-        color: var(--chat-cream);
-      }
-.close-button:hover {
-        background: rgba(231,76,60,0.2);
-        color: var(--chat-danger);
-      }
-
-.client-selector {
-        width: 100%;
-        background: var(--chat-black);
-        border: 1px solid var(--chat-border);
-        border-left: none;
-        border-right: none;
-        color: var(--chat-cream);
-        padding: 10px 16px;
-        font-size: 0.85rem;
-        font-family: 'DM Sans', sans-serif;
-      }
-.client-selector:focus {
-        outline: none;
-        border-color: var(--chat-gold);
-      }
-.client-selector:disabled {
-        opacity: 0.5;
-      }
-
-.chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        padding: 16px;
-        background: var(--chat-black);
-      }
-
-.chat-messages.admin-view {
-        background: var(--chat-black);
-      }
-
-.no-messages {
-        text-align: center;
-        color: var(--chat-muted);
-        padding: 40px 20px;
-        font-size: 0.9rem;
-      }
-
-.message {
-        margin-bottom: 12px;
-        padding: 10px 14px;
-        max-width: 80%;
-        word-wrap: break-word;
-        position: relative;
-      }
-
-.message.admin {
-        background: rgba(212,168,67,0.15);
-        border: 1px solid rgba(212,168,67,0.3);
-        margin-left: auto;
-        color: var(--chat-cream);
-      }
-
-.message.client {
-        background: var(--chat-charcoal);
-        border: 1px solid var(--chat-border);
-        color: var(--chat-light);
-      }
-
-.message-author {
-        font-size: 0.7rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        color: var(--chat-gold);
-        display: block;
-        margin-bottom: 4px;
-      }
-
-.message p {
-        margin: 0;
-        font-size: 0.9rem;
-        line-height: 1.5;
-      }
-
-.message-timestamp {
-        font-size: 0.7rem;
-        color: var(--chat-muted);
-        display: block;
-        margin-top: 6px;
-      }
-
-.message-status {
-        position: absolute;
-        bottom: 8px;
-        right: 8px;
-        font-size: 0.7rem;
-        color: var(--chat-muted);
-      }
-
-.chat-input {
-        border-top: 1px solid var(--chat-border);
-        padding: 12px;
-        display: flex;
-        gap: 8px;
-        background: var(--chat-card);
-        flex-shrink: 0;
-      }
-
-.chat-input textarea {
-        flex: 1;
-        background: var(--chat-black);
-        border: 1px solid var(--chat-border);
-        color: var(--chat-cream);
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.9rem;
-        padding: 10px 12px;
-        resize: none;
-        min-height: 44px;
-        max-height: 120px;
-      }
-.chat-input textarea:focus {
-        outline: none;
-        border-color: var(--chat-gold);
-      }
-.chat-input textarea:disabled {
-        opacity: 0.5;
-      }
-
-.chat-input button {
-        background: var(--chat-gold);
-        color: var(--chat-black);
-        border: none;
-        padding: 0 20px;
-        font-family: 'DM Sans', sans-serif;
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        cursor: pointer;
-        transition: background 0.2s;
-      }
-.chat-input button:hover:not(:disabled) {
-        background: var(--chat-gold-lt);
-      }
-.chat-input button:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-      }
-
-.status-indicator {
-        position: fixed;
-        top: 16px;
-        right: 16px;
-        background: var(--chat-card);
-        border: 1px solid var(--chat-border);
-        padding: 8px 14px;
-        font-size: 0.8rem;
-        color: var(--chat-light);
-        z-index: 10000;
-      }
-
-.call-container {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--chat-card);
-        border: 1px solid var(--chat-border);
-        padding: 24px;
-        z-index: 10001;
-        min-width: 400px;
-        max-width: 90vw;
-        box-shadow: 0 20px 60px rgba(0,0,0.8);
-      }
-
-.call-container h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.5rem;
-        color: var(--chat-cream);
-        margin: 0 20px 0;
-        text-align: center;
-      }
-
-.video-container {
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-
-.remote-video {
-        width: 100%;
-        background: var(--chat-black);
-        border: 1px solid var(--chat-border);
-      }
-
-.local-video {
-        width: 120px;
-        position: absolute;
-        bottom: 100px;
-        right: 24px;
-        background: var(--chat-black);
-        border: 2px solid var(--chat-gold);
-      }
-
-.audio-container {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--chat-light);
-      }
-
-.call-timer {
-        text-align: center;
-        font-size: 1.25rem;
-        font-family: 'DM Sans', sans-serif;
-        font-weight: 600;
-        color: var(--chat-gold);
-        margin-bottom: 20px;
-      }
-
-.call-controls {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-      }
-
-.call-controls button {
-        padding: 12px 24px;
-        background: var(--chat-charcoal);
-        border: 1px solid var(--chat-border);
-        color: var(--chat-cream);
-        font-family: 'DM Sans', sans-serif;
-        font-weight: 500;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-.call-controls button:hover {
-        border-color: var(--chat-gold);
-        color: var(--chat-gold);
-      }
-.call-controls button:last-child {
-        background: var(--chat-danger);
-        border-color: var(--chat-danger);
-      }
-.call-controls button:last-child:hover {
-        background: #c0392b;
-      }
-
-.incoming-call-modal {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: var(--chat-card);
-        border: 2px solid var(--chat-gold);
-        padding: 32px;
-        z-index: 10002;
-        text-align: center;
-        min-width: 320px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.9);
-      }
-
-.incoming-call-modal p {
-        font-size: 1.1rem;
-        color: var(--chat-cream);
-        margin-bottom: 24px;
-      }
-
-.incoming-call-modal button {
-        padding: 12px 28px;
-        margin: 0 8px;
-        border: none;
-        font-family: 'DM Sans', sans-serif;
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-.incoming-call-modal button:first-of-type {
-        background: var(--chat-success);
-        color: white;
-      }
-.incoming-call-modal button:first-of-type:hover {
-        background: #229954;
-      }
-.incoming-call-modal button:last-of-type {
-        background: var(--chat-danger);
-        color: white;
-      }
-.incoming-call-modal button:last-of-type:hover {
-        background: #c0392b;
-      }
-
-.sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border: 0;
-      }
-    `;
-    document.head.appendChild(style);
-
-    return () => {
-      const el = document.getElementById(styleId);
-      if (el) el.remove();
-    };
-  }, []);
-};
-
-// Réducteur pour la gestion de l'état des appels
 const callReducer = (state, action) => {
   switch (action.type) {
     case "SET_IN_CALL":
@@ -572,9 +48,6 @@ const callReducer = (state, action) => {
 };
 
 const ChatApp = ({ clientId, isAdmin }) => {
-  useChatStyles();
-
-  // États pour le chat
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -584,13 +57,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
-
-  // États pour le statut de connexion
   const [isConnected, setIsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
 
-  // États des appels gérés par le réducteur
   const [callState, dispatch] = useReducer(callReducer, {
     inCall: false,
     callConnected: false,
@@ -600,7 +70,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     callDuration: 0,
   });
 
-  // Références pour les éléments DOM et les valeurs persistantes
   const messagesEndRef = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
@@ -609,8 +78,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const socketRef = useRef(null);
   const pendingCandidatesRef = useRef([]);
   const reconnectTimeoutRef = useRef(null);
+  const callTimerRef = useRef(null);
 
-  // Références pour refléter les états dans les gestionnaires d'événements
   const inCallRef = useRef(callState.inCall);
   const selectedClientIdRef = useRef(selectedClientId);
   const callTypeRef = useRef(callState.callType);
@@ -618,7 +87,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
   useEffect(() => { callTypeRef.current = callState.callType; }, [callState.callType]);
 
-  // Configuration audio avec useRef pour éviter re-création
   const audioRefs = useRef({
     ringtone: null,
     notification: null,
@@ -626,7 +94,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   const SOCKET_SERVER_URL = "https://api.mrrenaudinbarbershop.com";
 
-  // Contraintes média mémorisées
   const mediaConstraints = useMemo(() => ({
     audio: {
       echoCancellation: true,
@@ -647,7 +114,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }), []);
 
-  // Initialiser les éléments audio une seule fois
   useEffect(() => {
     const createAudioElement = (src, options = {}) => {
       const audio = new Audio(src);
@@ -660,7 +126,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     audioRefs.current.ringtone = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/ringtone.mp3", { loop: true });
     audioRefs.current.notification = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/notification.mp3");
 
-    // Capture les refs pour le cleanup
     const ringtone = audioRefs.current.ringtone;
     const notification = audioRefs.current.notification;
 
@@ -676,7 +141,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, []);
 
-  // Déterminer l'ID du partenaire d'appel avec validation
   const getCallPartnerId = useCallback(() => {
     if (isAdmin) {
       if (!selectedClientIdRef.current) {
@@ -689,16 +153,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return "admin";
   }, [isAdmin]);
 
-  // Faire défiler vers le bas lors de la mise à jour des messages
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
+
   useEffect(() => {
     const timeoutId = setTimeout(scrollToBottom, 100);
     return () => clearTimeout(timeoutId);
   }, [messages, scrollToBottom]);
 
-  // Initialiser l'audio avec gestion des erreurs
   const initializeAudio = useCallback(async () => {
     try {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -727,7 +190,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, []);
 
-  // Contournement pour l'autoplay sur iOS
   useEffect(() => {
     const enableAudio = async () => {
       try {
@@ -749,7 +211,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [initializeAudio]);
 
-  // Demander la permission pour les notifications
   useEffect(() => {
     const requestNotificationPermission = async () => {
       if ("Notification" in window && Notification.permission === "default") {
@@ -763,7 +224,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     requestNotificationPermission();
   }, []);
 
-  // Fonctions de contrôle de la sonnerie
   const audioManager = useMemo(
     () => ({
       startRingtone: async () => {
@@ -803,7 +263,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [callState.incomingCall, audioManager]);
 
-  // Fonction pour arrêter les pistes média
   const stopMediaTracks = useCallback((stream) => {
     if (stream) {
       stream.getTracks().forEach((track) => {
@@ -813,7 +272,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, []);
 
-  // Terminer l'appel avec nettoyage
   const endCall = useCallback(() => {
     console.log("Terminaison de l'appel...");
     try {
@@ -856,7 +314,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [callState.localStream, getCallPartnerId, stopMediaTracks, audioManager]);
 
-  // Récupérer les messages initiaux depuis Supabase
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -880,7 +337,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     fetchMessages();
   }, [clientId]);
 
-  // Connexion Socket.IO avec logique de reconnexion
   useEffect(() => {
     reconnectTimeoutRef.current = null;
 
@@ -955,7 +411,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         if (isAdmin) {
           if (selectedClientId!== data.senderId) {
             setUnreadCounts((prev) => ({
-          ...prev,
+         ...prev,
               [data.senderId]: (prev[data.senderId] || 0) + 1,
             }));
           }
@@ -1054,8 +510,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
   }, [isAdmin, clientId, selectedClientId, endCall, isChatOpen, isMinimized, audioManager, reconnectAttempts, getCallPartnerId, callState.inCall]);
 
-  // Minuteur d'appel
-  const callTimerRef = useRef(null);
   useEffect(() => {
     if (callState.inCall && callState.callConnected) {
       callTimerRef.current = setInterval(() => {
@@ -1076,7 +530,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
   }, []);
 
-  // Créer une connexion RTCPeerConnection
   const createPeerConnection = useCallback(() => {
     const pc = new RTCPeerConnection({
       iceServers: [
@@ -1101,7 +554,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     };
     pc.onconnectionstatechange = () => {
       console.log("État de la connexion WebRTC :", pc.connectionState);
-            if (["connected", "completed"].includes(pc.connectionState)) {
+      if (["connected", "completed"].includes(pc.connectionState)) {
         dispatch({ type: "SET_CALL_CONNECTED", payload: true });
       }
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
@@ -1131,7 +584,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return pc;
   }, [getCallPartnerId, endCall]);
 
-  // Initier un appel sortant
   const initiateCall = useCallback(
     async (type) => {
       const partnerId = getCallPartnerId();
@@ -1187,7 +639,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     [isConnected, createPeerConnection, getCallPartnerId, callState.callConnected, endCall, mediaConstraints]
   );
 
-  // Accepter un appel entrant
   const handleAcceptCall = useCallback(async () => {
     if (!callState.incomingCall) return;
     audioManager.stopRingtone();
@@ -1229,7 +680,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [callState.incomingCall, createPeerConnection, audioManager, endCall, mediaConstraints]);
 
-  // Rejeter un appel entrant
   const handleRejectCall = useCallback(() => {
     if (callState.incomingCall) {
       console.log("Rejet de l'appel de :", callState.incomingCall.from);
@@ -1240,7 +690,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [callState.incomingCall, audioManager]);
 
-  // Marquer les messages comme lus
   const handleMarkMessagesAsRead = useCallback(async () => {
     const targetUserId = isAdmin? selectedClientId : clientId;
     if (!targetUserId) return;
@@ -1261,7 +710,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [clientId, isAdmin, selectedClientId]);
 
-  // Basculer la fenêtre de chat
   const handleChatToggle = useCallback(
     (event) => {
       event.preventDefault();
@@ -1289,7 +737,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     [isChatOpen, isAdmin, selectedClientId, handleMarkMessagesAsRead]
   );
 
-  // Basculer la minimisation du chat
   const handleMinimizeToggle = useCallback(() => {
     setIsMinimized((prev) =>!prev);
     setIsMaximized(false);
@@ -1299,13 +746,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [isMinimized, isAdmin, handleMarkMessagesAsRead]);
 
-  // Basculer maximisation/restauration du chat
   const handleMaximizeToggle = useCallback(() => {
     setIsMaximized((prev) =>!prev);
     setIsMinimized(false);
   }, []);
 
-  // Envoyer un message de chat
   const handleSendMessage = useCallback(() => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage) {
@@ -1350,7 +795,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [message, isAdmin, selectedClientId, isConnected]);
 
-  // Rendre la liste des clients
   const renderClientList = useCallback(
     () => (
       <select
@@ -1388,7 +832,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
     [clients, selectedClientId, unreadCounts, isConnected, handleMarkMessagesAsRead]
   );
 
-  // Rendre les messages avec horodatages
   const renderMessages = useMemo(() => {
     try {
       return (
@@ -1424,9 +867,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }, [messages, isAdmin]);
 
-  // Calculer le total des messages non lus
   const totalUnreadMessages = isAdmin
- ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
+? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
     : unreadCount;
 
   return (
@@ -1526,7 +968,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       >
                         📹
                       </button>
-                    </div>
+                                        </div>
                     <div className="chat-controls">
                       <button
                         className="minimize-button"
@@ -1593,7 +1035,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           <div className="call-container">
             <h4>
               {callState.callConnected
-             ? `${callState.callType === "audio"? "Appel Audio" : "Appel Vidéo"}`
+            ? `${callState.callType === "audio"? "Appel Audio" : "Appel Vidéo"}`
                 : "Connexion en cours..."}
             </h4>
             {callState.callType === "video" && (
