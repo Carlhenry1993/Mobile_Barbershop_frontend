@@ -17,25 +17,26 @@ const FontLink = () => (
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap');
 
     :root {
-      --black:    #0d0d0f;
-      --charcoal: #13131a;
-      --card:     #18181f;
-      --border:   #2c2c3a;
+      --black:    #0e1015;
+      --charcoal: #161b24;
+      --card:     #1e2535;
+      --border:   #2a3348;
       --gold:     #d4a843;
       --gold-lt:  #f0c96a;
-      --gold-dim: rgba(212,168,67,0.12);
-      --copper:   #b87333;
-      --cream:    #f7f2e8;
-      --muted:    #9a96a8;
-      --light:    #cdc8d8;
-      --white:    #ffffff;
+      --gold-dim: rgba(212,168,67,0.13);
+      --copper:   #8ba8c8;
+      --cream:    #eef2f7;
+      --muted:    #7888a0;
+      --light:    #b8c8da;
+      --white:    #eef2f7;
+      --steel:    #8ba8c8;
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       background: var(--black);
-      color: var(--white);
+      color: var(--cream);
       font-family: 'DM Sans', sans-serif;
       -webkit-font-smoothing: antialiased;
     }
@@ -78,6 +79,7 @@ const FontLink = () => (
       font-family: 'Playfair Display', Georgia, serif;
       font-weight: 900;
       line-height: 1.05;
+      color: var(--cream);
     }
 
     /* ── Italic serif body ── */
@@ -114,14 +116,14 @@ const FontLink = () => (
       align-items: center;
       gap: 0.5rem;
       background: transparent;
-      color: var(--white);
+      color: var(--cream);
       font-family: 'DM Sans', sans-serif;
       font-weight: 500;
       font-size: 0.85rem;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       padding: 1rem 2rem;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(184,200,218,0.3);
       cursor: pointer;
       transition: border-color 0.3s, color 0.3s, transform 0.2s;
       text-decoration: none;
@@ -142,12 +144,12 @@ const FontLink = () => (
       position: absolute;
       bottom: 0; left: 0; right: 0;
       height: 2px;
-      background: linear-gradient(90deg, var(--copper), var(--gold), var(--gold-lt));
+      background: linear-gradient(90deg, var(--steel), var(--gold), var(--gold-lt));
       transform: scaleX(0);
       transform-origin: left;
       transition: transform 0.4s ease;
     }
-    .feature-card:hover { border-color: var(--gold); transform: translateY(-6px); background: #1e1e28; }
+    .feature-card:hover { border-color: var(--gold); transform: translateY(-6px); background: #222e42; }
     .feature-card:hover::before { transform: scaleX(1); }
 
     .feature-icon {
@@ -167,7 +169,7 @@ const FontLink = () => (
       font-size: 1.2rem;
       font-weight: 700;
       margin-bottom: 0.6rem;
-      color: var(--white);
+      color: var(--cream);
       letter-spacing: 0.01em;
     }
 
@@ -190,8 +192,7 @@ const FontLink = () => (
       color: var(--cream);
       line-height: 1.8;
       margin-bottom: 1.25rem;
-    }
-    .testimonial-card span {
+    }    .testimonial-card span {
       font-size: 0.75rem;
       letter-spacing: 0.15em;
       text-transform: uppercase;
@@ -412,7 +413,7 @@ const HomePage = () => {
             position: "absolute",
             inset: 0,
             background:
-              "linear-gradient(to top, rgba(10,10,10,0.97) 0%, rgba(10,10,10,0.55) 50%, rgba(10,10,10,0.25) 100%)",
+              "linear-gradient(to top, rgba(14,16,21,0.97) 0%, rgba(14,16,21,0.6) 50%, rgba(14,16,21,0.22) 100%)",
           }}
         />
 
@@ -429,7 +430,7 @@ const HomePage = () => {
 
           <motion.h1
             className="display"
-            style={{ fontSize: "clamp(3.5rem, 8vw, 7rem)", color: "var(--white)" }}
+            style={{ fontSize: "clamp(3.5rem, 8vw, 7rem)", color: "var(--cream)" }}
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
@@ -444,7 +445,7 @@ const HomePage = () => {
               fontWeight: 300,
               fontStyle: "italic",
               fontSize: "1.3rem",
-              color: "rgba(255,255,255,0.7)",
+              color: "rgba(238,242,247,0.8)",
               marginTop: "1.25rem",
               maxWidth: "520px",
               lineHeight: 1.6,
@@ -649,7 +650,7 @@ const HomePage = () => {
                   left: 0,
                   right: 0,
                   padding: "2rem",
-                  background: "linear-gradient(to top, rgba(10,10,10,0.9), transparent)",
+                  background: "linear-gradient(to top, rgba(14,16,21,0.92), transparent)",
                 }}
               >
                 <p
@@ -722,7 +723,7 @@ const HomePage = () => {
                         fontWeight: 700,
                         fontSize: "1.05rem",
                         marginBottom: "0.35rem",
-                        color: "var(--white)",
+                        color: "var(--cream)",
                       }}
                     >
                       {title}
@@ -841,7 +842,7 @@ const HomePage = () => {
             fontFamily: "'Playfair Display', serif",
             fontSize: "clamp(5rem, 18vw, 16rem)",
             fontWeight: 900,
-            color: "rgba(201,168,76,0.035)",
+            color: "rgba(212,168,67,0.04)",
             userSelect: "none",
             letterSpacing: "-0.04em",
             pointerEvents: "none",
