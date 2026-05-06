@@ -16,7 +16,6 @@ import ContactPage from "./pages/ContactPage";
 import ServicesPage from "./pages/ServicesPage";
 import AboutPage from "./pages/AboutPage";
 import AnnoncePage from "./pages/AnnoncePage";
-import AdminPage from "./pages/AdminPage"; // Ajoute si t'as un dashboard admin
 
 // Import components
 import Login from "./components/Login";
@@ -115,17 +114,15 @@ const App = () => {
       <FontLoader />
       <ScrollToTop />
 
-      {/* Header visible partout avec role + logout */}
       <Header role={role} onLogout={handleLogout} />
 
-      {/* ChatApp seulement si connecté */}
       {role === "client" && clientId && (
         <ChatApp key={clientId} clientId={clientId} isAdmin={false} />
       )}
       {role === "admin" && <ChatApp key="admin" clientId={null} isAdmin={true} />}
 
       <Routes>
-        {/* Routes Publiques - Pas de compte requis */}
+        {/* Routes Publiques */}
         <Route path="/" element={<HomePage />} />
         <Route path="/services" element={<ServicesPage />} />
         <Route path="/contact" element={<ContactPage />} />
@@ -133,22 +130,12 @@ const App = () => {
         <Route path="/annonces" element={<AnnoncePage readOnly={!role || role === "client"} />} />
         <Route path="/login" element={<Login onLogin={handleLogin} />} />
 
-        {/* Routes Privées - Compte client requis */}
+        {/* Routes Privées */}
         <Route
           path="/reserver"
           element={
             <ProtectedRoute token={token} role={role} allowedRoles={["client", "admin"]}>
               <BookingPage />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Route Admin seulement */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute token={token} role={role} allowedRoles={["admin"]}>
-              <AdminPage />
             </ProtectedRoute>
           }
         />
