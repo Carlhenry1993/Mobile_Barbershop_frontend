@@ -11,7 +11,7 @@ const useHeaderStyles = () => {
     const style = document.createElement("style");
     style.id = styleId;
     style.innerHTML = `
-    .hd-root {
+   .hd-root {
         --hd-black: #0e1015;
         --hd-charcoal:#161b24;
         --hd-card: #1e2535;
@@ -32,7 +32,7 @@ const useHeaderStyles = () => {
         backdrop-filter: blur(12px);
       }
 
-    .hd-nav {
+   .hd-nav {
         max-width: 1100px;
         margin: 0 auto;
         display: flex;
@@ -41,26 +41,29 @@ const useHeaderStyles = () => {
         padding: 1rem 1.5rem;
       }
 
-    .hd-logo-wrap {
+   .hd-logo-wrap {
         display: flex;
         align-items: center;
         text-decoration: none;
         gap: 0.75rem;
       }
 
-    .hd-logo-svg {
+   .hd-logo-svg {
         height: 48px;
-        width: auto;
+        width: 48px;
+        min-width: 48px;
         color: var(--hd-gold);
+        display: block;
+        flex-shrink: 0;
       }
 
-    .hd-logo-text {
+   .hd-logo-text {
         display: flex;
         flex-direction: column;
         line-height: 1;
       }
 
-    .hd-logo-name {
+   .hd-logo-name {
         font-family: 'Playfair Display', serif;
         font-size: 1.1rem;
         font-weight: 900;
@@ -68,11 +71,11 @@ const useHeaderStyles = () => {
         letter-spacing: 0.02em;
       }
 
-    .hd-logo-name span {
+   .hd-logo-name span {
         color: var(--hd-gold);
       }
 
-    .hd-tagline {
+   .hd-tagline {
         font-size: 0.65rem;
         font-weight: 500;
         letter-spacing: 0.18em;
@@ -83,10 +86,10 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 768px) {
-      .hd-tagline { display: block; }
+     .hd-tagline { display: block; }
       }
 
-    .hd-menu-btn {
+   .hd-menu-btn {
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -99,13 +102,13 @@ const useHeaderStyles = () => {
         transition: border-color 0.2s, color 0.2s;
       }
 
-    .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
+   .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
         border-color: var(--hd-gold);
         color: var(--hd-gold);
         outline: none;
       }
 
-    .hd-menu-btn-text {
+   .hd-menu-btn-text {
         font-size: 0.75rem;
         letter-spacing: 0.15em;
         text-transform: uppercase;
@@ -113,20 +116,20 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 1024px) {
-      .hd-menu-btn { display: none; }
+     .hd-menu-btn { display: none; }
       }
 
-    .hd-links {
+   .hd-links {
         display: none;
         list-style: none;
         gap: 0.25rem;
       }
 
       @media (min-width: 1024px) {
-      .hd-links { display: flex; }
+     .hd-links { display: flex; }
       }
 
-    .hd-link {
+   .hd-link {
         display: block;
         font-size: 0.82rem;
         font-weight: 500;
@@ -139,23 +142,23 @@ const useHeaderStyles = () => {
         transition: color 0.2s, border-color 0.2s, background 0.2s;
       }
 
-    .hd-link:hover,.hd-link:focus-visible {
+   .hd-link:hover,.hd-link:focus-visible {
         color: var(--hd-gold);
         border-color: var(--hd-gold);
         outline: none;
       }
 
-    .hd-link.active {
+   .hd-link.active {
         color: var(--hd-black);
         background: var(--hd-gold);
         border-color: var(--hd-gold);
       }
 
-    .hd-link.active:hover {
+   .hd-link.active:hover {
         background: var(--hd-gold-lt);
       }
 
-    .hd-mobile-menu {
+   .hd-mobile-menu {
         background: var(--hd-charcoal);
         border-top: 1px solid var(--hd-border);
         padding: 1rem 1.5rem 1.5rem;
@@ -170,13 +173,13 @@ const useHeaderStyles = () => {
         to { opacity: 1; transform: translateY(0); }
       }
 
-    .hd-mobile-menu.hd-link {
+   .hd-mobile-menu.hd-link {
         text-align: center;
         padding: 0.9rem 1rem;
       }
 
       @media (min-width: 1024px) {
-      .hd-mobile-menu { display: none; }
+     .hd-mobile-menu { display: none; }
       }
     `;
     document.head.appendChild(style);
@@ -188,7 +191,7 @@ const useHeaderStyles = () => {
   }, []);
 };
 
-// SVG Logo intégré
+// SVG Logo avec dimensions fixes
 const LogoSVG = () => (
   <svg
     className="hd-logo-svg"
@@ -197,25 +200,22 @@ const LogoSVG = () => (
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    {/* Contour cercle */}
-    <circle cx="60" cy="60" r="58" stroke="currentColor" strokeWidth="2.5" />
-    {/* Ciseaux stylisés */}
+    <circle cx="60" cy="60" r="58" stroke="currentColor" strokeWidth="3" />
     <path
       d="M35 45L60 60L35 75M85 45L60 60L85 75"
       stroke="currentColor"
-      strokeWidth="3"
+      strokeWidth="3.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
-    <circle cx="35" cy="45" r="5" fill="currentColor" />
-    <circle cx="35" cy="75" r="5" fill="currentColor" />
-    <circle cx="85" cy="45" r="5" fill="currentColor" />
-    <circle cx="85" cy="75" r="5" fill="currentColor" />
-    {/* Moustache */}
+    <circle cx="35" cy="45" r="6" fill="currentColor" />
+    <circle cx="35" cy="75" r="6" fill="currentColor" />
+    <circle cx="85" cy="45" r="6" fill="currentColor" />
+    <circle cx="85" cy="75" r="6" fill="currentColor" />
     <path
-      d="M45 65 Q60 75 75 65"
+      d="M45 68 Q60 78 75 68"
       stroke="currentColor"
-      strokeWidth="2.5"
+      strokeWidth="3"
       strokeLinecap="round"
       fill="none"
     />
@@ -247,9 +247,9 @@ const Header = () => {
       if (
         isMenuOpen &&
         menuRef.current &&
-      !menuRef.current.contains(e.target) &&
+     !menuRef.current.contains(e.target) &&
         btnRef.current &&
-      !btnRef.current.contains(e.target)
+     !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -273,7 +273,7 @@ const Header = () => {
       { path: "/about", label: "À Propos" },
       { path: "/annonces", label: "Annonces" },
       { path: "/contact", label: "Contact" },
-    ...(role === "admin"? [{ path: "/admin", label: "Espace Admin" }] : []),
+   ...(role === "admin"? [{ path: "/admin", label: "Espace Admin" }] : []),
     ],
     [role]
   );
