@@ -4,21 +4,24 @@ import "react-toastify/dist/ReactToastify.css";
 import Header from "./Header";
 import Footer from "./Footer";
 
+const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
+const PHONE = "514-778-8318";
+
 const WelcomeMessage = ({ scrollToForm }) => (
   <div style={styles.welcomeContainer}>
-    <div style={styles.badge}>Depuis 2018 à Boston</div>
+    <div style={styles.badge}>Barbier Expert à Shawinigan</div>
     <h2 style={styles.welcomeTitle}>
       L'Art de la Coiffure Masculine
     </h2>
     <p style={styles.welcomeText}>
       Chez <strong>Mr. Renaudin Barbershop</strong>, chaque coupe est un rituel.
-      Barbier expert formé en France, Carl Fortunat allie techniques traditionnelles
-      et tendances actuelles pour révéler votre style.
+      Situé au <strong>{ADDRESS}</strong>, Carl Fortunat
+      allie techniques traditionnelles françaises et tendances actuelles pour révéler votre style.
     </p>
     <div style={styles.features}>
-      <div style={styles.feature}>✂️ Coupe & Taille de barbe</div>
-      <div style={styles.feature}>🕒 Rendez-vous 7j/7</div>
-      <div style={styles.feature}>⭐ 4.9/5 sur Google</div>
+      <div style={styles.feature}>✂️ Fades & Dégradés Experts</div>
+      <div style={styles.feature}>🪒 Rasage Traditionnel</div>
+      <div style={styles.feature}>⭐ 4.9/5 - 500+ Clients Satisfaits</div>
     </div>
     <button
       style={styles.welcomeButton}
@@ -27,7 +30,7 @@ const WelcomeMessage = ({ scrollToForm }) => (
       Réserver ma place
     </button>
     <p style={styles.smallText}>
-      Plus de 500 clients satisfaits à Boston
+      {ADDRESS} • <a href={`tel:${PHONE}`} style={{ color: "inherit", textDecoration: "underline" }}>{PHONE}</a>
     </p>
   </div>
 );
@@ -51,8 +54,8 @@ const LoginForm = ({
       </h1>
       <p style={styles.subtitle}>
         {isLogin
-        ? "Retrouvez vos rendez-vous et messages"
-          : "Accès prioritaire aux créneaux"}
+     ? "Retrouvez vos rendez-vous et messages"
+          : "Accès prioritaire aux créneaux Shawinigan"}
       </p>
 
       <form onSubmit={handleSubmit} style={styles.formContent}>
@@ -60,7 +63,7 @@ const LoginForm = ({
           <label style={styles.label}>Nom d'utilisateur</label>
           <input
             type="text"
-            placeholder="ex: carl.boston"
+            placeholder="ex: carl.shawinigan"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={styles.input}
@@ -83,8 +86,8 @@ const LoginForm = ({
         <button
           type="submit"
           style={{
-        ...styles.button,
-        ...(loading? styles.buttonDisabled : {})
+     ...styles.button,
+     ...(loading? styles.buttonDisabled : {})
           }}
           disabled={loading}
         >
@@ -93,7 +96,7 @@ const LoginForm = ({
 
         <div style={styles.switchContainer}>
           <p style={styles.switchText}>
-            {isLogin? "Première visite?" : "Déjà client?"}
+            {isLogin? "Première visite au salon?" : "Déjà client?"}
           </p>
           <button
             type="button"
@@ -109,6 +112,13 @@ const LoginForm = ({
             {errorMessage}
           </div>
         )}
+
+        <div style={styles.contactFooter}>
+          <p style={styles.contactText}>
+            {ADDRESS}<br />
+            <a href={`tel:${PHONE}`} style={styles.contactLink}>{PHONE}</a>
+          </p>
+        </div>
       </form>
     </div>
   </div>
@@ -166,7 +176,7 @@ const Login = ({ onLogin }) => {
 
       const endpoint = isLogin? "/login" : "/register";
       const body = isLogin
-  ? { username, password }
+? { username, password }
         : { username, password, role: "client" };
 
       try {
@@ -190,7 +200,7 @@ const Login = ({ onLogin }) => {
         setToken(userToken);
         onLogin(userRole, userId, userToken);
 
-        toast.success(isLogin? "Bon retour parmi nous!" : "Bienvenue chez Mr. Renaudin!");
+        toast.success(isLogin? "Bon retour à Shawinigan!" : "Bienvenue chez Mr. Renaudin!");
         setErrorMessage("");
       } catch (error) {
         console.error("Erreur:", error);
@@ -441,6 +451,21 @@ const styles = {
     padding: '12px',
     fontSize: '0.85rem',
     textAlign: 'center',
+  },
+  contactFooter: {
+    marginTop: '24px',
+    paddingTop: '24px',
+    borderTop: '1px solid var(--border)',
+    textAlign: 'center',
+  },
+  contactText: {
+    color: '#6b7280',
+    fontSize: '0.8rem',
+    lineHeight: '1.6',
+  },
+  contactLink: {
+    color: '#d4a843',
+    textDecoration: 'none',
   },
   loggedInContainer: {
     textAlign: 'center',
