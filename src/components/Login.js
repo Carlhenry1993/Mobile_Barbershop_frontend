@@ -6,21 +6,29 @@ import Footer from "./Footer";
 
 const WelcomeMessage = ({ scrollToForm }) => (
   <div style={styles.welcomeContainer}>
+    <div style={styles.badge}>Depuis 2018 à Boston</div>
     <h2 style={styles.welcomeTitle}>
-      Bienvenue chez Mr. Renaudin Barbershop
+      L'Art de la Coiffure Masculine
     </h2>
     <p style={styles.welcomeText}>
-      Redécouvrez l'excellence de la coiffure à domicile. Nos barbiers experts vous
-      offrent des coupes sur-mesure, alliant élégance et modernité pour sublimer votre
-      style. Créez votre compte dès aujourd'hui et offrez-vous une expérience personnalisée
-      et luxueuse, directement chez vous.
+      Chez <strong>Mr. Renaudin Barbershop</strong>, chaque coupe est un rituel.
+      Barbier expert formé en France, Carl Fortunat allie techniques traditionnelles
+      et tendances actuelles pour révéler votre style.
     </p>
+    <div style={styles.features}>
+      <div style={styles.feature}>✂️ Coupe & Taille de barbe</div>
+      <div style={styles.feature}>🕒 Rendez-vous 7j/7</div>
+      <div style={styles.feature}>⭐ 4.9/5 sur Google</div>
+    </div>
     <button
       style={styles.welcomeButton}
       onClick={scrollToForm}
     >
-      Rejoignez-nous dès maintenant
+      Réserver ma place
     </button>
+    <p style={styles.smallText}>
+      Plus de 500 clients satisfaits à Boston
+    </p>
   </div>
 );
 
@@ -39,51 +47,60 @@ const LoginForm = ({
   <div ref={formRef} id="login-form" style={styles.formContainer}>
     <div style={styles.form}>
       <h1 style={styles.title}>
-        {isLogin? "Connexion" : "Créer un compte"}
+        {isLogin? "Espace Client" : "Créer mon compte"}
       </h1>
       <p style={styles.subtitle}>
-        {isLogin? "Accédez à votre espace" : "Rejoignez Mr. Renaudin"}
+        {isLogin
+        ? "Retrouvez vos rendez-vous et messages"
+          : "Accès prioritaire aux créneaux"}
       </p>
 
       <form onSubmit={handleSubmit} style={styles.formContent}>
-        <input
-          type="text"
-          placeholder="Nom d'utilisateur"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={styles.input}
-          disabled={loading}
-        />
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-          disabled={loading}
-        />
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Nom d'utilisateur</label>
+          <input
+            type="text"
+            placeholder="ex: carl.boston"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            style={styles.input}
+            disabled={loading}
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Mot de passe</label>
+          <input
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            style={styles.input}
+            disabled={loading}
+          />
+        </div>
 
         <button
           type="submit"
           style={{
-          ...styles.button,
-          ...(loading? styles.buttonDisabled : {})
+        ...styles.button,
+        ...(loading? styles.buttonDisabled : {})
           }}
           disabled={loading}
         >
-          {loading? "Chargement..." : isLogin? "Se connecter" : "S’inscrire"}
+          {loading? "Connexion..." : isLogin? "Accéder à mon compte" : "Créer mon compte"}
         </button>
 
         <div style={styles.switchContainer}>
           <p style={styles.switchText}>
-            {isLogin? "Pas encore de compte?" : "Déjà un compte?"}
+            {isLogin? "Première visite?" : "Déjà client?"}
           </p>
           <button
             type="button"
             onClick={() => setIsLogin((prev) =>!prev)}
             style={styles.switchLink}
           >
-            {isLogin? "Créer un compte" : "Se connecter"}
+            {isLogin? "Créer un compte gratuitement" : "Je me connecte"}
           </button>
         </div>
 
@@ -112,19 +129,16 @@ const Login = ({ onLogin }) => {
     localStorage.removeItem("token");
     setToken(null);
     onLogin(null, null, null);
-    toast.info("Déconnexion réussie");
+    toast.info("À bientôt!");
   }, [onLogin]);
 
-  // Verify and decode the token whenever it changes
   useEffect(() => {
     if (token) {
       try {
         const [, payload] = token.split(".");
         const decodedToken = JSON.parse(atob(payload));
 
-        // Vérifier expiration
         if (decodedToken.exp && decodedToken.exp * 1000 < Date.now()) {
-          console.warn("Token expiré");
           handleLogout();
           return;
         }
@@ -133,7 +147,7 @@ const Login = ({ onLogin }) => {
         const userId = decodedToken.id.toString();
         onLogin(userRole, userId, token);
       } catch (error) {
-        console.error("Erreur lors du décodage du token :", error);
+        console.error("Token invalide:", error);
         localStorage.removeItem("token");
         setToken(null);
       }
@@ -144,7 +158,7 @@ const Login = ({ onLogin }) => {
     async (e) => {
       e.preventDefault();
       if (!username ||!password) {
-        setErrorMessage("Veuillez remplir tous les champs.");
+        setErrorMessage("Nom d'utilisateur et mot de passe requis.");
         return;
       }
       setLoading(true);
@@ -152,7 +166,7 @@ const Login = ({ onLogin }) => {
 
       const endpoint = isLogin? "/login" : "/register";
       const body = isLogin
-    ? { username, password }
+  ? { username, password }
         : { username, password, role: "client" };
 
       try {
@@ -165,7 +179,7 @@ const Login = ({ onLogin }) => {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || `Erreur ${response.status}`);
+          throw new Error(data.error || "Erreur de connexion");
         }
 
         const userRole = isLogin? data.user.role : "client";
@@ -176,12 +190,12 @@ const Login = ({ onLogin }) => {
         setToken(userToken);
         onLogin(userRole, userId, userToken);
 
-        toast.success(isLogin? "Connexion réussie!" : "Inscription réussie!");
+        toast.success(isLogin? "Bon retour parmi nous!" : "Bienvenue chez Mr. Renaudin!");
         setErrorMessage("");
       } catch (error) {
-        console.error("Erreur lors de la requête:", error);
-        setErrorMessage(error.message || "Erreur lors de la connexion.");
-        toast.error(error.message || "Erreur lors de la connexion.");
+        console.error("Erreur:", error);
+        setErrorMessage(error.message || "Erreur de connexion.");
+        toast.error(error.message || "Erreur de connexion.");
       } finally {
         setLoading(false);
       }
@@ -213,11 +227,11 @@ const Login = ({ onLogin }) => {
                 Se déconnecter
               </button>
               <div style={styles.loggedInText}>
-                Accédez à votre espace pour un service personnalisé.
+                Accédez à vos rendez-vous et messages privés.
               </div>
             </div>
           ) : (
-            <>
+            <div style={styles.splitLayout}>
               <WelcomeMessage scrollToForm={scrollToForm} />
               <LoginForm
                 isLogin={isLogin}
@@ -231,7 +245,7 @@ const Login = ({ onLogin }) => {
                 loading={loading}
                 formRef={formRef}
               />
-            </>
+            </div>
           )}
         </main>
         <Footer />
@@ -253,7 +267,7 @@ const styles = {
   overlay: {
     position: 'absolute',
     inset: 0,
-    background: 'linear-gradient(135deg, rgba(14,16,21,0.95), rgba(22,27,36,0.95))',
+    background: 'linear-gradient(135deg, rgba(14,16,21,0.97), rgba(22,27,36,0.97))',
     zIndex: 1,
   },
   content: {
@@ -265,44 +279,76 @@ const styles = {
   },
   main: {
     flexGrow: 1,
-    padding: '40px 20px',
+    padding: '60px 20px',
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  splitLayout: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '60px',
+    maxWidth: '1200px',
+    width: '100%',
+    alignItems: 'center',
+  },
   welcomeContainer: {
-    textAlign: 'center',
-    padding: '40px 20px',
-    maxWidth: '700px',
-    marginBottom: '40px',
+    textAlign: 'left',
+    padding: '20px',
+  },
+  badge: {
+    display: 'inline-block',
+    backgroundColor: 'rgba(212,168,67,0.15)',
+    color: '#d4a843',
+    padding: '6px 14px',
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
+    marginBottom: '24px',
+    border: '1px solid rgba(212,168,67,0.3)',
   },
   welcomeTitle: {
     color: '#eef2f7',
-    fontSize: '2.5rem',
+    fontSize: '3rem',
     fontWeight: '700',
-    marginBottom: '20px',
+    marginBottom: '24px',
     fontFamily: "'Playfair Display', serif",
-    textShadow: '2px 2px 8px rgba(0,0,0,0.8)',
+    lineHeight: '1.2',
   },
   welcomeText: {
     color: '#b8c8da',
-    fontSize: '1.1rem',
-    lineHeight: '1.7',
+    fontSize: '1.05rem',
+    lineHeight: '1.8',
     marginBottom: '32px',
-    textShadow: '1px 1px 4px rgba(0,0,0,0.8)',
+  },
+  features: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    marginBottom: '32px',
+  },
+  feature: {
+    color: '#eef2f7',
+    fontSize: '0.95rem',
+    fontWeight: '500',
   },
   welcomeButton: {
     backgroundColor: '#d4a843',
     color: '#0e1015',
     fontWeight: '700',
-    padding: '14px 32px',
+    padding: '16px 40px',
     border: 'none',
     fontSize: '0.9rem',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     cursor: 'pointer',
-    transition: 'background-color 0.2s',
+    transition: 'all 0.2s',
+  },
+  smallText: {
+    color: '#6b7280',
+    fontSize: '0.8rem',
+    marginTop: '16px',
   },
   formContainer: {
     width: '100%',
@@ -314,16 +360,14 @@ const styles = {
     border: '1px solid #2a3348',
   },
   title: {
-    fontSize: '2rem',
+    fontSize: '1.8rem',
     fontWeight: '700',
-    textAlign: 'center',
     marginBottom: '8px',
     color: '#eef2f7',
     fontFamily: "'Playfair Display', serif",
   },
   subtitle: {
     fontSize: '0.9rem',
-    textAlign: 'center',
     marginBottom: '32px',
     color: '#b8c8da',
   },
@@ -331,6 +375,16 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
+  },
+  inputGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  label: {
+    color: '#b8c8da',
+    fontSize: '0.85rem',
+    fontWeight: '500',
   },
   input: {
     width: '100%',
@@ -356,6 +410,7 @@ const styles = {
     letterSpacing: '0.08em',
     cursor: 'pointer',
     transition: 'background-color 0.2s',
+    marginTop: '8px',
   },
   buttonDisabled: {
     opacity: 0.5,
