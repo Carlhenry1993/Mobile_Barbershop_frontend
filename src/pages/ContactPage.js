@@ -1,21 +1,305 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { AiOutlinePhone, AiOutlineMail } from "react-icons/ai";
-import { FaMapMarkerAlt, FaClock } from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, useInView, useReducedMotion, AnimatePresence } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// L'endpoint est défini via une variable d'environnement pour une flexibilité maximale
+const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
+const PHONE = "514-778-8318";
+const EMAIL = "mrrenaudinbarber@gmail.com";
+const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
 const CONTACT_ENDPOINT = process.env.REACT_APP_CONTACT_ENDPOINT || "https://mobile-barbershop-backend.onrender.com/api/contact";
 
-const ContactPage = () => {
-  // Scroll to the top on component mount
+const useContactStyles = () => {
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+    const styleId = "mr-renaudin-contact-styles";
+    if (document.getElementById(styleId)) return;
 
-  // Gestion du formulaire et validation via React Hook Form
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+  .ct-root {
+        --ct-black: #0e1015;
+        --ct-charcoal: #161b24;
+        --ct-card: #1e2535;
+        --ct-border: #2a3348;
+        --ct-gold: #d4a843;
+        --ct-gold-lt: #f0c96a;
+        --ct-gold-dim: rgba(212,168,67,0.13);
+        --ct-steel: #8ba8c8;
+        --ct-cream: #eef2f7;
+        --ct-light: #b8c8da;
+        --ct-muted: #7888a0;
+        --ct-danger: #e74c3c;
+        --ct-success: #27ae60;
+
+        background: var(--ct-black);
+        color: var(--ct-cream);
+        font-family: 'DM Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
+      }
+
+  .ct-root::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        opacity: 0.035;
+      }
+
+  .ct-inner { position: relative; z-index: 1; flex: 1; }
+
+  .ct-eyebrow {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--ct-gold);
+        margin-bottom: 1rem;
+      }
+
+  .ct-display {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-weight: 900;
+        line-height: 1.05;
+        color: var(--ct-cream);
+      }
+
+  .ct-serif-body {
+        font-family: 'Cormorant Garamond', Georgia, serif;
+        font-weight: 300;
+        font-size: 1.25rem;
+        line-height: 1.85;
+        color: var(--ct-light);
+      }
+      @media (max-width: 768px) {
+  .ct-serif-body { font-size: 1.15rem; }
+      }
+
+  .ct-gold-rule {
+        display: block;
+        width: 60px;
+        height: 2px;
+        background: var(--ct-gold);
+        margin: 0 auto 1.5rem;
+      }
+
+  .ct-section-pad { padding: 7rem 1.5rem; }
+      @media (max-width: 768px) {
+  .ct-section-pad { padding: 5rem 1.25rem; }
+      }
+
+  .ct-btn-gold, .ct-btn-outline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 500;
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 1rem 2rem;
+        border: none;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s, border-color 0.3s, color 0.3s;
+        text-decoration: none;
+        will-change: transform;
+      }
+  .ct-btn-gold {
+        background: var(--ct-gold);
+        color: var(--ct-black);
+      }
+  .ct-btn-gold:hover, .ct-btn-gold:focus-visible { 
+        background: var(--ct-gold-lt); 
+        transform: translateY(-2px);
+        outline: 2px solid var(--ct-gold-lt);
+        outline-offset: 2px;
+      }
+  .ct-btn-gold:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+  .ct-btn-outline {
+        background: transparent;
+        color: var(--ct-cream);
+        border: 1px solid rgba(184,200,218,0.3);
+      }
+  .ct-btn-outline:hover, .ct-btn-outline:focus-visible { 
+        border-color: var(--ct-gold); 
+        color: var(--ct-gold); 
+        transform: translateY(-2px);
+        outline: 2px solid var(--ct-gold);
+        outline-offset: 2px;
+      }
+
+  .ct-hero {
+        position: relative;
+        min-height: 70svh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        overflow: hidden;
+        padding: 0 1.5rem;
+        background: var(--ct-charcoal);
+      }
+
+  .ct-hero::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 30%, rgba(212,168,67,0.08) 0%, transparent 60%);
+      }
+
+  .ct-card {
+        background: var(--ct-card);
+        border: 1px solid var(--ct-border);
+        padding: 2.5rem 2rem;
+        height: 100%;
+      }
+
+  .ct-input, .ct-textarea {
+        width: 100%;
+        background: var(--ct-black);
+        border: 1px solid var(--ct-border);
+        color: var(--ct-cream);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.95rem;
+        padding: 1rem 1.25rem;
+        transition: border-color 0.3s, background 0.3s;
+      }
+  .ct-input::placeholder, .ct-textarea::placeholder {
+        color: var(--ct-muted);
+      }
+  .ct-input:focus, .ct-textarea:focus {
+        outline: none;
+        border-color: var(--ct-gold);
+        background: #1a2332;
+      }
+  .ct-textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+
+  .ct-label {
+        display: block;
+        font-size: 0.8rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--ct-gold);
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+      }
+
+  .ct-error {
+        color: var(--ct-danger);
+        font-size: 0.8rem;
+        margin-top: 0.5rem;
+      }
+
+  .ct-contact-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+      }
+
+  .ct-contact-icon {
+        font-size: 1.5rem;
+        color: var(--ct-gold);
+        margin-top: 0.2rem;
+        flex-shrink: 0;
+      }
+
+  .ct-contact-link {
+        color: var(--ct-light);
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+  .ct-contact-link:hover {
+        color: var(--ct-gold);
+      }
+
+  .ct-success-box {
+        background: rgba(39,174,96,0.1);
+        border: 1px solid rgba(39,174,96,0.3);
+        padding: 2rem;
+        text-align: center;
+      }
+
+  .ct-success-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.75rem;
+        color: var(--ct-success);
+        margin-bottom: 0.75rem;
+      }
+
+  .ct-map-wrap {
+        border: 1px solid var(--ct-border);
+        overflow: hidden;
+        margin-top: 2rem;
+        aspect-ratio: 16/9;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  show: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.75, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] },
+  }),
+};
+
+const FadeIn = ({ children, delay = 0, className = "" }) => {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const shouldReduceMotion = useReducedMotion();
+  
+  if (shouldReduceMotion) return <div className={className}>{children}</div>;
+  
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial="hidden"
+      animate={inView? "show" : "hidden"}
+      custom={delay}
+      variants={fadeUp}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+const ContactPage = () => {
+  useContactStyles();
+  const shouldReduceMotion = useReducedMotion();
+  
   const {
     register,
     handleSubmit,
@@ -26,7 +310,10 @@ const ContactPage = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submissionError, setSubmissionError] = useState("");
 
-  // Handler de soumission : envoi des données à l'API et affichage d'un message engageant
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   const onSubmit = async (data) => {
     setSubmissionError("");
     try {
@@ -38,275 +325,309 @@ const ContactPage = () => {
       if (response.ok) {
         setSubmitted(true);
         reset();
+        toast.success("Message envoyé ! On vous répond vite.");
       } else {
         const errorData = await response.json();
-        setSubmissionError(errorData.message || "Oups, une erreur inattendue est survenue. Réessayez rapidement !");
+        setSubmissionError(errorData.message || "Une erreur est survenue. Réessayez !");
+        toast.error("Erreur lors de l'envoi");
       }
     } catch (error) {
       setSubmissionError("Erreur réseau : merci de réessayer dans quelques instants !");
+      toast.error("Erreur réseau");
     }
   };
 
   return (
-    <>
+    <div className="ct-root">
       <Header />
+      <div className="ct-inner">
+        
+        {/* Hero */}
+        <section className="ct-hero">
+          <div className="relative z-10 max-w-4xl mx-auto">
+            <motion.p
+              className="ct-eyebrow"
+              initial={shouldReduceMotion? {} : { opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+            >
+              Parlons de votre style
+            </motion.p>
 
-      {/* Section Héro : captez l'attention et inspirez vos visiteurs */}
-      <section className="bg-gradient-to-r from-blue-100 to-blue-200 text-gray-900 py-16 px-4 sm:py-20 sm:px-8 lg:py-24">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between">
-          <motion.div
-            className="text-left w-full lg:w-1/2"
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          >
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 mb-4">
-              Transformez votre look avec Mr. Renaudin Barbershop !
-            </h1>
-            <p className="text-base sm:text-lg lg:text-xl font-medium text-gray-700 mb-6">
-              Vous rêvez d’une métamorphose capillaire ou d’un rafraîchissement de style ? Nos experts passionnés vous offrent une expérience unique et personnalisée. Contactez-nous dès maintenant – ou discutez en direct avec nous en cliquant sur l’icône de chat ci-dessous !
-            </p>
-          </motion.div>
+            <motion.h1
+              className="ct-display"
+              style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", marginBottom: "1.5rem" }}
+              initial={shouldReduceMotion? {} : { opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            >
+              Contactez<br />
+              <span style={{ color: "var(--ct-gold)" }}>Mr. Renaudin</span>
+            </motion.h1>
 
-          <motion.div
-            className="mt-8 lg:mt-0 w-full lg:w-1/2 flex justify-center"
-            initial={{ opacity: 0, x: -100 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-          >
-            <img
-              src="/Photos/Carnet1.png"
-              alt="Illustration élégante"
-              className="max-w-full w-64 sm:w-80 lg:w-96 mx-auto rounded-lg shadow-lg"
-            />
-          </motion.div>
-        </div>
-      </section>
+            <motion.p
+              className="ct-serif-body"
+              style={{ maxWidth: "680px", margin: "0 auto 2.5rem" }}
+              initial={shouldReduceMotion? {} : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.6 }}
+            >
+              Une question ? Besoin de conseils ? Réservez votre consultation gratuite. 
+              Notre équipe de barbiers experts est là pour vous accompagner dans votre transformation.
+            </motion.p>
+          </div>
+        </section>
 
-      <main
-        id="contact-section"
-        className="bg-gradient-to-r from-gray-100 to-gray-200 py-10 px-4 sm:px-6 lg:px-8"
-      >
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between space-y-8 lg:space-y-0 lg:space-x-8">
-          {/* Section Coordonnées : inspirez confiance et démontrez votre expertise */}
-          <motion.section
-            className="w-full lg:w-1/2 bg-white shadow-lg rounded-3xl p-6 sm:p-8 lg:p-12 border-t-8 border-blue-500"
-            initial={{ opacity: 0, x: -100 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-          >
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-800 mb-6">
-              Nos Coordonnées – Parlons de votre transformation !
-            </h2>
-            <div className="space-y-6">
-              <motion.p
-                className="text-sm sm:text-base lg:text-lg text-gray-700 flex items-center"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                <AiOutlinePhone className="mr-3 text-xl sm:text-2xl text-blue-600" />
-                <a
-                  href="tel:+15147788318"
-                  className="text-blue-600 hover:underline break-words"
-                >
-                  +1 514 778 8318
-                </a>
-              </motion.p>
-
-              <motion.p
-                className="text-sm sm:text-base lg:text-lg text-gray-700 flex items-center"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.2 }}
-              >
-                <AiOutlineMail className="mr-3 text-xl sm:text-2xl text-blue-600" />
-                <a
-                  href="mailto:mrrenaudinbarber@gmail.com"
-                  className="text-blue-600 hover:underline break-words"
-                >
-                  mrrenaudinbarber@gmail.com
-                </a>
-              </motion.p>
-
-              <motion.p
-                className="text-sm sm:text-base lg:text-lg text-gray-700 flex items-center"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.4 }}
-              >
-                <FaMapMarkerAlt className="mr-3 text-xl sm:text-2xl text-blue-600" />
-                <a
-                  href="https://www.google.com/maps?q=Trois-Rivières,+QC,+Canada"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-600 hover:underline break-words"
-                >
-                  Trois-Rivières, QC, Canada
-                </a>
-              </motion.p>
-
-              <motion.p
-                className="text-sm sm:text-base lg:text-lg text-gray-700 flex items-center"
-                initial={{ opacity: 0, x: -50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.8, delay: 0.6 }}
-              >
-                <FaClock className="mr-3 text-xl sm:text-2xl text-blue-600" />
-                <span className="text-xs sm:text-sm lg:text-base">
-                  Ouverts tous les jours : 11h30 - 20h30
-                </span>
-              </motion.p>
-            </div>
-          </motion.section>
-
-          {/* Section Formulaire : incitez à agir et à vivre l'expérience */}
-          <motion.section
-            className="w-full lg:w-1/2 bg-white shadow-lg rounded-3xl p-6 sm:p-8 lg:p-12 border-t-8 border-blue-500"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.5, ease: "easeOut" }}
-          >
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold text-gray-800 mb-6">
-              Contactez-nous dès maintenant et lancez votre transformation !
-            </h2>
-            <AnimatePresence>
-              {submitted ? (
-                <motion.div
-                  key="successMessage"
-                  className="text-center bg-green-100 p-6 rounded-xl shadow-lg border-l-4 border-green-600"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                >
-                  <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-green-700 mb-4">
-                    Votre demande a été envoyée avec succès !
+        {/* Main Content */}
+        <section className="ct-section-pad" style={{ background: "var(--ct-charcoal)" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))",
+              gap: "3rem",
+            }}>
+              
+              {/* Coordonnées */}
+              <FadeIn>
+                <div className="ct-card">
+                  <p className="ct-eyebrow">Nos coordonnées</p>
+                  <span className="ct-gold-rule" style={{ margin: "0 0 2rem 0" }} />
+                  <h2 className="ct-display" style={{ fontSize: "2rem", marginBottom: "2rem" }}>
+                    Parlons de votre transformation
                   </h2>
-                  <p className="text-sm sm:text-base lg:text-lg text-gray-600">
-                    Merci de nous avoir contactés. Nous vous répondrons très rapidement pour vous offrir une expérience sur-mesure.
-                  </p>
-                </motion.div>
-              ) : (
-                <form
-                  onSubmit={handleSubmit(onSubmit)}
-                  noValidate
-                  aria-label="Formulaire de contact attractif"
-                >
-                  {submissionError && (
-                    <motion.div
-                      key="errorMessage"
-                      className="flex items-center justify-center mb-4 p-4 bg-red-100 border-2 border-red-500 rounded-xl"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.6 }}
-                      role="alert"
-                    >
-                      <span className="text-red-600 text-2xl mr-2" aria-hidden="true">
-                        ⚠️
-                      </span>
-                      <p className="text-red-600">{submissionError}</p>
-                    </motion.div>
-                  )}
-                  <div className="mb-4">
-                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                      Nom complet
-                    </label>
-                    <motion.input
-                      type="text"
-                      id="fullName"
-                      name="fullName"
-                      placeholder="Entrez votre nom complet et démarrez votre transformation !"
-                      aria-invalid={errors.fullName ? "true" : "false"}
-                      aria-describedby={errors.fullName ? "fullName-error" : undefined}
-                      {...register("fullName", {
-                        required: "Votre nom complet est indispensable pour débuter votre métamorphose !"
-                      })}
-                      className="mt-2 block w-full rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 p-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                    {errors.fullName && (
-                      <p id="fullName-error" className="text-red-600 text-xs sm:text-sm mt-1">
-                        {errors.fullName.message}
-                      </p>
-                    )}
+                  
+                  <div className="ct-contact-item">
+                    <span className="ct-contact-icon">📞</span>
+                    <div>
+                      <p className="ct-label">Téléphone</p>
+                      <a href={`tel:${PHONE}`} className="ct-contact-link">
+                        {PHONE}
+                      </a>
+                    </div>
                   </div>
-                  <div className="mb-4">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                      Adresse e-mail
-                    </label>
-                    <motion.input
-                      type="email"
-                      id="email"
-                      name="email"
-                      placeholder="Votre adresse e-mail pour recevoir nos offres exclusives"
-                      aria-invalid={errors.email ? "true" : "false"}
-                      aria-describedby={errors.email ? "email-error" : undefined}
-                      {...register("email", {
-                        required: "Votre e-mail est indispensable pour recevoir nos conseils premium",
-                        pattern: {
-                          value: /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/,
-                          message: "Veuillez saisir un e-mail valide"
-                        }
-                      })}
-                      className="mt-2 block w-full rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 p-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                    {errors.email && (
-                      <p id="email-error" className="text-red-600 text-xs sm:text-sm mt-1">
-                        {errors.email.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mb-4">
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700">
-                      Votre message
-                    </label>
-                    <motion.textarea
-                      id="message"
-                      name="message"
-                      placeholder="Partagez en quelques mots vos attentes ou questions..."
-                      rows="4"
-                      aria-invalid={errors.message ? "true" : "false"}
-                      aria-describedby={errors.message ? "message-error" : undefined}
-                      {...register("message", {
-                        required: "Merci de nous indiquer brièvement ce que vous recherchez !"
-                      })}
-                      className="mt-2 block w-full rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600 p-2"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5 }}
-                    />
-                    {errors.message && (
-                      <p id="message-error" className="text-red-600 text-xs sm:text-sm mt-1">
-                        {errors.message.message}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex justify-center">
-                    <motion.button
-                      type="submit"
-                      className="inline-block px-6 py-3 text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition-all duration-300"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? "Envoi en cours..." : "Lancez ma transformation"}
-                    </motion.button>
-                  </div>
-                </form>
-              )}
-            </AnimatePresence>
-          </motion.section>
-        </div>
-      </main>
 
+                  <div className="ct-contact-item">
+                    <span className="ct-contact-icon">✉️</span>
+                    <div>
+                      <p className="ct-label">Email</p>
+                      <a href={`mailto:${EMAIL}`} className="ct-contact-link">
+                        {EMAIL}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="ct-contact-item">
+                    <span className="ct-contact-icon">📍</span>
+                    <div>
+                      <p className="ct-label">Adresse</p>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ct-contact-link"
+                      >
+                        {ADDRESS}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="ct-contact-item">
+                    <span className="ct-contact-icon">🕐</span>
+                    <div>
+                      <p className="ct-label">Horaires</p>
+                      <p className="ct-contact-link" style={{ color: "var(--ct-light)" }}>
+                        Lundi - Samedi : 9h00 - 19h00<br />
+                        Dimanche : Fermé
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="ct-map-wrap">
+                    <iframe
+                      title="Mr. Renaudin Barbershop Location"
+                      src={`https://www.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&output=embed`}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0, display: "block", filter: "grayscale(30%) contrast(1.05)" }}
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+              </FadeIn>
+
+              {/* Formulaire */}
+              <FadeIn delay={0.15}>
+                <div className="ct-card">
+                  <p className="ct-eyebrow">Écrivez-nous</p>
+                  <span className="ct-gold-rule" style={{ margin: "0 0 2rem 0" }} />
+                  <h2 className="ct-display" style={{ fontSize: "2rem", marginBottom: "2rem" }}>
+                    Envoyez-nous un message
+                  </h2>
+
+                  <AnimatePresence mode="wait">
+                    {submitted ? (
+                      <motion.div
+                        key="success"
+                        className="ct-success-box"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <h3 className="ct-success-title">Message envoyé !</h3>
+                        <p style={{ color: "var(--ct-light)", fontSize: "0.95rem" }}>
+                          Merci de nous avoir contactés. Nous vous répondrons dans les 24h pour planifier votre transformation.
+                        </p>
+                      </motion.div>
+                    ) : (
+                      <motion.form
+                        key="form"
+                        onSubmit={handleSubmit(onSubmit)}
+                        noValidate
+                        initial={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                      >
+                        {submissionError && (
+                          <div style={{
+                            background: "rgba(231,76,60,0.1)",
+                            border: "1px solid rgba(231,76,60,0.3)",
+                            color: "#ff8a7a",
+                            padding: "1rem",
+                            marginBottom: "1.5rem",
+                            fontSize: "0.9rem"
+                          }}>
+                            {submissionError}
+                          </div>
+                        )}
+
+                        <div style={{ marginBottom: "1.5rem" }}>
+                          <label htmlFor="fullName" className="ct-label">
+                            Nom complet
+                          </label>
+                          <input
+                            type="text"
+                            id="fullName"
+                            placeholder="Votre nom complet"
+                            {...register("fullName", {
+                              required: "Votre nom est requis"
+                            })}
+                            className="ct-input"
+                          />
+                          {errors.fullName && (
+                            <p className="ct-error">{errors.fullName.message}</p>
+                          )}
+                        </div>
+
+                        <div style={{ marginBottom: "1.5rem" }}>
+                          <label htmlFor="email" className="ct-label">
+                            Adresse e-mail
+                          </label>
+                          <input
+                            type="email"
+                            id="email"
+                            placeholder="votre@email.com"
+                            {...register("email", {
+                              required: "Votre e-mail est requis",
+                              pattern: {
+                                value: /^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/,
+                                message: "E-mail invalide"
+                              }
+                            })}
+                            className="ct-input"
+                          />
+                          {errors.email && (
+                            <p className="ct-error">{errors.email.message}</p>
+                          )}
+                        </div>
+
+                        <div style={{ marginBottom: "1.5rem" }}>
+                          <label htmlFor="message" className="ct-label">
+                            Votre message
+                          </label>
+                          <textarea
+                            id="message"
+                            rows="5"
+                            placeholder="Parlez-nous de votre projet capillaire..."
+                            {...register("message", {
+                              required: "Votre message est requis"
+                            })}
+                            className="ct-textarea"
+                          />
+                          {errors.message && (
+                            <p className="ct-error">{errors.message.message}</p>
+                          )}
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="ct-btn-gold"
+                          disabled={isSubmitting}
+                          style={{ width: "100%" }}
+                        >
+                          {isSubmitting ? "Envoi en cours..." : "Envoyer le message"}
+                        </button>
+                      </motion.form>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </FadeIn>
+
+            </div>
+          </div>
+        </section>
+
+        {/* CTA */}
+        <section className="ct-section-pad" style={{ 
+          background: "var(--ct-black)",
+          borderTop: "1px solid var(--ct-border)",
+          textAlign: "center"
+        }}>
+          <FadeIn>
+            <p className="ct-eyebrow">Passez nous voir</p>
+            <span className="ct-gold-rule" />
+            <h2 className="ct-display" style={{ 
+              fontSize: "clamp(2.5rem, 6vw, 4.5rem)", 
+              maxWidth: "600px", 
+              margin: "0 auto 1.5rem" 
+            }}>
+              Walk-ins acceptés
+            </h2>
+            <p className="ct-serif-body" style={{ maxWidth: "480px", margin: "0 auto 2.5rem" }}>
+              Pas de rendez-vous ? Passez directement au salon. Selon disponibilité, on vous prend en charge.
+            </p>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ct-btn-gold"
+              >
+                Voir sur Google Maps
+              </a>
+              <a href={`tel:${PHONE}`} className="ct-btn-outline">
+                Appeler maintenant
+              </a>
+            </div>
+          </FadeIn>
+        </section>
+
+      </div>
       <Footer />
-    </>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+    </div>
   );
 };
 
