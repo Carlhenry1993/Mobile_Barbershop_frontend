@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useReducer } from "react";
 import io from "socket.io-client";
-import "./ChatApp.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -19,7 +18,7 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: "20px", color: "red" }}>
+        <div style={{ padding: "20px", color: "#e74c3c", background: "#0e1015" }}>
           <h2>Quelque chose s'est mal passé.</h2>
           <p>{this.state.error?.message || "Veuillez rafraîchir la page."}</p>
         </div>
@@ -29,63 +28,553 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// Configuration audio avec fichiers hébergés sur Supabase
-const createAudioElement = (src, options = {}) => {
-  const audio = new Audio(src);
-  audio.crossOrigin = "anonymous";
-  audio.preload = "auto";
-  if (options.loop) audio.loop = true;
-  return audio;
-};
+// Styles injectés pour match le thème noir/gold
+const useChatStyles = () => {
+  useEffect(() => {
+    const styleId = "mr-renaudin-chat-styles";
+    if (document.getElementById(styleId)) return;
 
-const ringtoneURL = "https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/ringtone.mp3";
-const notificationAudio = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/notification.mp3");
-const ringtoneAudio = createAudioElement(ringtoneURL, { loop: true });
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+.chat-app {
+        --chat-black: #0e1015;
+        --chat-charcoal: #161b24;
+        --chat-card: #1e2535;
+        --chat-border: #2a3348;
+        --chat-gold: #d4a843;
+        --chat-gold-lt: #f0c96a;
+        --chat-steel: #8ba8c8;
+        --chat-cream: #eef2f7;
+        --chat-light: #b8c8da;
+        --chat-muted: #7888a0;
+        --chat-danger: #e74c3c;
+        --chat-success: #27ae60;
 
-const SOCKET_SERVER_URL = "https://api.mrrenaudinbarbershop.com";
+        font-family: 'DM Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
 
-// Contraintes média pour une meilleure qualité audio/vidéo
-const audioConstraints = {
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    sampleRate: 44100,
-  },
-};
-const videoConstraints = {
-  audio: {
-    echoCancellation: true,
-    noiseSuppression: true,
-    sampleRate: 44100,
-  },
-  video: {
-    width: { ideal: 1280 },
-    height: { ideal: 720 },
-    frameRate: { ideal: 30 },
-  },
+.chat-bubble-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9998;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+
+.chat-info {
+        background: var(--chat-card);
+        color: var(--chat-light);
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        border: 1px solid var(--chat-border);
+        box-shadow: 0 4px 12px rgba(0,0,0.4);
+      }
+
+.admin-offline-notice {
+        background: rgba(231,76,60,0.1);
+        border: 1px solid rgba(231,76,60,0.3);
+        color: #ff8a7a;
+        padding: 6px 12px;
+        font-size: 0.75rem;
+      }
+
+.chat-bubble-icon {
+        width: 56px;
+        height: 56px;
+        background: var(--chat-gold);
+        color: var(--chat-black);
+        border: none;
+        cursor: pointer;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s, transform 0.2s;
+        position: relative;
+      }
+.chat-bubble-icon:hover {
+        background: var(--chat-gold-lt);
+        transform: scale(1.05);
+      }
+.chat-bubble-icon:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+.unread-count {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: var(--chat-danger);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        min-width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6px;
+      }
+
+.chat-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 380px;
+        max-height: 600px;
+        background: var(--chat-card);
+        border: 1px solid var(--chat-border);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+        transition: all 0.3s ease;
+      }
+      @media (max-width: 480px) {
+.chat-container { width: calc(100vw - 32px); right: 16px; }
+      }
+
+.chat-container.minimized {
+        height: 48px;
+        overflow: hidden;
+      }
+
+.chat-container.maximized {
+        width: 90vw;
+        max-width: 900px;
+        height: 85vh;
+        max-height: none;
+        bottom: 50%;
+        right: 50%;
+        transform: translate(50%, 50%);
+      }
+
+.chat-header {
+        background: var(--chat-charcoal);
+        border-bottom: 1px solid var(--chat-border);
+        padding: 12px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+.chat-header.minimized {
+        border-bottom: none;
+      }
+
+.chat-header h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--chat-cream);
+        margin: 0;
+      }
+
+.admin-status {
+        font-size: 0.75rem;
+        color: var(--chat-muted);
+        margin-top: 2px;
+      }
+
+.header-buttons {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+.call-buttons-container {
+        display: flex;
+        gap: 8px;
+      }
+
+.call-button {
+        width: 32px;
+        height: 32px;
+        background: transparent;
+        border: 1px solid rgba(184,200,218,0.2);
+        color: var(--chat-light);
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+.call-button:hover:not(:disabled) {
+        border-color: var(--chat-gold);
+        color: var(--chat-gold);
+        background: rgba(212,168,67,0.1);
+      }
+.call-button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+.chat-controls {
+        display: flex;
+        gap: 4px;
+      }
+
+.minimize-button,.maximize-button,.close-button {
+        width: 28px;
+        height: 28px;
+        background: transparent;
+        border: none;
+        color: var(--chat-muted);
+        cursor: pointer;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s, background 0.2s;
+      }
+.minimize-button:hover,.maximize-button:hover {
+        background: rgba(184,200,218,0.1);
+        color: var(--chat-cream);
+      }
+.close-button:hover {
+        background: rgba(231,76,60,0.2);
+        color: var(--chat-danger);
+      }
+
+.client-selector {
+        width: 100%;
+        background: var(--chat-black);
+        border: 1px solid var(--chat-border);
+        border-left: none;
+        border-right: none;
+        color: var(--chat-cream);
+        padding: 10px 16px;
+        font-size: 0.85rem;
+        font-family: 'DM Sans', sans-serif;
+      }
+.client-selector:focus {
+        outline: none;
+        border-color: var(--chat-gold);
+      }
+.client-selector:disabled {
+        opacity: 0.5;
+      }
+
+.chat-messages {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        background: var(--chat-black);
+      }
+
+.chat-messages.admin-view {
+        background: var(--chat-black);
+      }
+
+.no-messages {
+        text-align: center;
+        color: var(--chat-muted);
+        padding: 40px 20px;
+        font-size: 0.9rem;
+      }
+
+.message {
+        margin-bottom: 12px;
+        padding: 10px 14px;
+        max-width: 80%;
+        word-wrap: break-word;
+        position: relative;
+      }
+
+.message.admin {
+        background: rgba(212,168,67,0.15);
+        border: 1px solid rgba(212,168,67,0.3);
+        margin-left: auto;
+        color: var(--chat-cream);
+      }
+
+.message.client {
+        background: var(--chat-charcoal);
+        border: 1px solid var(--chat-border);
+        color: var(--chat-light);
+      }
+
+.message-author {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--chat-gold);
+        display: block;
+        margin-bottom: 4px;
+      }
+
+.message p {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+.message-timestamp {
+        font-size: 0.7rem;
+        color: var(--chat-muted);
+        display: block;
+        margin-top: 6px;
+      }
+
+.message-status {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        font-size: 0.7rem;
+        color: var(--chat-muted);
+      }
+
+.chat-input {
+        border-top: 1px solid var(--chat-border);
+        padding: 12px;
+        display: flex;
+        gap: 8px;
+        background: var(--chat-card);
+        flex-shrink: 0;
+      }
+
+.chat-input textarea {
+        flex: 1;
+        background: var(--chat-black);
+        border: 1px solid var(--chat-border);
+        color: var(--chat-cream);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.9rem;
+        padding: 10px 12px;
+        resize: none;
+        min-height: 44px;
+        max-height: 120px;
+      }
+.chat-input textarea:focus {
+        outline: none;
+        border-color: var(--chat-gold);
+      }
+.chat-input textarea:disabled {
+        opacity: 0.5;
+      }
+
+.chat-input button {
+        background: var(--chat-gold);
+        color: var(--chat-black);
+        border: none;
+        padding: 0 20px;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+.chat-input button:hover:not(:disabled) {
+        background: var(--chat-gold-lt);
+      }
+.chat-input button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+.status-indicator {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        background: var(--chat-card);
+        border: 1px solid var(--chat-border);
+        padding: 8px 14px;
+        font-size: 0.8rem;
+        color: var(--chat-light);
+        z-index: 10000;
+      }
+
+.call-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--chat-card);
+        border: 1px solid var(--chat-border);
+        padding: 24px;
+        z-index: 10001;
+        min-width: 400px;
+        max-width: 90vw;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      }
+
+.call-container h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--chat-cream);
+        margin: 0 20px 0;
+        text-align: center;
+      }
+
+.video-container {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+.remote-video {
+        width: 100%;
+        background: var(--chat-black);
+        border: 1px solid var(--chat-border);
+      }
+
+.local-video {
+        width: 120px;
+        position: absolute;
+        bottom: 100px;
+        right: 24px;
+        background: var(--chat-black);
+        border: 2px solid var(--chat-gold);
+      }
+
+.audio-container {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--chat-light);
+      }
+
+.call-timer {
+        text-align: center;
+        font-size: 1.25rem;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 600;
+        color: var(--chat-gold);
+        margin-bottom: 20px;
+      }
+
+.call-controls {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+      }
+
+.call-controls button {
+        padding: 12px 24px;
+        background: var(--chat-charcoal);
+        border: 1px solid var(--chat-border);
+        color: var(--chat-cream);
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 500;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+.call-controls button:hover {
+        border-color: var(--chat-gold);
+        color: var(--chat-gold);
+      }
+.call-controls button:last-child {
+        background: var(--chat-danger);
+        border-color: var(--chat-danger);
+      }
+.call-controls button:last-child:hover {
+        background: #c0392b;
+      }
+
+.incoming-call-modal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--chat-card);
+        border: 2px solid var(--chat-gold);
+        padding: 32px;
+        z-index: 10002;
+        text-align: center;
+        min-width: 320px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.9);
+      }
+
+.incoming-call-modal p {
+        font-size: 1.1rem;
+        color: var(--chat-cream);
+        margin-bottom: 24px;
+      }
+
+.incoming-call-modal button {
+        padding: 12px 28px;
+        margin: 0 8px;
+        border: none;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+.incoming-call-modal button:first-of-type {
+        background: var(--chat-success);
+        color: white;
+      }
+.incoming-call-modal button:first-of-type:hover {
+        background: #229954;
+      }
+.incoming-call-modal button:last-of-type {
+        background: var(--chat-danger);
+        color: white;
+      }
+.incoming-call-modal button:last-of-type:hover {
+        background: #c0392b;
+      }
+
+.sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
 };
 
 // Réducteur pour la gestion de l'état des appels
 const callReducer = (state, action) => {
   switch (action.type) {
     case "SET_IN_CALL":
-      return { ...state, inCall: action.payload };
+      return {...state, inCall: action.payload };
     case "SET_CALL_CONNECTED":
-      return { ...state, callConnected: action.payload };
+      return {...state, callConnected: action.payload };
     case "SET_CALL_TYPE":
-      return { ...state, callType: action.payload };
+      return {...state, callType: action.payload };
     case "SET_INCOMING_CALL":
-      return { ...state, incomingCall: action.payload };
+      return {...state, incomingCall: action.payload };
     case "SET_LOCAL_STREAM":
-      return { ...state, localStream: action.payload };
+      return {...state, localStream: action.payload };
     case "SET_CALL_DURATION":
-      return { ...state, callDuration: action.payload };
+      return {...state, callDuration: action.payload };
     default:
       return state;
   }
 };
 
 const ChatApp = ({ clientId, isAdmin }) => {
+  useChatStyles();
+
   // États pour le chat
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
@@ -130,6 +619,65 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
   useEffect(() => { callTypeRef.current = callState.callType; }, [callState.callType]);
 
+  // Configuration audio avec useRef pour éviter re-création
+  const audioRefs = useRef({
+    ringtone: null,
+    notification: null,
+  });
+
+  const SOCKET_SERVER_URL = "https://api.mrrenaudinbarbershop.com";
+
+  // Contraintes média mémorisées
+  const mediaConstraints = useMemo(() => ({
+    audio: {
+      echoCancellation: true,
+      noiseSuppression: true,
+      sampleRate: 44100,
+    },
+    video: {
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        sampleRate: 44100,
+      },
+      video: {
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30 },
+      },
+    }
+  }), []);
+
+  // Remplace le useEffect qui initialise l'audio vers ligne 650-670
+
+useEffect(() => {
+  const createAudioElement = (src, options = {}) => {
+    const audio = new Audio(src);
+    audio.crossOrigin = "anonymous";
+    audio.preload = "auto";
+    if (options.loop) audio.loop = true;
+    return audio;
+  };
+
+  audioRefs.current.ringtone = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/ringtone.mp3", { loop: true });
+  audioRefs.current.notification = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/notification.mp3");
+
+  // Capture les refs pour le cleanup
+  const ringtone = audioRefs.current.ringtone;
+  const notification = audioRefs.current.notification;
+
+  return () => {
+    if (ringtone) {
+      ringtone.pause();
+      ringtone.src = "";
+    }
+    if (notification) {
+      notification.pause();
+      notification.src = "";
+    }
+  };
+}, []);
+
   // Déterminer l'ID du partenaire d'appel avec validation
   const getCallPartnerId = useCallback(() => {
     if (isAdmin) {
@@ -164,15 +712,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
       await Promise.all([
         new Promise((resolve, reject) => {
-          ringtoneAudio.addEventListener("canplaythrough", resolve, { once: true });
-          ringtoneAudio.addEventListener("error", reject, { once: true });
-          ringtoneAudio.load();
+          audioRefs.current.ringtone.addEventListener("canplaythrough", resolve, { once: true });
+          audioRefs.current.ringtone.addEventListener("error", reject, { once: true });
+          audioRefs.current.ringtone.load();
         }),
-        notificationAudio
-          ? new Promise((resolve, reject) => {
-              notificationAudio.addEventListener("canplaythrough", resolve, { once: true });
-              notificationAudio.addEventListener("error", reject, { once: true });
-              notificationAudio.load();
+        audioRefs.current.notification
+        ? new Promise((resolve, reject) => {
+              audioRefs.current.notification.addEventListener("canplaythrough", resolve, { once: true });
+              audioRefs.current.notification.addEventListener("error", reject, { once: true });
+              audioRefs.current.notification.load();
             })
           : Promise.resolve(),
       ]);
@@ -185,9 +733,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
   useEffect(() => {
     const enableAudio = async () => {
       try {
-        await ringtoneAudio.play();
-        await ringtoneAudio.pause();
-        ringtoneAudio.currentTime = 0;
+        if (audioRefs.current.ringtone) {
+          await audioRefs.current.ringtone.play();
+          await audioRefs.current.ringtone.pause();
+          audioRefs.current.ringtone.currentTime = 0;
+        }
         await initializeAudio();
       } catch (error) {
         console.warn("Échec du déverrouillage audio :", error);
@@ -220,23 +770,25 @@ const ChatApp = ({ clientId, isAdmin }) => {
     () => ({
       startRingtone: async () => {
         try {
-          if (ringtoneAudio.paused) {
-            ringtoneAudio.loop = true;
-            await ringtoneAudio.play();
+          if (audioRefs.current.ringtone && audioRefs.current.ringtone.paused) {
+            audioRefs.current.ringtone.loop = true;
+            await audioRefs.current.ringtone.play();
           }
         } catch (error) {
           console.error("Erreur de lecture de la sonnerie :", error);
         }
       },
       stopRingtone: () => {
-        ringtoneAudio.pause();
-        ringtoneAudio.currentTime = 0;
+        if (audioRefs.current.ringtone) {
+          audioRefs.current.ringtone.pause();
+          audioRefs.current.ringtone.currentTime = 0;
+        }
       },
       playNotification: async () => {
-        if (!notificationAudio) return;
+        if (!audioRefs.current.notification) return;
         try {
-          notificationAudio.currentTime = 0;
-          await notificationAudio.play();
+          audioRefs.current.notification.currentTime = 0;
+          await audioRefs.current.notification.play();
         } catch (error) {
           console.warn("Échec du son de notification :", error);
         }
@@ -313,11 +865,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
         const response = await fetch(`${SOCKET_SERVER_URL}/api/messages`, {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
-        if (!response.ok) throw new Error(`Erreur HTTP ! statut : ${response.status}`);
+        if (!response.ok) throw new Error(`Erreur HTTP! statut : ${response.status}`);
         const data = await response.json();
         setMessages(data.map((msg) => ({
           id: msg.id,
-          sender: msg.sender_id === clientId ? "client" : "admin",
+          sender: msg.sender_id === clientId? "client" : "admin",
           senderId: msg.sender_id,
           message: msg.message,
           timestamp: msg.timestamp,
@@ -359,7 +911,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           socket.emit("admin_status", { adminId: clientId, online: false });
         }
         if (callState.inCall) endCall();
-        if (reason !== "io client disconnect") {
+        if (reason!== "io client disconnect") {
           const attempts = reconnectAttempts + 1;
           setReconnectAttempts(attempts);
           const delay = Math.min(1000 * Math.pow(2, attempts) + Math.random() * 100, 30000);
@@ -403,9 +955,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
           };
         }
         if (isAdmin) {
-          if (selectedClientId !== data.senderId) {
+          if (selectedClientId!== data.senderId) {
             setUnreadCounts((prev) => ({
-              ...prev,
+            ...prev,
               [data.senderId]: (prev[data.senderId] || 0) + 1,
             }));
           }
@@ -534,7 +1086,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
       ],
-    });
+          });
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         console.log("Candidat ICE généré :", event.candidate);
@@ -585,17 +1137,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const initiateCall = useCallback(
     async (type) => {
       const partnerId = getCallPartnerId();
-      if (!partnerId) return; // Arrête si l'ID du partenaire est invalide
+      if (!partnerId) return;
       if (!isConnected) {
         toast.error("Non connecté au serveur.");
         return;
       }
       try {
-        const constraints = type === "audio" ? audioConstraints : videoConstraints;
+        const constraints = type === "audio"? mediaConstraints.audio : mediaConstraints.video;
         const stream = await navigator.mediaDevices.getUserMedia(constraints).catch(async (error) => {
           if (type === "video" && error.name === "NotFoundError") {
-            toast.warn("Appareil vidéo non trouvé, basculement vers un appel audio uniquement.");
-            return await navigator.mediaDevices.getUserMedia(audioConstraints);
+            toast.warn("Caméra non trouvée, basculement vers audio uniquement.");
+            return await navigator.mediaDevices.getUserMedia(mediaConstraints.audio);
           }
           throw error;
         });
@@ -619,8 +1171,8 @@ const ChatApp = ({ clientId, isAdmin }) => {
         dispatch({ type: "SET_CALL_TYPE", payload: type });
         dispatch({ type: "SET_IN_CALL", payload: true });
         setTimeout(() => {
-          if (inCallRef.current && !callState.callConnected) {
-            toast.info("Délai d'attente de l'appel - le destinataire n'a pas répondu.");
+          if (inCallRef.current &&!callState.callConnected) {
+            toast.info("Le destinataire n'a pas répondu.");
             endCall();
           }
         }, 30000);
@@ -634,7 +1186,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         toast.error(errorMessages[error.name] || "Erreur lors du démarrage de l'appel.");
       }
     },
-    [isConnected, createPeerConnection, getCallPartnerId, callState.callConnected, endCall]
+    [isConnected, createPeerConnection, getCallPartnerId, callState.callConnected, endCall, mediaConstraints]
   );
 
   // Accepter un appel entrant
@@ -642,7 +1194,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     if (!callState.incomingCall) return;
     audioManager.stopRingtone();
     try {
-      const constraints = callState.incomingCall.callType === "audio" ? audioConstraints : videoConstraints;
+      const constraints = callState.incomingCall.callType === "audio"? mediaConstraints.audio : mediaConstraints.video;
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       dispatch({ type: "SET_LOCAL_STREAM", payload: stream });
       if (localVideoRef.current && callState.incomingCall.callType === "video") {
@@ -677,7 +1229,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       toast.error("Erreur lors de l'acceptation de l'appel.");
       endCall();
     }
-  }, [callState.incomingCall, createPeerConnection, audioManager, endCall]);
+  }, [callState.incomingCall, createPeerConnection, audioManager, endCall, mediaConstraints]);
 
   // Rejeter un appel entrant
   const handleRejectCall = useCallback(() => {
@@ -692,7 +1244,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Marquer les messages comme lus
   const handleMarkMessagesAsRead = useCallback(async () => {
-    const targetUserId = isAdmin ? selectedClientId : clientId;
+    const targetUserId = isAdmin? selectedClientId : clientId;
     if (!targetUserId) return;
     try {
       const response = await fetch(`${SOCKET_SERVER_URL}/api/messages/markAsRead`, {
@@ -704,7 +1256,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         body: JSON.stringify({ userId: targetUserId }),
       });
       if (!response.ok) {
-        throw new Error(`Erreur HTTP ! statut : ${response.status}`);
+        throw new Error(`Erreur HTTP! statut : ${response.status}`);
       }
     } catch (error) {
       console.error("Erreur lors du marquage des messages comme lus :", error);
@@ -717,19 +1269,19 @@ const ChatApp = ({ clientId, isAdmin }) => {
       event.preventDefault();
       event.stopPropagation();
       console.log("Bascule du chat cliquée", {
-        isChatOpen: !isChatOpen,
+        isChatOpen:!isChatOpen,
         eventTarget: event.target.tagName,
         eventCurrentTarget: event.currentTarget.tagName,
         eventType: event.type,
       });
-      setIsChatOpen((prev) => !prev);
+      setIsChatOpen((prev) =>!prev);
       setIsMinimized(false);
       setIsMaximized(false);
       if (!isAdmin) {
         setUnreadCount(0);
       } else if (isAdmin && selectedClientId) {
         setUnreadCounts((prev) => {
-          const updated = { ...prev };
+          const updated = {...prev };
           delete updated[selectedClientId];
           return updated;
         });
@@ -741,9 +1293,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Basculer la minimisation du chat
   const handleMinimizeToggle = useCallback(() => {
-    setIsMinimized((prev) => !prev);
+    setIsMinimized((prev) =>!prev);
     setIsMaximized(false);
-    if (!isMinimized && !isAdmin) {
+    if (!isMinimized &&!isAdmin) {
       setUnreadCount(0);
       handleMarkMessagesAsRead();
     }
@@ -751,7 +1303,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Basculer maximisation/restauration du chat
   const handleMaximizeToggle = useCallback(() => {
-    setIsMaximized((prev) => !prev);
+    setIsMaximized((prev) =>!prev);
     setIsMinimized(false);
   }, []);
 
@@ -759,10 +1311,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const handleSendMessage = useCallback(() => {
     const trimmedMessage = message.trim();
     if (!trimmedMessage) {
-      toast.error("Le message ne peut pas être vide !");
+      toast.error("Le message ne peut pas être vide!");
       return;
     }
-    if (isAdmin && !selectedClientId) {
+    if (isAdmin &&!selectedClientId) {
       toast.error("Aucun client sélectionné.");
       return;
     }
@@ -772,7 +1324,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
     const newMessage = {
       id: Date.now() + Math.random(),
-      sender: isAdmin ? "admin" : "client",
+      sender: isAdmin? "admin" : "client",
       message: trimmedMessage,
       status: "sending",
       timestamp: new Date().toISOString(),
@@ -780,12 +1332,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
     setMessages((prev) => [...prev, newMessage]);
     try {
       socketRef.current?.emit(
-        isAdmin ? "send_message_to_client" : "send_message_to_admin",
+        isAdmin? "send_message_to_client" : "send_message_to_admin",
         { clientId: selectedClientId, message: trimmedMessage }
       );
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === newMessage.id ? { ...msg, status: "sent" } : msg
+          msg.id === newMessage.id? {...msg, status: "sent" } : msg
         )
       );
       setMessage("");
@@ -793,7 +1345,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
       console.error("Erreur lors de l'envoi du message :", error);
       setMessages((prev) =>
         prev.map((msg) =>
-          msg.id === newMessage.id ? { ...msg, status: "failed" } : msg
+          msg.id === newMessage.id? {...msg, status: "failed" } : msg
         )
       );
       toast.error("Échec de l'envoi du message.");
@@ -809,7 +1361,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           setSelectedClientId(clientId);
           if (clientId) {
             setUnreadCounts((prev) => {
-              const updated = { ...prev };
+              const updated = {...prev };
               delete updated[clientId];
               return updated;
             });
@@ -822,14 +1374,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
         aria-label="Sélectionnez un client pour discuter"
       >
         <option value="">Sélectionnez un client</option>
-        {clients.length === 0 ? (
+        {clients.length === 0? (
           <option disabled>Aucun client connecté</option>
         ) : (
           clients.map((client) => (
             <option key={client.id} value={client.id}>
               {client.name || "Client inconnu"}
-              {unreadCounts[client.id] ? ` (${unreadCounts[client.id]})` : ""}
-              {client.online ? " 🟢" : " 🔴"}
+              {unreadCounts[client.id]? ` (${unreadCounts[client.id]})` : ""}
+              {client.online? " 🟢" : " 🔴"}
             </option>
           ))
         )}
@@ -842,10 +1394,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const renderMessages = useMemo(() => {
     try {
       return (
-        <div className={`chat-messages ${isAdmin ? "admin-view" : "client-view"}`} aria-live="polite">
-          {messages.length === 0 ? (
+        <div className={`chat-messages ${isAdmin? "admin-view" : "client-view"}`} aria-live="polite">
+          {messages.length === 0? (
             <div className="no-messages">
-              <p>Pas encore de messages. Commencez une conversation !</p>
+              <p>Pas encore de messages. Commencez une conversation!</p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -876,7 +1428,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
   // Calculer le total des messages non lus
   const totalUnreadMessages = isAdmin
-    ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
+   ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
     : unreadCount;
 
   return (
@@ -885,39 +1437,39 @@ const ChatApp = ({ clientId, isAdmin }) => {
         {isAdmin && (
           <div className="status-indicator">
             <span>
-              Vous êtes {isConnected ? "en ligne 🟢" : "hors ligne 🔴"}
+              Vous êtes {isConnected? "en ligne 🟢" : "hors ligne 🔴"}
               {reconnectAttempts > 0 && ` (Reconnexion : ${reconnectAttempts}/5)`}
             </span>
           </div>
         )}
-        {!isChatOpen ? (
+        {!isChatOpen? (
           <div className="chat-bubble-container">
-            <p className="chat-info">Discutez avec nous !</p>
-            {!isAdmin && !adminOnline && (
-              <p className="admin-offline-notice">L'administrateur est actuellement hors ligne</p>
+            <p className="chat-info">Discutez avec Mr. Renaudin!</p>
+            {!isAdmin &&!adminOnline && (
+              <p className="admin-offline-notice">L'équipe est actuellement hors ligne</p>
             )}
             <button
               type="button"
               className="chat-bubble-icon"
               onClick={handleChatToggle}
               disabled={!isConnected}
-              title={isConnected ? "Ouvrir le chat" : "Connexion en cours..."}
-              aria-label={isConnected ? "Ouvrir la fenêtre de chat" : "Le chat est en cours de connexion"}
+              title={isConnected? "Ouvrir le chat" : "Connexion en cours..."}
+              aria-label={isConnected? "Ouvrir la fenêtre de chat" : "Le chat est en cours de connexion"}
               aria-expanded={isChatOpen}
             >
               💬
               {totalUnreadMessages > 0 && (
                 <span className="unread-count" aria-label={`${totalUnreadMessages} messages non lus`}>
-                  {totalUnreadMessages > 99 ? "99+" : totalUnreadMessages}
+                  {totalUnreadMessages > 99? "99+" : totalUnreadMessages}
                 </span>
               )}
             </button>
           </div>
         ) : (
-          <div className={`chat-container ${isMinimized ? "minimized" : ""} ${isMaximized ? "maximized" : ""}`}>
-            {isMinimized ? (
+          <div className={`chat-container ${isMinimized? "minimized" : ""} ${isMaximized? "maximized" : ""}`}>
+            {isMinimized? (
               <div className="chat-header minimized">
-                <h4>Chat {isAdmin ? "Administrateur" : "Client"}</h4>
+                <h4>Chat {isAdmin? "Administrateur" : "Client"}</h4>
                 <div className="chat-controls">
                   <button
                     className="minimize-button"
@@ -930,10 +1482,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
                   <button
                     className="maximize-button"
                     onClick={handleMaximizeToggle}
-                    title={isMaximized ? "Restaurer" : "Maximiser"}
-                    aria-label={isMaximized ? "Restaurer le chat" : "Maximiser le chat"}
+                    title={isMaximized? "Restaurer" : "Maximiser"}
+                    aria-label={isMaximized? "Restaurer le chat" : "Maximiser le chat"}
                   >
-                    {isMaximized ? "🗗" : "🗖"}
+                    {isMaximized? "🗗" : "🗖"}
                   </button>
                   <button
                     className="close-button"
@@ -949,10 +1501,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
               <>
                 <div className="chat-header">
                   <div>
-                    <h4>Chat {isAdmin ? "Administrateur" : "Client"}</h4>
+                    <h4>Chat {isAdmin? "Administrateur" : "Client"}</h4>
                     {!isAdmin && (
                       <div className="admin-status">
-                        L'administrateur est {adminOnline ? "en ligne 🟢" : "hors ligne 🔴"}
+                        L'équipe est {adminOnline? "en ligne 🟢" : "hors ligne 🔴"}
                       </div>
                     )}
                   </div>
@@ -961,7 +1513,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="call-button audio"
                         onClick={() => initiateCall("audio")}
-                        disabled={callState.inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        disabled={callState.inCall ||!isConnected || (isAdmin &&!selectedClientId)}
                         title="Démarrer un appel audio"
                         aria-label="Démarrer un appel audio"
                       >
@@ -970,7 +1522,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="call-button video"
                         onClick={() => initiateCall("video")}
-                        disabled={callState.inCall || !isConnected || (isAdmin && !selectedClientId)}
+                        disabled={callState.inCall ||!isConnected || (isAdmin &&!selectedClientId)}
                         title="Démarrer un appel vidéo"
                         aria-label="Démarrer un appel vidéo"
                       >
@@ -981,18 +1533,18 @@ const ChatApp = ({ clientId, isAdmin }) => {
                       <button
                         className="minimize-button"
                         onClick={handleMinimizeToggle}
-                        title={isMinimized ? "Restaurer" : "Minimiser"}
-                        aria-label={isMinimized ? "Restaurer le chat" : "Minimiser le chat"}
+                        title={isMinimized? "Restaurer" : "Minimiser"}
+                        aria-label={isMinimized? "Restaurer le chat" : "Minimiser le chat"}
                       >
                         _
                       </button>
                       <button
                         className="maximize-button"
                         onClick={handleMaximizeToggle}
-                        title={isMaximized ? "Restaurer" : "Maximiser"}
-                        aria-label={isMaximized ? "Restaurer le chat" : "Maximiser le chat"}
+                        title={isMaximized? "Restaurer" : "Maximiser"}
+                        aria-label={isMaximized? "Restaurer le chat" : "Maximiser le chat"}
                       >
-                        {isMaximized ? "🗗" : "🗖"}
+                        {isMaximized? "🗗" : "🗖"}
                       </button>
                       <button
                         className="close-button"
@@ -1013,9 +1565,9 @@ const ChatApp = ({ clientId, isAdmin }) => {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Tapez votre message..."
                     maxLength={1000}
-                    disabled={!isConnected || (isAdmin && !selectedClientId)}
+                    disabled={!isConnected || (isAdmin &&!selectedClientId)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
+                      if (e.key === "Enter" &&!e.shiftKey) {
                         e.preventDefault();
                         handleSendMessage();
                       }
@@ -1028,7 +1580,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                   </span>
                   <button
                     onClick={handleSendMessage}
-                    disabled={!message.trim() || !isConnected || (isAdmin && !selectedClientId)}
+                    disabled={!message.trim() ||!isConnected || (isAdmin &&!selectedClientId)}
                     aria-label="Envoyer le message"
                   >
                     Envoyer
@@ -1043,7 +1595,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           <div className="call-container">
             <h4>
               {callState.callConnected
-                ? `${callState.callType === "audio" ? "Appel Audio" : "Appel Vidéo"}`
+               ? `${callState.callType === "audio"? "Appel Audio" : "Appel Vidéo"}`
                 : "Connexion en cours..."}
             </h4>
             {callState.callType === "video" && (
@@ -1064,14 +1616,14 @@ const ChatApp = ({ clientId, isAdmin }) => {
                 onClick={() => {
                   if (callState.localStream) {
                     callState.localStream.getAudioTracks().forEach((track) => {
-                      track.enabled = !track.enabled;
+                      track.enabled =!track.enabled;
                     });
-                    toast.info(callState.localStream.getAudioTracks()[0].enabled ? "Microphone activé" : "Microphone coupé");
+                    toast.info(callState.localStream.getAudioTracks()[0].enabled? "Microphone activé" : "Microphone coupé");
                   }
                 }}
-                aria-label={callState.localStream?.getAudioTracks()[0]?.enabled ? "Couper le microphone" : "Activer le microphone"}
+                aria-label={callState.localStream?.getAudioTracks()[0]?.enabled? "Couper le microphone" : "Activer le microphone"}
               >
-                {callState.localStream?.getAudioTracks()[0]?.enabled ? "Couper" : "Activer"}
+                {callState.localStream?.getAudioTracks()[0]?.enabled? "Couper" : "Activer"}
               </button>
               <button onClick={endCall} aria-label="Terminer l'appel">Terminer l'appel</button>
             </div>
@@ -1081,7 +1633,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         {callState.incomingCall && (
           <div className="incoming-call-modal">
             <p>
-              Appel {callState.incomingCall.callType === "audio" ? "audio" : "vidéo"} entrant de{" "}
+              Appel {callState.incomingCall.callType === "audio"? "audio" : "vidéo"} entrant de{" "}
               {callState.incomingCall.from || "Utilisateur inconnu"}
             </p>
             <button onClick={handleAcceptCall} aria-label="Accepter l'appel entrant">Accepter</button>
@@ -1099,6 +1651,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
           pauseOnFocusLoss
           draggable
           pauseOnHover
+          theme="dark"
         />
       </div>
     </ErrorBoundary>
