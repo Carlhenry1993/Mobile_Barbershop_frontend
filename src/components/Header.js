@@ -1,44 +1,291 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { GiHamburgerMenu } from "react-icons/gi"; // Icône hamburger
-import { VscClose } from "react-icons/vsc"; // Icône fermer
+import { GiHamburgerMenu } from "react-icons/gi";
+import { VscClose } from "react-icons/vsc";
+
+const useHeaderStyles = () => {
+  useEffect(() => {
+    const styleId = "mr-renaudin-header-styles";
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+    .hd-root {
+        --hd-black: #0e1015;
+        --hd-charcoal:#161b24;
+        --hd-card: #1e2535;
+        --hd-border: #2a3348;
+        --hd-gold: #d4a843;
+        --hd-gold-lt: #f0c96a;
+        --hd-cream: #eef2f7;
+        --hd-light: #b8c8da;
+        --hd-muted: #7888a0;
+
+        background: rgba(22, 27, 36, 0.85);
+        color: var(--hd-cream);
+        font-family: 'DM Sans', sans-serif;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        border-bottom: 1px solid var(--hd-border);
+        backdrop-filter: blur(12px);
+      }
+
+    .hd-nav {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+      }
+
+    .hd-logo-wrap {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        gap: 0.75rem;
+      }
+
+    .hd-logo-svg {
+        height: 48px;
+        width: auto;
+        color: var(--hd-gold);
+      }
+
+    .hd-logo-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1;
+      }
+
+    .hd-logo-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        font-weight: 900;
+        color: var(--hd-cream);
+        letter-spacing: 0.02em;
+      }
+
+    .hd-logo-name span {
+        color: var(--hd-gold);
+      }
+
+    .hd-tagline {
+        font-size: 0.65rem;
+        font-weight: 500;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--hd-muted);
+        margin-top: 0.15rem;
+        display: none;
+      }
+
+      @media (min-width: 768px) {
+      .hd-tagline { display: block; }
+      }
+
+    .hd-menu-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: transparent;
+        border: 1px solid var(--hd-border);
+        color: var(--hd-cream);
+        font-size: 1.5rem;
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        transition: border-color 0.2s, color 0.2s;
+      }
+
+    .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
+        border-color: var(--hd-gold);
+        color: var(--hd-gold);
+        outline: none;
+      }
+
+    .hd-menu-btn-text {
+        font-size: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        font-weight: 500;
+      }
+
+      @media (min-width: 1024px) {
+      .hd-menu-btn { display: none; }
+      }
+
+    .hd-links {
+        display: none;
+        list-style: none;
+        gap: 0.25rem;
+      }
+
+      @media (min-width: 1024px) {
+      .hd-links { display: flex; }
+      }
+
+    .hd-link {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 500;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--hd-light);
+        text-decoration: none;
+        padding: 0.6rem 1rem;
+        border: 1px solid transparent;
+        transition: color 0.2s, border-color 0.2s, background 0.2s;
+      }
+
+    .hd-link:hover,.hd-link:focus-visible {
+        color: var(--hd-gold);
+        border-color: var(--hd-gold);
+        outline: none;
+      }
+
+    .hd-link.active {
+        color: var(--hd-black);
+        background: var(--hd-gold);
+        border-color: var(--hd-gold);
+      }
+
+    .hd-link.active:hover {
+        background: var(--hd-gold-lt);
+      }
+
+    .hd-mobile-menu {
+        background: var(--hd-charcoal);
+        border-top: 1px solid var(--hd-border);
+        padding: 1rem 1.5rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+    .hd-mobile-menu.hd-link {
+        text-align: center;
+        padding: 0.9rem 1rem;
+      }
+
+      @media (min-width: 1024px) {
+      .hd-mobile-menu { display: none; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
+};
+
+// SVG Logo intégré
+const LogoSVG = () => (
+  <svg
+    className="hd-logo-svg"
+    viewBox="0 0 120 120"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    {/* Contour cercle */}
+    <circle cx="60" cy="60" r="58" stroke="currentColor" strokeWidth="2.5" />
+    {/* Ciseaux stylisés */}
+    <path
+      d="M35 45L60 60L35 75M85 45L60 60L85 75"
+      stroke="currentColor"
+      strokeWidth="3"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+    <circle cx="35" cy="45" r="5" fill="currentColor" />
+    <circle cx="35" cy="75" r="5" fill="currentColor" />
+    <circle cx="85" cy="45" r="5" fill="currentColor" />
+    <circle cx="85" cy="75" r="5" fill="currentColor" />
+    {/* Moustache */}
+    <path
+      d="M45 65 Q60 75 75 65"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      fill="none"
+    />
+  </svg>
+);
 
 const Header = () => {
+  useHeaderStyles();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [role, setRole] = useState(null); // Rôle de l'utilisateur
+  const [role, setRole] = useState(null);
   const location = useLocation();
+  const menuRef = useRef(null);
+  const btnRef = useRef(null);
 
   useEffect(() => {
-    // Récupère le rôle de l'utilisateur depuis localStorage
     const userRole = localStorage.getItem("role");
     setRole(userRole);
   }, []);
 
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setIsMenuOpen(false);
+    };
+    const handleClickOutside = (e) => {
+      if (
+        isMenuOpen &&
+        menuRef.current &&
+      !menuRef.current.contains(e.target) &&
+        btnRef.current &&
+      !btnRef.current.contains(e.target)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEsc);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("keydown", handleEsc);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  // Utilise useMemo pour recalculer navLinks uniquement lorsque le rôle change
-  const navLinks = useMemo(() => [
-    { path: "/", label: "Accueil" },
-    { path: "/services", label: "Nos Services" },
-    { path: "/booking", label: "Réservez" },
-    { path: "/about", label: "À Propos" },
-    { path: "/annonces", label: "Annonces" },
-    { path: "/contact", label: "Contact" },
-    // Ajoute le lien Admin uniquement pour les administrateurs
-    ...(role === "admin" ? [{ path: "/admin", label: "Espace Admin" }] : []),
-  ], [role]);
+  const navLinks = useMemo(
+    () => [
+      { path: "/", label: "Accueil" },
+      { path: "/services", label: "Nos Services" },
+      { path: "/booking", label: "Réservez" },
+      { path: "/about", label: "À Propos" },
+      { path: "/annonces", label: "Annonces" },
+      { path: "/contact", label: "Contact" },
+    ...(role === "admin"? [{ path: "/admin", label: "Espace Admin" }] : []),
+    ],
+    [role]
+  );
 
   const renderLinks = (onClick) =>
     navLinks.map((link) => (
-      <li key={link.path} className="transition-transform duration-300 ease-in-out">
+      <li key={link.path}>
         <Link
           to={link.path}
-          className={`text-lg font-medium py-2 px-4 rounded-md ${
-            location.pathname === link.path
-              ? "text-white bg-blue-600"
-              : "text-gray-800 hover:text-white hover:bg-blue-500 hover:scale-105"
-          }`}
+          className={`hd-link ${location.pathname === link.path? "active" : ""}`}
           onClick={onClick}
+          aria-current={location.pathname === link.path? "page" : undefined}
         >
           {link.label}
         </Link>
@@ -46,44 +293,35 @@ const Header = () => {
     ));
 
   return (
-    <header className="bg-blue-50 text-gray-800 py-4 sticky top-0 z-50 shadow-md transition-all duration-300" role="banner">
-      <nav className="container mx-auto flex justify-between items-center px-4">
-        {/* Logo et slogan promotionnel */}
-        <Link to="/" className="flex items-center">
-          <img
-            src="/Photos/Logo5.png"
-            alt="Logo Mr. Renaudin Barbershop"
-            className="h-20 w-auto"
-          />
-          <span className="ml-3 text-xl font-bold text-blue-600 hidden md:block">
-            Votre style, notre passion
-          </span>
+    <header className="hd-root" role="banner">
+      <nav className="hd-nav">
+        <Link to="/" className="hd-logo-wrap" aria-label="Mr. Renaudin Barbershop - Accueil">
+          <LogoSVG />
+          <div className="hd-logo-text">
+            <div className="hd-logo-name">
+              Mr. Renaudin <span>Barbershop</span>
+            </div>
+            <div className="hd-tagline">Votre style, notre passion</div>
+          </div>
         </Link>
 
-        {/* Bouton de menu mobile */}
         <button
-          className="lg:hidden flex items-center text-3xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ref={btnRef}
+          className="hd-menu-btn"
           onClick={toggleMenu}
-          aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-label={isMenuOpen? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={isMenuOpen}
           aria-controls="mobile-menu"
         >
-          <span className="mr-2 text-base font-medium">
-            {isMenuOpen ? "Fermer" : "Menu"}
-          </span>
-          {isMenuOpen ? <VscClose /> : <GiHamburgerMenu />}
+          <span className="hd-menu-btn-text">{isMenuOpen? "Fermer" : "Menu"}</span>
+          {isMenuOpen? <VscClose /> : <GiHamburgerMenu />}
         </button>
 
-        {/* Menu Desktop */}
-        <ul className="hidden lg:flex space-x-6">{renderLinks()}</ul>
+        <ul className="hd-links">{renderLinks()}</ul>
       </nav>
 
-      {/* Menu Mobile */}
       {isMenuOpen && (
-        <ul
-          id="mobile-menu"
-          className="lg:hidden bg-blue-50 text-center p-4 space-y-4 shadow-md rounded-md transition-transform duration-300 ease-in-out"
-        >
+        <ul id="mobile-menu" ref={menuRef} className="hd-mobile-menu">
           {renderLinks(toggleMenu)}
         </ul>
       )}
