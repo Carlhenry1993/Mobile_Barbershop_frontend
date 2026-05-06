@@ -50,7 +50,6 @@ const useChatStyles = () => {
         --chat-muted: #7888a0;
         --chat-danger: #e74c3c;
         --chat-success: #27ae60;
-
         font-family: 'DM Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
       }
@@ -72,7 +71,7 @@ const useChatStyles = () => {
         padding: 8px 14px;
         font-size: 0.8rem;
         border: 1px solid var(--chat-border);
-        box-shadow: 0 4px 12px rgba(0,0,0.4);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.4);
       }
 
 .admin-offline-notice {
@@ -405,7 +404,7 @@ const useChatStyles = () => {
         z-index: 10001;
         min-width: 400px;
         max-width: 90vw;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+        box-shadow: 0 20px 60px rgba(0,0,0.8);
       }
 
 .call-container h4 {
@@ -648,35 +647,34 @@ const ChatApp = ({ clientId, isAdmin }) => {
     }
   }), []);
 
-  // Remplace le useEffect qui initialise l'audio vers ligne 650-670
+  // Initialiser les éléments audio une seule fois
+  useEffect(() => {
+    const createAudioElement = (src, options = {}) => {
+      const audio = new Audio(src);
+      audio.crossOrigin = "anonymous";
+      audio.preload = "auto";
+      if (options.loop) audio.loop = true;
+      return audio;
+    };
 
-useEffect(() => {
-  const createAudioElement = (src, options = {}) => {
-    const audio = new Audio(src);
-    audio.crossOrigin = "anonymous";
-    audio.preload = "auto";
-    if (options.loop) audio.loop = true;
-    return audio;
-  };
+    audioRefs.current.ringtone = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/ringtone.mp3", { loop: true });
+    audioRefs.current.notification = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/notification.mp3");
 
-  audioRefs.current.ringtone = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/ringtone.mp3", { loop: true });
-  audioRefs.current.notification = createAudioElement("https://your-supabase-project.storage.supabase.co/storage/v1/object/public/audio/notification.mp3");
+    // Capture les refs pour le cleanup
+    const ringtone = audioRefs.current.ringtone;
+    const notification = audioRefs.current.notification;
 
-  // Capture les refs pour le cleanup
-  const ringtone = audioRefs.current.ringtone;
-  const notification = audioRefs.current.notification;
-
-  return () => {
-    if (ringtone) {
-      ringtone.pause();
-      ringtone.src = "";
-    }
-    if (notification) {
-      notification.pause();
-      notification.src = "";
-    }
-  };
-}, []);
+    return () => {
+      if (ringtone) {
+        ringtone.pause();
+        ringtone.src = "";
+      }
+      if (notification) {
+        notification.pause();
+        notification.src = "";
+      }
+    };
+  }, []);
 
   // Déterminer l'ID du partenaire d'appel avec validation
   const getCallPartnerId = useCallback(() => {
@@ -717,7 +715,7 @@ useEffect(() => {
           audioRefs.current.ringtone.load();
         }),
         audioRefs.current.notification
-        ? new Promise((resolve, reject) => {
+      ? new Promise((resolve, reject) => {
               audioRefs.current.notification.addEventListener("canplaythrough", resolve, { once: true });
               audioRefs.current.notification.addEventListener("error", reject, { once: true });
               audioRefs.current.notification.load();
@@ -957,7 +955,7 @@ useEffect(() => {
         if (isAdmin) {
           if (selectedClientId!== data.senderId) {
             setUnreadCounts((prev) => ({
-            ...prev,
+          ...prev,
               [data.senderId]: (prev[data.senderId] || 0) + 1,
             }));
           }
@@ -1086,7 +1084,7 @@ useEffect(() => {
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
       ],
-          });
+    });
     pc.onicecandidate = (event) => {
       if (event.candidate) {
         console.log("Candidat ICE généré :", event.candidate);
@@ -1103,7 +1101,7 @@ useEffect(() => {
     };
     pc.onconnectionstatechange = () => {
       console.log("État de la connexion WebRTC :", pc.connectionState);
-      if (["connected", "completed"].includes(pc.connectionState)) {
+            if (["connected", "completed"].includes(pc.connectionState)) {
         dispatch({ type: "SET_CALL_CONNECTED", payload: true });
       }
       if (["disconnected", "failed", "closed"].includes(pc.connectionState)) {
@@ -1428,7 +1426,7 @@ useEffect(() => {
 
   // Calculer le total des messages non lus
   const totalUnreadMessages = isAdmin
-   ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
+ ? Object.values(unreadCounts).reduce((a, b) => a + b, 0)
     : unreadCount;
 
   return (
@@ -1595,7 +1593,7 @@ useEffect(() => {
           <div className="call-container">
             <h4>
               {callState.callConnected
-               ? `${callState.callType === "audio"? "Appel Audio" : "Appel Vidéo"}`
+             ? `${callState.callType === "audio"? "Appel Audio" : "Appel Vidéo"}`
                 : "Connexion en cours..."}
             </h4>
             {callState.callType === "video" && (
