@@ -12,10 +12,9 @@ const PHONE = "514-778-8318";
 const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
 
 const HOURS = [
-  { day: "Lundi", hours: "Fermé" },
-  { day: "Mardi - Vendredi", hours: "9h00 - 19h00" },
-  { day: "Samedi", hours: "9h00 - 17h00" },
-  { day: "Dimanche", hours: "Fermé" },
+  { day: "Lundi - Vendredi", hours: "11h00 - 19h00" },
+  { day: "Samedi", hours: "12h00 - 19h00" },
+  { day: "Dimanche", hours: "11h00 - 17h00" },
 ];
 
 /* ─── Inject styles once ──────────────────────────────────────── */
