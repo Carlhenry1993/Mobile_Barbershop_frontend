@@ -7,9 +7,10 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+
 import "animate.css";
 
-// Import pages
+/* ───────── Pages ───────── */
 import HomePage from "./pages/HomePage";
 import BookingPage from "./pages/BookingPage";
 import ContactPage from "./pages/ContactPage";
@@ -17,84 +18,126 @@ import ServicesPage from "./pages/ServicesPage";
 import AboutPage from "./pages/AboutPage";
 import AnnoncePage from "./pages/AnnoncePage";
 
-// Import components
+/* ───────── Components ───────── */
 import Login from "./components/Login";
 import ChatApp from "./components/ChatApp";
 
-// ScrollToTop component: scrolls to the top on route change
+/* ───────── ScrollToTop ───────── */
 const ScrollToTop = () => {
   const { pathname } = useLocation();
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [pathname]);
+
   return null;
 };
 
+/* ───────── SAFE JWT DECODE ───────── */
+const decodeToken = (token) => {
+  try {
+    const payload = token.split(".")[1];
+
+    // fix base64url → base64
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+
+    return JSON.parse(atob(base64));
+  } catch (err) {
+    console.error("Token invalide:", err);
+    return null;
+  }
+};
+
+/* ───────── APP ───────── */
 const App = () => {
-  const [role, setRole] = useState(null); // "client" or "admin"
+  const [role, setRole] = useState(null); // "client" | "admin"
   const [clientId, setClientId] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
+  const [loading, setLoading] = useState(true);
 
-  // Logout handler: clears state and localStorage
+  /* ─── Logout ─── */
   const handleLogout = useCallback(() => {
     setRole(null);
-    setToken(null);
     setClientId(null);
+    setToken(null);
     localStorage.removeItem("token");
   }, []);
 
-  // When token changes, decode it manually using atob
+  /* ─── Decode token on load ─── */
   useEffect(() => {
     if (token) {
-      try {
-        const [, payload] = token.split(".");
-        const decodedToken = JSON.parse(atob(payload));
-        setRole(decodedToken.role);
-        if (decodedToken.role === "client") {
-          setClientId(decodedToken.id);
-        }
-      } catch (error) {
-        console.error("Erreur lors du décodage du token :", error);
+      const decoded = decodeToken(token);
+
+      if (!decoded) {
         handleLogout();
+      } else {
+        setRole(decoded.role);
+
+        if (decoded.role === "client") {
+          setClientId(decoded.id);
+        }
       }
     }
+
+    setLoading(false);
   }, [token, handleLogout]);
 
-  // Login handler
-  const handleLogin = useCallback((userRole, userId = null, userToken) => {
+  /* ─── Login ─── */
+  const handleLogin = useCallback((userRole, userId, userToken) => {
     setRole(userRole);
     setToken(userToken);
     localStorage.setItem("token", userToken);
-    if (userRole === "client" && userId) {
+
+    if (userRole === "client") {
       setClientId(userId);
     }
   }, []);
 
+  /* ─── Loading screen ─── */
+  if (loading) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        Chargement...
+      </div>
+    );
+  }
+
   return (
     <Router>
       <ScrollToTop />
+
       {!role ? (
+        /* ───────── LOGIN ───────── */
         <Login onLogin={handleLogin} />
       ) : (
         <div>
-          {/* Logout Button */}
-          <div className="p-4 bg-gray-200">
+          {/* ───────── HEADER ACTIONS ───────── */}
+          <div style={{ padding: "1rem", background: "#eee" }}>
             <button
               onClick={handleLogout}
-              className="bg-red-500 text-white px-4 py-2 rounded"
+              style={{
+                background: "#e63946",
+                color: "white",
+                padding: "0.5rem 1rem",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               Déconnexion
             </button>
           </div>
 
-          {/* ChatApp for clients and admins */}
+          {/* ───────── CHAT ───────── */}
           {role === "client" && clientId && (
             <ChatApp clientId={clientId} isAdmin={false} />
           )}
-          {role === "admin" && <ChatApp clientId={null} isAdmin={true} />}
 
+          {role === "admin" && (
+            <ChatApp clientId={null} isAdmin={true} />
+          )}
+
+          {/* ───────── ROUTES ───────── */}
           <Routes>
-            {/* Common Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/services" element={<ServicesPage />} />
             <Route path="/contact" element={<ContactPage />} />
@@ -104,8 +147,9 @@ const App = () => {
               path="/annonces"
               element={<AnnoncePage readOnly={role === "client"} />}
             />
-            {/* Fallback Redirection */}
-            <Route path="*" element={<Navigate to="/" />} />
+
+            {/* fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       )}
