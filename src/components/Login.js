@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Header from "./Header";
-import Footer from "./Footer";
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
 const PHONE = "514-778-8318";
@@ -55,7 +54,7 @@ const LoginForm = ({
       </h1>
       <p style={styles.subtitle}>
         {isLogin
-   ? "Gérez vos rendez-vous en ligne"
+  ? "Gérez vos rendez-vous en ligne"
           : "Accédez aux créneaux prioritaires"}
       </p>
 
@@ -87,8 +86,8 @@ const LoginForm = ({
         <button
           type="submit"
           style={{
-   ...styles.button,
-   ...(loading? styles.buttonDisabled : {})
+  ...styles.button,
+  ...(loading? styles.buttonDisabled : {})
           }}
           disabled={loading}
         >
@@ -130,40 +129,25 @@ const Login = ({ onLogin }) => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(false);
   const formRef = useRef(null);
+  const navigate = useNavigate();
 
   const API_URL = "https://api.mrrenaudinbarbershop.com";
 
-  const handleLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    setToken(null);
-    onLogin(null, null, null);
-    toast.info("À bientôt chez Mr. Renaudin!");
-  }, [onLogin]);
-
+  // Redirect si déjà connecté ou après login
   useEffect(() => {
+    const token = localStorage.getItem("token");
     if (token) {
-      try {
-        const [, payload] = token.split(".");
-        const decodedToken = JSON.parse(atob(payload));
-
-        if (decodedToken.exp && decodedToken.exp * 1000 < Date.now()) {
-          handleLogout();
-          return;
-        }
-
-        const userRole = decodedToken.role;
-        const userId = decodedToken.id.toString();
-        onLogin(userRole, userId, token);
-      } catch (error) {
-        console.error("Token invalide:", error);
-        localStorage.removeItem("token");
-        setToken(null);
+      const redirect = sessionStorage.getItem('redirectAfterLogin');
+      if (redirect) {
+        sessionStorage.removeItem('redirectAfterLogin');
+        navigate(redirect);
+      } else {
+        navigate('/');
       }
     }
-  }, [token, onLogin, handleLogout]);
+  }, [navigate]);
 
   const handleSubmit = useCallback(
     async (e) => {
@@ -197,12 +181,18 @@ const Login = ({ onLogin }) => {
         const userId = data.user.id.toString();
         const userToken = data.token;
 
-        localStorage.setItem("token", userToken);
-        setToken(userToken);
         onLogin(userRole, userId, userToken);
 
         toast.success(isLogin? "Bon retour chez Mr. Renaudin!" : "Bienvenue chez Mr. Renaudin!");
-        setErrorMessage("");
+
+        // Redirect après login
+        const redirect = sessionStorage.getItem('redirectAfterLogin');
+        if (redirect) {
+          sessionStorage.removeItem('redirectAfterLogin');
+          navigate(redirect);
+        } else {
+          navigate('/');
+        }
       } catch (error) {
         console.error("Erreur:", error);
         setErrorMessage(error.message || "Erreur de connexion.");
@@ -211,7 +201,7 @@ const Login = ({ onLogin }) => {
         setLoading(false);
       }
     },
-    [isLogin, username, password, onLogin]
+    [isLogin, username, password, onLogin, navigate]
   );
 
   const scrollToForm = () => {
@@ -224,42 +214,23 @@ const Login = ({ onLogin }) => {
     <div style={styles.container}>
       <div style={styles.overlay}></div>
       <div style={styles.content}>
-        <Header />
         <main style={styles.main}>
-          {token? (
-            <div style={styles.loggedInContainer}>
-              <h2 style={styles.loggedInTitle}>
-                Bienvenue chez Mr. Renaudin
-              </h2>
-              <button
-                onClick={handleLogout}
-                style={styles.logoutButton}
-              >
-                Se déconnecter
-              </button>
-              <div style={styles.loggedInText}>
-                Gérez vos rendez-vous et votre profil.
-              </div>
-            </div>
-          ) : (
-            <div style={styles.splitLayout}>
-              <WelcomeMessage scrollToForm={scrollToForm} />
-              <LoginForm
-                isLogin={isLogin}
-                username={username}
-                password={password}
-                errorMessage={errorMessage}
-                handleSubmit={handleSubmit}
-                setUsername={setUsername}
-                setPassword={setPassword}
-                setIsLogin={setIsLogin}
-                loading={loading}
-                formRef={formRef}
-              />
-            </div>
-          )}
+          <div style={styles.splitLayout}>
+            <WelcomeMessage scrollToForm={scrollToForm} />
+            <LoginForm
+              isLogin={isLogin}
+              username={username}
+              password={password}
+              errorMessage={errorMessage}
+              handleSubmit={handleSubmit}
+              setUsername={setUsername}
+              setPassword={setPassword}
+              setIsLogin={setIsLogin}
+              loading={loading}
+              formRef={formRef}
+            />
+          </div>
         </main>
-        <Footer />
       </div>
       <ToastContainer theme="dark" position="top-center" />
     </div>
@@ -477,37 +448,6 @@ const styles = {
   contactLink: {
     color: '#d4a843',
     textDecoration: 'none',
-  },
-  loggedInContainer: {
-    textAlign: 'center',
-    backgroundColor: '#1e2535',
-    padding: '40px 24px',
-    border: '1px solid #2a3348',
-    width: '100%',
-    maxWidth: '440px',
-  },
-  loggedInTitle: {
-    color: '#eef2f7',
-    fontSize: '1.8rem',
-    fontWeight: '700',
-    marginBottom: '20px',
-    fontFamily: "'Playfair Display', serif",
-  },
-  logoutButton: {
-    backgroundColor: '#d4a843',
-    color: '#0e1015',
-    fontWeight: '700',
-    padding: '12px 28px',
-    border: 'none',
-    fontSize: '0.85rem',
-    textTransform: 'uppercase',
-    letterSpacing: '0.08em',
-    cursor: 'pointer',
-  },
-  loggedInText: {
-    marginTop: '20px',
-    color: '#b8c8da',
-    fontSize: '0.9rem',
   },
 };
 
