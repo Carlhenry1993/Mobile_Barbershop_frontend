@@ -1,11 +1,8 @@
-import React, { Suspense, lazy, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
-import { ErrorBoundary } from "react-error-boundary";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-
-const Header = lazy(() => import("../components/Header"));
-const Footer = lazy(() => import("../components/Footer"));
+// ❌ ENLEVER: import { ErrorBoundary } from "react-error-boundary";
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
@@ -17,7 +14,6 @@ const HOURS = [
   { day: "Dimanche", hours: "11h00 - 17h00" },
 ];
 
-/* ─── Inject styles once ──────────────────────────────────────── */
 const useInjectStyles = () => {
   useEffect(() => {
     const styleId = "mr-renaudin-styles";
@@ -309,18 +305,8 @@ const useInjectStyles = () => {
   }, []);
 };
 
-/* ─── Error fallback ──────────────────────────────────────────── */
-const ErrorFallback = ({ error, resetErrorBoundary }) => (
-  <div style={{ padding: "2rem", background: "#1a0000", color: "#ff6b", borderRadius: "8px", margin: "2rem" }}>
-    <p style={{ fontWeight: "bold" }}>Une erreur est survenue :</p>
-    <pre style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>{error.message}</pre>
-    <button onClick={resetErrorBoundary} className="btn-gold" style={{ marginTop: "1rem" }}>
-      Réessayer
-    </button>
-  </div>
-);
+// ❌ SUPPRIMÉ: ErrorFallback - plus utilisé
 
-/* ─── Animation helpers ───────────────────────────────────────── */
 const fadeUp = {
   hidden: { opacity: 0, y: 40 },
   show: (i = 0) => ({
@@ -351,7 +337,6 @@ const FadeIn = ({ children, delay = 0, className = "" }) => {
   );
 };
 
-/* ─── Data ────────────────────────────────────────────────────── */
 const SERVICES = [
   { icon: "◉", title: "Boule à Zéro", desc: "Rasage total de la tête pour un rendu net, propre et assumé. La définition même de la précision." },
   { icon: "▬", title: "Flat Top", desc: "La coiffure iconique à sommet plat — une silhouette architecturale qui impose le respect." },
@@ -372,7 +357,6 @@ const TESTIMONIALS = [
   { quote: "Ils ont pris le temps de comprendre exactement ce que je voulais. Je suis reparti avec un look au-dessus de mes attentes.", author: "Kevin L." },
 ];
 
-/* ─── Page ────────────────────────────────────────────────────── */
 const HomePage = () => {
   const navigate = useNavigate();
   useInjectStyles();
@@ -415,13 +399,7 @@ const HomePage = () => {
         <script type="application/ld+json">{JSON.stringify(schemaData)}</script>
       </Helmet>
 
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <Suspense fallback={null}>
-          <Header />
-        </Suspense>
-      </ErrorBoundary>
-
-      {/* ══════════════════════════════ HERO ══════════════════════════════════════════════ */}
+      {/* HERO */}
       <section
         style={{
           position: "relative",
@@ -496,7 +474,7 @@ const HomePage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.8 }}
           >
-            <button className="btn-gold" onClick={() => navigate("/booking")} aria-label="Prendre rendez-vous en ligne">
+            <button className="btn-gold" onClick={() => navigate("/reserver")} aria-label="Prendre rendez-vous en ligne">
               Prendre rendez-vous
             </button>
             <a href={`tel:${PHONE}`} className="btn-outline" aria-label={`Appeler le ${PHONE}`}>
@@ -542,7 +520,7 @@ const HomePage = () => {
         )}
       </section>
 
-      {/* ══════════════════════════════════════════════ STATS ══════════════════════════════════════════════ */}
+      {/* STATS */}
       <section
         style={{
           background: "var(--charcoal)",
@@ -575,7 +553,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════ ABOUT ══════════════════════════════════════════════ */}
+      {/* ABOUT */}
       <section className="section-pad" style={{ background: "var(--black)", textAlign: "center" }}>
         <FadeIn>
           <p className="eyebrow">Notre philosophie</p>
@@ -594,7 +572,7 @@ const HomePage = () => {
         </FadeIn>
       </section>
 
-      {/* ══════════════════════════════════════════════ SERVICES ══════════════════════════════════════════════ */}
+      {/* SERVICES */}
       <section className="section-pad" style={{ background: "var(--charcoal)" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeIn>
@@ -627,7 +605,7 @@ const HomePage = () => {
 
           <FadeIn delay={0.5}>
             <div style={{ textAlign: "center", marginTop: "3.5rem" }}>
-              <button className="btn-gold" onClick={() => navigate("/booking")} aria-label="Réserver votre place maintenant">
+              <button className="btn-gold" onClick={() => navigate("/reserver")} aria-label="Réserver votre place maintenant">
                 Réserver votre place
               </button>
             </div>
@@ -635,7 +613,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════ WHY US ══════════════════════════════════════════════ */}
+      {/* WHY US */}
       <section className="section-pad" style={{ background: "var(--black)" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }} className="why-us-grid">
           <FadeIn>
@@ -709,7 +687,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════ TESTIMONIALS ══════════════════════════════════════════════ */}
+      {/* TESTIMONIALS */}
       <section className="section-pad" style={{ background: "var(--charcoal)" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeIn>
@@ -736,7 +714,7 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════ LOCATION + HOURS ══════════════════════════════════════════════ */}
+      {/* LOCATION + HOURS */}
       <section className="section-pad" style={{ background: "var(--black)" }}>
         <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
           <FadeIn>
@@ -792,13 +770,13 @@ const HomePage = () => {
                 >
                   Ouvrir dans Google Maps
                 </a>
-                            </div>
+              </div>
             </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════ FINAL CTA ══════════════════════════════════════════════ */}
+      {/* FINAL CTA */}
       <section
         style={{
           background: "var(--charcoal)",
@@ -809,7 +787,6 @@ const HomePage = () => {
           overflow: "hidden",
         }}
       >
-        {/* Decorative background text */}
         <div
           aria-hidden="true"
           style={{
@@ -844,7 +821,7 @@ const HomePage = () => {
           </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
-            <button className="btn-gold" onClick={() => navigate("/booking")} aria-label="Prendre rendez-vous maintenant">
+                       <button className="btn-gold" onClick={() => navigate("/reserver")} aria-label="Prendre rendez-vous maintenant">
               Prendre rendez-vous
             </button>
             <a href={`tel:${PHONE}`} className="btn-outline" aria-label={`Appeler ${PHONE}`}>
@@ -859,18 +836,12 @@ const HomePage = () => {
         <button 
           className="btn-gold" 
           style={{ width: "100%", justifyContent: "center" }}
-          onClick={() => navigate("/booking")}
+          onClick={() => navigate("/reserver")}
           aria-label="Prendre rendez-vous"
         >
           Prendre rendez-vous
         </button>
       </div>
-
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <Suspense fallback={null}>
-          <Footer />
-        </Suspense>
-      </ErrorBoundary>
     </>
   );
 };
