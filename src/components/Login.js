@@ -30,7 +30,8 @@ const WelcomeMessage = ({ scrollToForm }) => (
       Réserver ma place
     </button>
     <p style={styles.smallText}>
-      {ADDRESS} • <a href={`tel:${PHONE}`} style={{ color: "inherit", textDecoration: "underline" }}>{PHONE}</a>
+      {ADDRESS}<br />
+      <a href={`tel:${PHONE}`} style={styles.phoneLink}>{PHONE}</a>
     </p>
   </div>
 );
@@ -54,7 +55,7 @@ const LoginForm = ({
       </h1>
       <p style={styles.subtitle}>
         {isLogin
-     ? "Retrouvez vos rendez-vous et messages"
+    ? "Retrouvez vos rendez-vous et messages"
           : "Accès prioritaire aux créneaux Shawinigan"}
       </p>
 
@@ -86,8 +87,8 @@ const LoginForm = ({
         <button
           type="submit"
           style={{
-     ...styles.button,
-     ...(loading? styles.buttonDisabled : {})
+    ...styles.button,
+    ...(loading? styles.buttonDisabled : {})
           }}
           disabled={loading}
         >
@@ -215,7 +216,7 @@ const Login = ({ onLogin }) => {
 
   const scrollToForm = () => {
     if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: "smooth" });
+      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   };
 
@@ -289,116 +290,126 @@ const styles = {
   },
   main: {
     flexGrow: 1,
-    padding: '60px 20px',
+    padding: '40px 16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
   },
   splitLayout: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '60px',
+    gridTemplateColumns: '1fr',
+    gap: '40px',
     maxWidth: '1200px',
     width: '100%',
-    alignItems: 'center',
+    alignItems: 'start',
   },
   welcomeContainer: {
-    textAlign: 'left',
-    padding: '20px',
+    textAlign: 'center',
+    padding: '20px 0',
   },
   badge: {
     display: 'inline-block',
     backgroundColor: 'rgba(212,168,67,0.15)',
     color: '#d4a843',
     padding: '6px 14px',
-    fontSize: '0.75rem',
+    fontSize: '0.7rem',
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: '0.1em',
-    marginBottom: '24px',
+    marginBottom: '20px',
     border: '1px solid rgba(212,168,67,0.3)',
   },
   welcomeTitle: {
     color: '#eef2f7',
-    fontSize: '3rem',
+    fontSize: 'clamp(2rem, 8vw, 3rem)',
     fontWeight: '700',
-    marginBottom: '24px',
+    marginBottom: '20px',
     fontFamily: "'Playfair Display', serif",
-    lineHeight: '1.2',
+    lineHeight: '1.15',
   },
   welcomeText: {
     color: '#b8c8da',
-    fontSize: '1.05rem',
-    lineHeight: '1.8',
-    marginBottom: '32px',
+    fontSize: '1rem',
+    lineHeight: '1.7',
+    marginBottom: '28px',
   },
   features: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '12px',
-    marginBottom: '32px',
+    gap: '10px',
+    marginBottom: '28px',
+    alignItems: 'center',
   },
   feature: {
     color: '#eef2f7',
-    fontSize: '0.95rem',
+    fontSize: '0.9rem',
     fontWeight: '500',
   },
   welcomeButton: {
     backgroundColor: '#d4a843',
     color: '#0e1015',
     fontWeight: '700',
-    padding: '16px 40px',
+    padding: '14px 32px',
     border: 'none',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     cursor: 'pointer',
     transition: 'all 0.2s',
+    width: '100%',
+    maxWidth: '280px',
   },
   smallText: {
     color: '#6b7280',
-    fontSize: '0.8rem',
-    marginTop: '16px',
+    fontSize: '0.75rem',
+    marginTop: '14px',
+    lineHeight: '1.5',
+  },
+  phoneLink: {
+    color: '#d4a843',
+    textDecoration: 'none',
   },
   formContainer: {
     width: '100%',
     maxWidth: '440px',
+    margin: '0 auto',
   },
   form: {
     backgroundColor: '#1e2535',
-    padding: '48px 40px',
+    padding: '32px 24px',
     border: '1px solid #2a3348',
   },
   title: {
-    fontSize: '1.8rem',
+    fontSize: '1.6rem',
     fontWeight: '700',
     marginBottom: '8px',
     color: '#eef2f7',
     fontFamily: "'Playfair Display', serif",
   },
   subtitle: {
-    fontSize: '0.9rem',
-    marginBottom: '32px',
+    fontSize: '0.85rem',
+    marginBottom: '28px',
     color: '#b8c8da',
+    lineHeight: '1.5',
   },
   formContent: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '20px',
+    gap: '18px',
   },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '8px',
+    gap: '6px',
   },
   label: {
     color: '#b8c8da',
-    fontSize: '0.85rem',
+    fontSize: '0.8rem',
     fontWeight: '500',
   },
   input: {
     width: '100%',
-    padding: '14px 16px',
+    padding: '12px 14px',
     border: '1px solid #2a3348',
     backgroundColor: '#0e1015',
     color: '#eef2f7',
@@ -414,7 +425,7 @@ const styles = {
     color: '#0e1015',
     padding: '14px',
     border: 'none',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
@@ -432,7 +443,7 @@ const styles = {
   },
   switchText: {
     color: '#b8c8da',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     marginBottom: '8px',
   },
   switchLink: {
@@ -442,25 +453,25 @@ const styles = {
     cursor: 'pointer',
     fontWeight: '600',
     textDecoration: 'underline',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
   },
   errorAlert: {
     backgroundColor: 'rgba(231,76,60,0.1)',
     border: '1px solid rgba(231,76,60,0.3)',
     color: '#ff8a7a',
     padding: '12px',
-    fontSize: '0.85rem',
+    fontSize: '0.8rem',
     textAlign: 'center',
   },
   contactFooter: {
     marginTop: '24px',
-    paddingTop: '24px',
-    borderTop: '1px solid var(--border)',
+    paddingTop: '20px',
+    borderTop: '1px solid #2a3348',
     textAlign: 'center',
   },
   contactText: {
     color: '#6b7280',
-    fontSize: '0.8rem',
+    fontSize: '0.75rem',
     lineHeight: '1.6',
   },
   contactLink: {
@@ -470,32 +481,49 @@ const styles = {
   loggedInContainer: {
     textAlign: 'center',
     backgroundColor: '#1e2535',
-    padding: '48px',
+    padding: '40px 24px',
     border: '1px solid #2a3348',
+    width: '100%',
+    maxWidth: '440px',
   },
   loggedInTitle: {
     color: '#eef2f7',
-    fontSize: '2rem',
+    fontSize: '1.8rem',
     fontWeight: '700',
-    marginBottom: '24px',
+    marginBottom: '20px',
     fontFamily: "'Playfair Display', serif",
   },
   logoutButton: {
     backgroundColor: '#d4a843',
     color: '#0e1015',
     fontWeight: '700',
-    padding: '12px 32px',
+    padding: '12px 28px',
     border: 'none',
-    fontSize: '0.9rem',
+    fontSize: '0.85rem',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     cursor: 'pointer',
   },
   loggedInText: {
-    marginTop: '24px',
+    marginTop: '20px',
     color: '#b8c8da',
-    fontSize: '1rem',
+    fontSize: '0.9rem',
   },
 };
+
+// Media query pour desktop
+if (typeof window!== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
+  styles.splitLayout.gridTemplateColumns = '1fr 1fr';
+  styles.splitLayout.gap = '60px';
+  styles.splitLayout.alignItems = 'center';
+  styles.welcomeContainer.textAlign = 'left';
+  styles.welcomeContainer.padding = '20px';
+  styles.features.alignItems = 'flex-start';
+  styles.welcomeButton.width = 'auto';
+  styles.welcomeButton.maxWidth = 'none';
+  styles.form.padding = '48px 40px';
+  styles.main.padding = '60px 20px';
+  styles.welcomeTitle.fontSize = '3rem';
+}
 
 export default Login;
