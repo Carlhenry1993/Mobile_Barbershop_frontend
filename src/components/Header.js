@@ -11,7 +11,7 @@ const useHeaderStyles = () => {
     const style = document.createElement("style");
     style.id = styleId;
     style.innerHTML = `
-     .hd-root {
+    .hd-root {
         --hd-black: #0e1015;
         --hd-charcoal: #161b24;
         --hd-card: #1e2535;
@@ -32,7 +32,7 @@ const useHeaderStyles = () => {
         backdrop-filter: blur(12px);
       }
 
-     .hd-nav {
+    .hd-nav {
         max-width: 1200px;
         margin: 0 auto;
         display: flex;
@@ -41,14 +41,14 @@ const useHeaderStyles = () => {
         padding: 0.75rem 1.5rem;
       }
 
-     .hd-logo-wrap {
+    .hd-logo-wrap {
         display: flex;
         align-items: center;
         text-decoration: none;
         gap: 0.75rem;
       }
 
-     .hd-logo-img {
+    .hd-logo-img {
         height: 48px;
         width: auto;
         max-width: 160px;
@@ -56,16 +56,16 @@ const useHeaderStyles = () => {
         display: block;
       }
       @media (max-width: 540px) {
-       .hd-logo-img { height: 44px; }
+      .hd-logo-img { height: 44px; }
       }
 
-     .hd-logo-text-wrap {
+    .hd-logo-text-wrap {
         display: flex;
         flex-direction: column;
         line-height: 1.1;
       }
 
-     .hd-tagline {
+    .hd-tagline {
         font-size: 0.6rem;
         font-weight: 500;
         letter-spacing: 0.15em;
@@ -74,16 +74,16 @@ const useHeaderStyles = () => {
         margin-top: 0.2rem;
       }
       @media (min-width: 768px) {
-       .hd-tagline { font-size: 0.65rem; }
+      .hd-tagline { font-size: 0.65rem; }
       }
 
-     .hd-right {
+    .hd-right {
         display: flex;
         align-items: center;
         gap: 0.75rem;
       }
 
-     .hd-menu-btn {
+    .hd-menu-btn {
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -96,13 +96,13 @@ const useHeaderStyles = () => {
         transition: border-color 0.2s, color 0.2s;
       }
 
-     .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
+    .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
         border-color: var(--hd-gold);
         color: var(--hd-gold);
         outline: none;
       }
 
-     .hd-menu-btn-text {
+    .hd-menu-btn-text {
         font-size: 0.75rem;
         letter-spacing: 0.15em;
         text-transform: uppercase;
@@ -110,10 +110,10 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 1024px) {
-       .hd-menu-btn { display: none; }
+      .hd-menu-btn { display: none; }
       }
 
-     .hd-links {
+    .hd-links {
         display: none;
         list-style: none;
         gap: 0.25rem;
@@ -121,10 +121,10 @@ const useHeaderStyles = () => {
       }
 
       @media (min-width: 1024px) {
-       .hd-links { display: flex; }
+      .hd-links { display: flex; }
       }
 
-     .hd-link {
+    .hd-link {
         display: block;
         font-size: 0.82rem;
         font-weight: 500;
@@ -137,23 +137,23 @@ const useHeaderStyles = () => {
         transition: color 0.2s, border-color 0.2s, background 0.2s;
       }
 
-     .hd-link:hover,.hd-link:focus-visible {
+    .hd-link:hover,.hd-link:focus-visible {
         color: var(--hd-gold);
         border-color: var(--hd-gold);
         outline: none;
       }
 
-     .hd-link.active {
+    .hd-link.active {
         color: var(--hd-black);
         background: var(--hd-gold);
         border-color: var(--hd-gold);
       }
 
-     .hd-link.active:hover {
+    .hd-link.active:hover {
         background: var(--hd-gold-lt);
       }
 
-     .hd-cta-btn {
+    .hd-cta-btn {
         font-size: 0.78rem;
         font-weight: 600;
         letter-spacing: 0.1em;
@@ -168,22 +168,22 @@ const useHeaderStyles = () => {
         display: inline-block;
       }
 
-     .hd-cta-btn:hover {
+    .hd-cta-btn:hover {
         background: var(--hd-gold-lt);
         transform: translateY(-1px);
       }
 
-     .hd-cta-btn-outline {
+    .hd-cta-btn-outline {
         background: transparent;
         color: var(--hd-gold);
       }
 
-     .hd-cta-btn-outline:hover {
+    .hd-cta-btn-outline:hover {
         background: var(--hd-gold);
         color: var(--hd-black);
       }
 
-     .hd-mobile-menu {
+    .hd-mobile-menu {
         background: var(--hd-charcoal);
         border-top: 1px solid var(--hd-border);
         padding: 1rem 1.5rem 1.5rem;
@@ -198,19 +198,22 @@ const useHeaderStyles = () => {
         to { opacity: 1; transform: translateY(0); }
       }
 
-     .hd-mobile-menu.hd-link {
+    .hd-mobile-menu.hd-link {
         text-align: center;
         padding: 0.9rem 1rem;
       }
 
-     .hd-mobile-cta {
+    .hd-mobile-cta {
         margin-top: 0.75rem;
         padding-top: 0.75rem;
         border-top: 1px solid var(--hd-border);
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
       }
 
       @media (min-width: 1024px) {
-       .hd-mobile-menu { display: none; }
+      .hd-mobile-menu { display: none; }
       }
     `;
     document.head.appendChild(style);
@@ -243,9 +246,9 @@ const Header = ({ role, onLogout }) => {
       if (
         isMenuOpen &&
         menuRef.current &&
-  !menuRef.current.contains(e.target) &&
+ !menuRef.current.contains(e.target) &&
         btnRef.current &&
-  !btnRef.current.contains(e.target)
+ !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -261,6 +264,7 @@ const Header = ({ role, onLogout }) => {
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
+  // IMPORTANT: Pas de /reserver ou /booking ici, c'est un CTA séparé
   const navLinks = useMemo(
     () => [
       { path: "/", label: "Accueil" },
@@ -279,6 +283,11 @@ const Header = ({ role, onLogout }) => {
 
   const handleLoginClick = () => {
     navigate('/login');
+    setIsMenuOpen(false);
+  };
+
+  const handleLogoutClick = () => {
+    onLogout();
     setIsMenuOpen(false);
   };
 
@@ -332,7 +341,7 @@ const Header = ({ role, onLogout }) => {
             </li>
             <li>
               {role? (
-                <button onClick={onLogout} className="hd-cta-btn hd-cta-btn-outline">
+                <button onClick={handleLogoutClick} className="hd-cta-btn hd-cta-btn-outline">
                   Déconnexion
                 </button>
               ) : (
@@ -367,7 +376,7 @@ const Header = ({ role, onLogout }) => {
           </li>
           <li>
             {role? (
-              <button onClick={() => { onLogout(); toggleMenu(); }} className="hd-cta-btn hd-cta-btn-outline" style={{ width: '100%' }}>
+              <button onClick={handleLogoutClick} className="hd-cta-btn hd-cta-btn-outline" style={{ width: '100%' }}>
                 Déconnexion
               </button>
             ) : (
