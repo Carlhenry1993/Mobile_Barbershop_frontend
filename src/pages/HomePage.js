@@ -17,14 +17,17 @@ const FontLink = () => (
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap');
 
     :root {
-      --black:    #0a0a0a;
-      --charcoal: #141414;
-      --card:     #1a1a1a;
-      --border:   #2a2a2a;
-      --gold:     #c9a84c;
-      --gold-lt:  #e8c87a;
-      --cream:    #f5f0e8;
-      --muted:    #8a8a8a;
+      --black:    #0d0d0f;
+      --charcoal: #13131a;
+      --card:     #18181f;
+      --border:   #2c2c3a;
+      --gold:     #d4a843;
+      --gold-lt:  #f0c96a;
+      --gold-dim: rgba(212,168,67,0.12);
+      --copper:   #b87333;
+      --cream:    #f7f2e8;
+      --muted:    #9a96a8;
+      --light:    #cdc8d8;
       --white:    #ffffff;
     }
 
@@ -81,9 +84,9 @@ const FontLink = () => (
     .serif-body {
       font-family: 'Cormorant Garamond', Georgia, serif;
       font-weight: 300;
-      font-size: 1.2rem;
-      line-height: 1.8;
-      color: var(--muted);
+      font-size: 1.25rem;
+      line-height: 1.85;
+      color: var(--light);
     }
 
     /* ── CTA buttons ── */
@@ -132,38 +135,46 @@ const FontLink = () => (
       padding: 2.5rem 2rem;
       position: relative;
       overflow: hidden;
-      transition: border-color 0.35s, transform 0.35s;
+      transition: border-color 0.35s, transform 0.35s, background 0.35s;
     }
     .feature-card::before {
       content: '';
       position: absolute;
       bottom: 0; left: 0; right: 0;
       height: 2px;
-      background: var(--gold);
+      background: linear-gradient(90deg, var(--copper), var(--gold), var(--gold-lt));
       transform: scaleX(0);
       transform-origin: left;
       transition: transform 0.4s ease;
     }
-    .feature-card:hover { border-color: var(--gold); transform: translateY(-6px); }
+    .feature-card:hover { border-color: var(--gold); transform: translateY(-6px); background: #1e1e28; }
     .feature-card:hover::before { transform: scaleX(1); }
 
     .feature-icon {
-      font-size: 2rem;
+      font-size: 1.5rem;
       margin-bottom: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      background: var(--gold-dim);
+      border: 1px solid rgba(212,168,67,0.25);
     }
 
     .feature-card h3 {
       font-family: 'Playfair Display', serif;
-      font-size: 1.25rem;
+      font-size: 1.2rem;
       font-weight: 700;
       margin-bottom: 0.6rem;
       color: var(--white);
+      letter-spacing: 0.01em;
     }
 
     .feature-card p {
-      font-size: 0.9rem;
-      color: var(--muted);
-      line-height: 1.6;
+      font-size: 0.92rem;
+      color: var(--light);
+      line-height: 1.7;
     }
 
     /* ── Testimonial card ── */
@@ -174,10 +185,10 @@ const FontLink = () => (
     }
     .testimonial-card p {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       font-style: italic;
       color: var(--cream);
-      line-height: 1.75;
+      line-height: 1.8;
       margin-bottom: 1.25rem;
     }
     .testimonial-card span {
@@ -224,7 +235,7 @@ const FontLink = () => (
       font-size: 0.78rem;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color: var(--muted);
+      color: var(--light);
       margin-top: 0.4rem;
     }
 
@@ -275,34 +286,59 @@ const FadeIn = ({ children, delay = 0, className = "" }) => {
 /* ─── Data ────────────────────────────────────────────────────── */
 const SERVICES = [
   {
-    icon: "✦",
-    title: "Fade Signature",
-    desc: "Dégradés précis de la peau jusqu'à la longueur voulue, avec des lignes nettes qui définissent votre silhouette.",
+    icon: "◉",
+    title: "Boule à Zéro",
+    desc: "Rasage total de la tête pour un rendu net, propre et assumé. La définition même de la précision.",
   },
   {
-    icon: "✦",
-    title: "Coupe Classique",
-    desc: "Travail aux ciseaux intemporel, façonné selon votre visage, votre style de vie et votre esthétique personnelle.",
+    icon: "▬",
+    title: "Flat Top",
+    desc: "La coiffure iconique à sommet plat — une silhouette architecturale qui impose le respect.",
   },
   {
-    icon: "✦",
-    title: "Sculpture de Barbe",
-    desc: "Contourage et finition experts pour une barbe propre, bien formée et pleinement assumée.",
+    icon: "⟁",
+    title: "Dreadlocks",
+    desc: "Création et entretien de locks authentiques, façonnées avec soin pour un style naturel et affirmé.",
   },
   {
-    icon: "✦",
-    title: "Rasage à la Serviette Chaude",
-    desc: "Une expérience traditionnelle au rasoir droit avec serviettes chaudes, crème à raser et soin après-rasage.",
+    icon: "◎",
+    title: "Mini Afro",
+    desc: "Un afro compact et bien défini — volume maîtrisé, texture valorisée, style impeccable.",
   },
   {
-    icon: "✦",
-    title: "Combo Cheveux & Barbe",
-    desc: "Le traitement complet — coupe et barbe ensemble pour un look parfaitement soigné de la tête aux pieds.",
+    icon: "❋",
+    title: "Afro Naturelle",
+    desc: "La pleine expression de votre texture naturelle, façonnée et volumisée par des mains expertes.",
   },
   {
-    icon: "✦",
-    title: "Contour & Mise en Forme",
-    desc: "Définition précise de la ligne de cheveux et galbe des tempes pour encadrer votre visage à la perfection.",
+    icon: "≋",
+    title: "Nattes & Tresses Collées",
+    desc: "Tressage serré et précis, plaqué au crâne pour un rendu soigné, durable et élégant.",
+  },
+  {
+    icon: "✂",
+    title: "Coupe Ultra Courte Classique",
+    desc: "La coupe intemporelle — courte, nette, professionnelle. Une valeur sûre pour chaque occasion.",
+  },
+  {
+    icon: "◌",
+    title: "Courte Dégradée",
+    desc: "Longueur légèrement conservée sur le dessus avec un dégradé subtil sur les côtés et la nuque.",
+  },
+  {
+    icon: "▽",
+    title: "Fade (Dégradé)",
+    desc: "Notre spécialité absolue — dégradé de la peau vers la longueur, avec des transitions parfaitement fondues.",
+  },
+  {
+    icon: "◈",
+    title: "Afro Taper",
+    desc: "Volume afro préservé sur le dessus, effilé avec précision sur les côtés pour un rendu moderne et structuré.",
+  },
+  {
+    icon: "〜",
+    title: "Waves 360",
+    desc: "Technique de brossage et compression pour créer des waves uniformes sur tout le crâne — un chef-d'œuvre de texture.",
   },
 ];
 
@@ -494,7 +530,7 @@ const HomePage = () => {
           {[
             { n: "10+", label: "Années d'expérience" },
             { n: "5★", label: "Note clientèle" },
-            { n: "6", label: "Services signature" },
+            { n: "11", label: "Services signature" },
             { n: "100%", label: "Axé satisfaction" },
           ].map(({ n, label }, i) => (
             <FadeIn key={label} delay={i * 0.1}>
@@ -691,7 +727,7 @@ const HomePage = () => {
                     >
                       {title}
                     </h4>
-                    <p style={{ fontSize: "0.9rem", color: "var(--muted)", lineHeight: 1.65 }}>{body}</p>
+                    <p style={{ fontSize: "0.92rem", color: "var(--light)", lineHeight: 1.7 }}>{body}</p>
                   </div>
                 </div>
               ))}
@@ -747,7 +783,7 @@ const HomePage = () => {
               <h2 className="display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "0.75rem" }}>
                 Visitez notre boutique
               </h2>
-              <p style={{ color: "var(--muted)", fontSize: "0.9rem", letterSpacing: "0.05em" }}>{ADDRESS}</p>
+              <p style={{ color: "var(--light)", fontSize: "0.92rem", letterSpacing: "0.05em" }}>{ADDRESS}</p>
               <p style={{ color: "var(--gold)", fontWeight: 500, marginTop: "0.35rem", fontSize: "0.95rem" }}>
                 {PHONE}
               </p>
