@@ -1,126 +1,100 @@
-import React, { useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 import { motion, useInView, useReducedMotion } from "framer-motion";
 // ❌ SUPPRIMÉ: import Header from "../components/Header";
 // ❌ SUPPRIMÉ: import Footer from "../components/Footer";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
 const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
 
-const VALUES = [
-  {
-    title: "Excellence Artisanale",
-    desc: "Chaque coupe est exécutée avec une précision chirurgicale. Pas de compromis sur la qualité — juste des résultats qui parlent d’eux-mêmes.",
-    icon: "✦",
-  },
-  {
-    title: "Expérience Premium",
-    desc: "Fauteuils en cuir, serviettes chaudes, produits Redken & American Crew. Un moment pour vous, dans une ambiance pensée pour l’homme moderne.",
-    icon: "◆",
-  },
-  {
-    title: "Savoir-Faire Authentique",
-    desc: "Nos barbiers maîtrisent autant les techniques classiques que les tendances actuelles. 10+ ans d’expérience au service de votre style.",
-    icon: "❖",
-  },
-];
-
-const TEAM = [
-  {
-    name: "Renaudin",
-    role: "Fondateur & Maître Barbier",
-    img: "/Photos/barbier1.jpg",
-    bio: "Passionné par l’art du grooming depuis 2014. Spécialiste du fade et des textures afro.",
-  },
-  {
-    name: "Marc",
-    role: "Barbier Expert",
-    img: "/Photos/barbier2.jpg",
-    bio: "Précision et créativité. Expert en coupes classiques et dégradés modernes.",
-  },
-];
-
-const useAboutStyles = () => {
+const useAnnouncementsStyles = () => {
   useEffect(() => {
-    const styleId = "mr-renaudin-about-styles";
+    const styleId = "mr-renaudin-announcements-styles";
     if (document.getElementById(styleId)) return;
 
     const style = document.createElement("style");
     style.id = styleId;
     style.innerHTML = `
-   .ab-root {
-        --ab-black: #0e1015;
-        --ab-charcoal: #161b24;
-        --ab-card: #1e2535;
-        --ab-border: #2a3348;
-        --ab-gold: #d4a843;
-        --ab-gold-lt: #f0c96a;
-        --ab-gold-dim: rgba(212,168,67,0.13);
-        --ab-steel: #8ba8c8;
-        --ab-cream: #eef2f7;
-        --ab-light: #b8c8da;
-        --ab-muted: #7888a0;
+  .an-root {
+        --an-black: #0e1015;
+        --an-charcoal: #161b24;
+        --an-card: #1e2535;
+        --an-border: #2a3348;
+        --an-gold: #d4a843;
+        --an-gold-lt: #f0c96a;
+        --an-gold-dim: rgba(212,168,67,0.13);
+        --an-steel: #8ba8c8;
+        --an-cream: #eef2f7;
+        --an-light: #b8c8da;
+        --an-muted: #7888a0;
+        --an-danger: #e74c3c;
 
-        background: var(--ab-black);
-        color: var(--ab-cream);
+        background: var(--an-black);
+        color: var(--an-cream);
         font-family: 'DM Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
+        min-height: 100svh;
+        display: flex;
+        flex-direction: column;
       }
 
-   .ab-root::before {
+  .an-root::before {
         content: '';
         position: fixed;
         inset: 0;
         pointer-events: none;
         z-index: 0;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
         opacity: 0.035;
       }
 
-   .ab-inner { position: relative; z-index: 1; }
+  .an-inner { position: relative; z-index: 1; flex: 1; }
 
-   .ab-eyebrow {
+  .an-eyebrow {
         font-family: 'DM Sans', sans-serif;
         font-size: 0.68rem;
         letter-spacing: 0.25em;
         text-transform: uppercase;
-        color: var(--ab-gold);
+        color: var(--an-gold);
         margin-bottom: 1rem;
       }
 
-   .ab-display {
+  .an-display {
         font-family: 'Playfair Display', Georgia, serif;
         font-weight: 900;
         line-height: 1.05;
-        color: var(--ab-cream);
+        color: var(--an-cream);
       }
 
-   .ab-serif-body {
+  .an-serif-body {
         font-family: 'Cormorant Garamond', Georgia, serif;
         font-weight: 300;
         font-size: 1.25rem;
         line-height: 1.85;
-        color: var(--ab-light);
+        color: var(--an-light);
       }
       @media (max-width: 768px) {
-   .ab-serif-body { font-size: 1.15rem; }
+  .an-serif-body { font-size: 1.15rem; }
       }
 
-   .ab-gold-rule {
+  .an-gold-rule {
         display: block;
         width: 60px;
         height: 2px;
-        background: var(--ab-gold);
+        background: var(--an-gold);
         margin: 0 auto 1.5rem;
       }
 
-   .ab-section-pad { padding: 7rem 1.5rem; }
+  .an-section-pad { padding: 7rem 1.5rem; }
       @media (max-width: 768px) {
-   .ab-section-pad { padding: 5rem 1.25rem; }
+  .an-section-pad { padding: 5rem 1.25rem; }
       }
 
-   .ab-btn-gold, .ab-btn-outline {
+  .an-btn-gold, .an-btn-outline {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
@@ -136,166 +110,175 @@ const useAboutStyles = () => {
         text-decoration: none;
         will-change: transform;
       }
-   .ab-btn-gold {
-        background: var(--ab-gold);
-        color: var(--ab-black);
+  .an-btn-gold {
+        background: var(--an-gold);
+        color: var(--an-black);
       }
-   .ab-btn-gold:hover, .ab-btn-gold:focus-visible { 
-        background: var(--ab-gold-lt); 
+  .an-btn-gold:hover, .an-btn-gold:focus-visible { 
+        background: var(--an-gold-lt); 
         transform: translateY(-2px);
-        outline: 2px solid var(--ab-gold-lt);
+        outline: 2px solid var(--an-gold-lt);
         outline-offset: 2px;
       }
-   .ab-btn-outline {
+  .an-btn-gold:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+  .an-btn-outline {
         background: transparent;
-        color: var(--ab-cream);
+        color: var(--an-cream);
         border: 1px solid rgba(184,200,218,0.3);
       }
-   .ab-btn-outline:hover, .ab-btn-outline:focus-visible { 
-        border-color: var(--ab-gold); 
-        color: var(--ab-gold); 
+  .an-btn-outline:hover, .an-btn-outline:focus-visible { 
+        border-color: var(--an-gold); 
+        color: var(--an-gold); 
         transform: translateY(-2px);
-        outline: 2px solid var(--ab-gold);
+        outline: 2px solid var(--an-gold);
         outline-offset: 2px;
       }
 
-   .ab-hero {
+  .an-hero {
         position: relative;
-        min-height: 85svh;
+        min-height: 70svh;
         display: flex;
-        align-items: flex-end;
-        padding: 0 1.5rem 6rem;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
         overflow: hidden;
+        padding: 0 1.5rem;
+        background: var(--an-charcoal);
       }
 
-   .ab-hero-bg {
-        position: absolute;
-        inset: 0;
-        background-image: url('/Photos/salon-hero.jpg');
-        background-size: cover;
-        background-position: center 30%;
-      }
-   .ab-hero-bg::after {
+  .an-hero::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(to top, rgba(14,16,21,0.97) 0%, rgba(14,16,21,0.6) 50%, rgba(14,16,21,0.22) 100%);
+        background: radial-gradient(circle at 50% 30%, rgba(212,168,67,0.08) 0%, transparent 60%);
       }
 
-   .ab-value-card {
-        background: var(--ab-card);
-        border: 1px solid var(--ab-border);
+  .an-admin-card {
+        background: var(--an-card);
+        border: 1px solid var(--an-border);
         padding: 2.5rem 2rem;
-        position: relative;
-        overflow: hidden;
+        margin-bottom: 3rem;
+      }
+
+  .an-input, .an-textarea {
+        width: 100%;
+        background: var(--an-black);
+        border: 1px solid var(--an-border);
+        color: var(--an-cream);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.95rem;
+        padding: 1rem 1.25rem;
+        transition: border-color 0.3s, background 0.3s;
+      }
+  .an-input::placeholder, .an-textarea::placeholder {
+        color: var(--an-muted);
+      }
+  .an-input:focus, .an-textarea:focus {
+        outline: none;
+        border-color: var(--an-gold);
+        background: #1a2332;
+      }
+  .an-textarea {
+        resize: vertical;
+        min-height: 120px;
+      }
+
+  .an-card {
+        background: var(--an-card);
+        border: 1px solid var(--an-border);
+        padding: 2rem;
         transition: border-color 0.35s, transform 0.35s, background 0.35s;
         will-change: transform;
         height: 100%;
+        display: flex;
+        flex-direction: column;
       }
-   .ab-value-card::before {
-        content: '';
-        position: absolute;
-        bottom: 0; left: 0; right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, var(--ab-steel), var(--ab-gold-lt));
-        transform: scaleX(0);
-        transform-origin: left;
-        transition: transform 0.4s ease;
-      }
-   .ab-value-card:hover { 
-        border-color: var(--ab-gold); 
+  .an-card:hover { 
+        border-color: var(--an-gold); 
         transform: translateY(-6px); 
         background: #222e42; 
       }
-   .ab-value-card:hover::before { transform: scaleX(1); }
 
-   .ab-value-icon {
-        font-size: 1.5rem;
-        margin-bottom: 1.25rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 48px;
-        height: 48px;
-        background: var(--ab-gold-dim);
-        border: 1px solid rgba(212,168,67,0.25);
-        color: var(--ab-gold);
-      }
-
-   .ab-value-title {
+  .an-card-title {
         font-family: 'Playfair Display', serif;
-        font-size: 1.2rem;
+        font-size: 1.4rem;
         font-weight: 700;
-        margin-bottom: 0.6rem;
-        color: var(--ab-cream);
+        color: var(--an-cream);
+        margin-bottom: 0.75rem;
         letter-spacing: 0.01em;
       }
 
-   .ab-value-desc {
-        font-size: 0.92rem;
-        color: var(--ab-light);
-        line-height: 1.7;
+  .an-card-content {
+        font-size: 0.95rem;
+        color: var(--an-light);
+        line-height: 1.75;
+        margin-bottom: 1rem;
+        flex: 1;
       }
 
-   .ab-team-card {
-        background: var(--ab-card);
-        border: 1px solid var(--ab-border);
-        overflow: hidden;
-        transition: border-color 0.35s, transform 0.35s;
-      }
-   .ab-team-card:hover {
-        border-color: var(--ab-gold);
-        transform: translateY(-6px);
-      }
-
-   .ab-team-img-wrap {
-        position: relative;
-        width: 100%;
-        aspect-ratio: 3/4;
-        overflow: hidden;
-        background: var(--ab-black);
-      }
-   .ab-team-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.6s ease;
-      }
-   .ab-team-card:hover .ab-team-img {
-        transform: scale(1.05);
-      }
-
-   .ab-team-body {
-        padding: 1.75rem;
-        text-align: center;
-      }
-
-   .ab-team-name {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: var(--ab-cream);
-        margin-bottom: 0.25rem;
-      }
-
-   .ab-team-role {
+  .an-card-date {
         font-size: 0.75rem;
-        letter-spacing: 0.15em;
+        color: var(--an-muted);
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+      }
+
+  .an-card-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--an-border);
+      }
+
+  .an-action-btn {
+        background: transparent;
+        border: none;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
-        color: var(--ab-gold);
-        margin-bottom: 0.75rem;
+        cursor: pointer;
+        transition: color 0.2s;
+      }
+  .an-action-edit {
+        color: var(--an-gold);
+      }
+  .an-action-edit:hover {
+        color: var(--an-gold-lt);
+      }
+  .an-action-delete {
+        color: var(--an-danger);
+      }
+  .an-action-delete:hover {
+        color: #ff6b5a;
       }
 
-   .ab-team-bio {
-        font-size: 0.88rem;
-        color: var(--ab-light);
-        line-height: 1.7;
+  .an-error {
+        background: rgba(231,76,60,0.1);
+        border: 1px solid rgba(231,76,60,0.3);
+        color: #ff8a7a;
+        padding: 1rem 1.5rem;
+        margin-bottom: 2rem;
+        font-size: 0.9rem;
       }
 
-   .ab-map-wrap {
-        border: 1px solid var(--ab-border);
-        overflow: hidden;
-        margin-top: 2rem;
+  .an-address-box {
+        background: var(--an-card);
+        border: 1px solid var(--an-border);
+        padding: 2rem;
+        text-align: center;
+        margin-top: 3rem;
+      }
+  .an-address-text {
+        font-size: 0.95rem;
+        color: var(--an-light);
+        margin-bottom: 1rem;
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -345,198 +328,298 @@ const FadeIn = ({ children, delay = 0, className = "" }) => {
   );
 };
 
-const AboutPage = () => {
-  useAboutStyles();
+const AnnouncementPage = () => {
+  useAnnouncementsStyles();
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
+  
+  const [announcements, setAnnouncements] = useState([]);
+  const [newAnnouncement, setNewAnnouncement] = useState({ title: '', content: '' });
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [loadingAnnouncements, setLoadingAnnouncements] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+
+  axios.defaults.baseURL = 'https://mobile-barbershop-backend.onrender.com';
+  axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`;
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decodedToken = JSON.parse(atob(token.split('.')[1]));
+        setIsAdmin(decodedToken.role === 'admin');
+      } catch (err) {
+        console.error("Erreur lors du décodage du token :", err);
+        setIsAdmin(false);
+      }
+    }
+
+    const fetchAnnouncements = async () => {
+      setLoadingAnnouncements(true);
+      try {
+        const response = await axios.get('/api/announcements');
+        const data = response.data;
+        if (Array.isArray(data)) {
+          setAnnouncements(data);
+        } else if (data && Array.isArray(data.announcements)) {
+          setAnnouncements(data.announcements);
+        } else {
+          console.error("Structure inattendue de la réponse API :", data);
+          setError("Impossible de charger les annonces pour le moment.");
+        }
+      } catch (err) {
+        console.error("Erreur lors de la récupération des annonces :", err);
+        setError("Impossible de charger les annonces pour le moment.");
+      } finally {
+        setLoadingAnnouncements(false);
+      }
+    };
+
+    fetchAnnouncements();
   }, []);
 
+  const validateFields = () => {
+    if (!newAnnouncement.title.trim() || !newAnnouncement.content.trim()) {
+      setError("Le titre et le contenu sont obligatoires.");
+      return false;
+    }
+    return true;
+  };
+
+  const handleAddOrEditAnnouncement = async () => {
+    if (!validateFields()) return;
+    setLoading(true);
+    setError('');
+    try {
+      let response;
+      if (editingId) {
+        response = await axios.put(`/api/announcements/${editingId}`, newAnnouncement);
+        setAnnouncements(
+          announcements.map((announcement) =>
+            announcement.id === editingId ? response.data : announcement
+          )
+        );
+        toast.success('Annonce modifiée avec succès !');
+      } else {
+        response = await axios.post('/api/announcements', newAnnouncement);
+        setAnnouncements([response.data, ...announcements]);
+        toast.success('Annonce ajoutée avec succès !');
+      }
+      setNewAnnouncement({ title: '', content: '' });
+      setEditingId(null);
+    } catch (err) {
+      console.error("Erreur lors de l'ajout/modification :", err);
+      setError("Une erreur est survenue lors de l'opération. Veuillez réessayer !");
+      toast.error("Une erreur est survenue !");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (id) => {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette annonce ?")) {
+      try {
+        await axios.delete(`/api/announcements/${id}`);
+        setAnnouncements(announcements.filter((announcement) => announcement.id !== id));
+        toast.success('Annonce supprimée avec succès !');
+      } catch (err) {
+        console.error("Erreur lors de la suppression :", err);
+        setError("Impossible de supprimer l'annonce.");
+        toast.error("Une erreur est survenue !");
+      }
+    }
+  };
+
+  const handleEditAnnouncement = (id) => {
+    const announcementToEdit = announcements.find((announcement) => announcement.id === id);
+    if (announcementToEdit) {
+      setNewAnnouncement({ title: announcementToEdit.title, content: announcementToEdit.content });
+      setEditingId(id);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const scrollToAnnouncements = () => {
+    const section = document.getElementById("announcements-section");
+    if (section) {
+      section.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const dateObj = new Date(dateString);
+    const datePart = dateObj.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+    const timePart = dateObj.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    return `${datePart} à ${timePart}`;
+  };
+
   return (
-    <div className="ab-root">
-      <div className="ab-inner">
+    <div className="an-root">
+      <div className="an-inner">
         
         {/* Hero */}
-        <section className="ab-hero">
-          <div className="ab-hero-bg" />
-          <div className="relative z-10 max-w-4xl mx-auto" style={{ textAlign: 'left' }}>
+        <section className="an-hero">
+          <div className="relative z-10 max-w-4xl mx-auto">
             <motion.p
-              className="ab-eyebrow"
+              className="an-eyebrow"
               initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              Établi à Shawinigan depuis 2014
+              Nouveautés & Promotions
             </motion.p>
 
             <motion.h1
-              className="ab-display"
-              style={{ fontSize: "clamp(3rem, 7vw, 5.5rem)", marginBottom: "1.25rem" }}
+              className="an-display"
+              style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", marginBottom: "1.5rem" }}
               initial={shouldReduceMotion ? {} : { opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
-              Plus qu'un barbershop.<br />
-              <span style={{ color: "var(--ab-gold)" }}>Une institution.</span>
+              Annonces Exclusives<br />
+              <span style={{ color: "var(--an-gold)" }}>Mr. Renaudin</span>
             </motion.h1>
 
             <motion.p
-              className="ab-serif-body"
-              style={{ maxWidth: "520px", marginBottom: "2.5rem" }}
+              className="an-serif-body"
+              style={{ maxWidth: "680px", margin: "0 auto 2.5rem" }}
               initial={shouldReduceMotion ? {} : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Chez Mr. Renaudin, chaque visite est un rituel. Fauteuils en cuir vintage, serviettes chaudes, 
-              et l’expertise de barbiers passionnés au service de votre style.
+              Restez informé des dernières offres, événements et nouveautés de votre barbershop à Shawinigan. 
+              Promotions saisonnières, nouveaux services, horaires spéciaux — tout est ici.
             </motion.p>
 
             <motion.div
-              style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}
               initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.8 }}
             >
-              <button className="ab-btn-gold" onClick={() => navigate("/reserver")}>
-                Prendre rendez-vous
+              <button onClick={scrollToAnnouncements} className="an-btn-gold">
+                Voir les annonces
               </button>
-              <a href={`tel:${PHONE}`} className="ab-btn-outline">
-                Nous appeler
-              </a>
             </motion.div>
           </div>
         </section>
 
-        {/* Notre Histoire */}
-        <section className="ab-section-pad" style={{ background: "var(--ab-charcoal)", textAlign: "center" }}>
-          <FadeIn>
-            <p className="ab-eyebrow">Notre histoire</p>
-            <span className="ab-gold-rule" />
-            <h2 className="ab-display" style={{ fontSize: "clamp(2.2rem, 5vw, 3.75rem)", maxWidth: "700px", margin: "0 auto 2rem" }}>
-              De la passion à la référence<br />en Mauricie
-            </h2>
-          </FadeIn>
-          <FadeIn delay={1}>
-            <p className="ab-serif-body" style={{ maxWidth: "720px", margin: "0 auto" }}>
-              Tout a commencé en 2014 avec un rêve simple : ramener l’authenticité du barbershop classique à Shawinigan. 
-              Un lieu où la qualité prime sur la quantité, où chaque client repart avec plus qu’une coupe — une expérience. 
-              Aujourd’hui, Mr. Renaudin est devenu la référence pour les hommes qui refusent le compromis sur leur style. 
-              Trois-Rivières, Grand-Mère, Saint-Boniface… ils viennent de partout en Mauricie pour l’expertise et l’ambiance.
-            </p>
-          </FadeIn>
-        </section>
-
-        {/* Nos Valeurs */}
-        <section className="ab-section-pad" style={{ background: "var(--ab-black)" }}>
-          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-            <FadeIn>
-              <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-                <p className="ab-eyebrow">Ce qui nous définit</p>
-                <span className="ab-gold-rule" />
-                <h2 className="ab-display" style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)" }}>
-                  Nos Valeurs
-                </h2>
-              </div>
-            </FadeIn>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: "1.5rem",
-            }}>
-              {VALUES.map((value, i) => (
-                <FadeIn key={value.title} delay={i * 0.1}>
-                  <div className="ab-value-card">
-                    <div className="ab-value-icon" aria-hidden="true">{value.icon}</div>
-                    <h3 className="ab-value-title">{value.title}</h3>
-                    <p className="ab-value-desc">{value.desc}</p>
-                  </div>
-                </FadeIn>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Notre Équipe */}
-        <section className="ab-section-pad" style={{ background: "var(--ab-charcoal)" }}>
-          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
-            <FadeIn>
-              <div style={{ textAlign: "center", marginBottom: "4rem" }}>
-                <p className="ab-eyebrow">Les artisans</p>
-                <span className="ab-gold-rule" />
-                <h2 className="ab-display" style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)" }}>
-                  Notre Équipe
-                </h2>
-              </div>
-            </FadeIn>
-
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: "2rem",
-              maxWidth: "700px",
-              margin: "0 auto"
-            }}>
-              {TEAM.map((member, i) => (
-                <FadeIn key={member.name} delay={i * 0.1}>
-                  <div className="ab-team-card">
-                    <div className="ab-team-img-wrap">
-                      <img 
-                        src={member.img} 
-                        alt={member.name}
-                        className="ab-team-img"
-                        loading="lazy"
-                      />
-                    </div>
-                    <div className="ab-team-body">
-                      <h3 className="ab-team-name">{member.name}</h3>
-                      <p className="ab-team-role">{member.role}</p>
-                      <p className="ab-team-bio">{member.bio}</p>
-                    </div>
-                  </div>
-                </FadeIn>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Emplacement */}
-        <section className="ab-section-pad" style={{ background: "var(--ab-black)" }}>
-          <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
+        {/* Main Content */}
+        <section id="announcements-section" className="an-section-pad" style={{ background: "var(--an-charcoal)" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
             <FadeIn>
               <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-                <p className="ab-eyebrow">Nous trouver</p>
-                <span className="ab-gold-rule" />
-                <h2 className="ab-display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "1rem" }}>
-                  Au cœur de Shawinigan
+                <p className="an-eyebrow">Dernières nouvelles</p>
+                <span className="an-gold-rule" />
+                <h2 className="an-display" style={{ fontSize: "clamp(2rem, 4.5vw, 3.25rem)" }}>
+                  Nos Annonces
                 </h2>
-                <p className="ab-serif-body" style={{ maxWidth: "600px", margin: "0 auto" }}>
-                  Situé au {ADDRESS}. Stationnement gratuit devant. 
-                  On sert Shawinigan, Trois-Rivières, Grand-Mère et toute la Mauricie.
-                </p>
               </div>
             </FadeIn>
 
-            <FadeIn delay={0.3}>
-              <div className="ab-map-wrap">
-                <iframe
-                  title="Mr. Renaudin Barbershop Location"
-                  src={`https://www.google.com/maps?q=${encodeURIComponent(MAP_QUERY)}&output=embed`}
-                  width="100%"
-                  height="440"
-                  style={{ border: 0, display: "block", filter: "grayscale(30%) contrast(1.05)" }}
-                  loading="lazy"
-                />
-              </div>
+            {error && (
+              <FadeIn>
+                <div className="an-error">{error}</div>
+              </FadeIn>
+            )}
 
-              <div style={{ textAlign: "center", marginTop: "2rem" }}>
+            {isAdmin && (
+              <FadeIn delay={0.1}>
+                <div className="an-admin-card">
+                  <h3 className="an-display" style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>
+                    {editingId ? 'Modifier' : 'Ajouter'} une annonce
+                  </h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                    <input
+                      type="text"
+                      placeholder="Titre de l'annonce"
+                      value={newAnnouncement.title}
+                      onChange={(e) => setNewAnnouncement({ ...newAnnouncement, title: e.target.value })}
+                      className="an-input"
+                    />
+                    <textarea
+                      placeholder="Contenu de l'annonce"
+                      value={newAnnouncement.content}
+                      onChange={(e) => setNewAnnouncement({ ...newAnnouncement, content: e.target.value })}
+                      className="an-textarea"
+                    />
+                    <button
+                      onClick={handleAddOrEditAnnouncement}
+                      className="an-btn-gold"
+                      disabled={loading}
+                      style={{ width: "100%" }}
+                    >
+                      {loading ? 'En cours...' : editingId ? 'Modifier l\'annonce' : 'Publier l\'annonce'}
+                    </button>
+                  </div>
+                </div>
+              </FadeIn>
+            )}
+
+            {loadingAnnouncements ? (
+              <div style={{ textAlign: "center", padding: "4rem 0", color: "var(--an-light)" }}>
+                Chargement des annonces...
+              </div>
+            ) : announcements.length === 0 ? (
+              <FadeIn>
+                <div style={{ textAlign: "center", padding: "4rem 0", color: "var(--an-muted)" }}>
+                  Aucune annonce pour le moment. Revenez bientôt !
+                </div>
+              </FadeIn>
+            ) : (
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+                gap: "2rem",
+              }}>
+                {announcements.map((announcement, i) => (
+                  <FadeIn key={announcement.id} delay={i * 0.06}>
+                    <div className="an-card">
+                      <h3 className="an-card-title">{announcement.title}</h3>
+                      <p className="an-card-content">{announcement.content}</p>
+                      <p className="an-card-date">{formatDate(announcement.created_at)}</p>
+                      {isAdmin && (
+                        <div className="an-card-actions">
+                          <button
+                            onClick={() => handleEditAnnouncement(announcement.id)}
+                            className="an-action-btn an-action-edit"
+                          >
+                            Modifier
+                          </button>
+                          <button
+                            onClick={() => handleDeleteAnnouncement(announcement.id)}
+                            className="an-action-btn an-action-delete"
+                          >
+                            Supprimer
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </FadeIn>
+                ))}
+              </div>
+            )}
+
+            {/* Adresse du salon utilisée ici */}
+            <FadeIn delay={0.3}>
+              <div className="an-address-box">
+                <p className="an-eyebrow" style={{ marginBottom: "0.5rem" }}>Nous trouver</p>
+                <p className="an-address-text">{ADDRESS}</p>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="ab-btn-outline"
+                  className="an-btn-outline"
                 >
                   Ouvrir dans Google Maps
                 </a>
@@ -545,32 +628,31 @@ const AboutPage = () => {
           </div>
         </section>
 
-        {/* CTA Final */}
-        <section className="ab-section-pad" style={{ 
-          background: "var(--ab-charcoal)",
-          borderTop: "1px solid var(--ab-border)",
+        {/* CTA */}
+        <section className="an-section-pad" style={{ 
+          background: "var(--an-black)",
+          borderTop: "1px solid var(--an-border)",
           textAlign: "center"
         }}>
           <FadeIn>
-            <p className="ab-eyebrow">On vous attend</p>
-            <span className="ab-gold-rule" />
-            <h2 className="ab-display" style={{ 
+            <p className="an-eyebrow">Besoin d'infos ?</p>
+            <span className="an-gold-rule" />
+            <h2 className="an-display" style={{ 
               fontSize: "clamp(2.5rem, 6vw, 4.5rem)", 
               maxWidth: "600px", 
               margin: "0 auto 1.5rem" 
             }}>
-              Passez au salon
+              Contactez-nous
             </h2>
-            <p className="ab-serif-body" style={{ maxWidth: "480px", margin: "0 auto 2.5rem" }}>
-              Réservez en ligne ou passez nous voir. Walk-ins acceptés selon disponibilité. 
-              Café offert, bonne ambiance garantie.
+            <p className="an-serif-body" style={{ maxWidth: "480px", margin: "0 auto 2.5rem" }}>
+              Une question sur une promotion ? Besoin de plus d'infos ? Notre équipe est là pour vous.
             </p>
 
             <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", justifyContent: "center" }}>
-              <button className="ab-btn-gold" onClick={() => navigate("/reserver")}>
-                Prendre rendez-vous
+              <button className="an-btn-gold" onClick={() => navigate("/contact")}>
+                Nous contacter
               </button>
-              <a href={`tel:${PHONE}`} className="ab-btn-outline">
+              <a href={`tel:${PHONE}`} className="an-btn-outline">
                 {PHONE}
               </a>
             </div>
@@ -578,8 +660,21 @@ const AboutPage = () => {
         </section>
 
       </div>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
     </div>
   );
 };
 
-export default AboutPage;
+export default AnnouncementPage;
