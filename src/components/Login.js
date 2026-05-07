@@ -22,11 +22,20 @@ const WelcomeMessage = ({ scrollToForm }) => (
       <div style={styles.feature}>🪒 Rasage Traditionnel au Coupe-Chou</div>
       <div style={styles.feature}>⭐ Noté 4.9/5 par nos clients</div>
     </div>
+
+    {/* ✅ NOUVEAU: Message compte requis */}
+    <div style={styles.accountRequiredBox}>
+      <p style={styles.accountRequiredText}>
+        🔒 <strong>Compte requis pour réserver</strong><br />
+        Créez votre compte client en 30 secondes pour accéder aux créneaux en ligne
+      </p>
+    </div>
+
     <button
       style={styles.welcomeButton}
       onClick={scrollToForm}
     >
-      Réserver maintenant
+      Créer mon compte client
     </button>
     <p style={styles.smallText}>
       {ADDRESS}<br />
@@ -54,9 +63,17 @@ const LoginForm = ({
       </h1>
       <p style={styles.subtitle}>
         {isLogin
-  ? "Gérez vos rendez-vous en ligne"
-          : "Accédez aux créneaux prioritaires"}
+         ? "Gérez vos rendez-vous en ligne"
+          : "Créez votre compte pour réserver en ligne"}
       </p>
+
+      {/* ✅ NOUVEAU: Bannière info si inscription */}
+      {!isLogin && (
+        <div style={styles.infoAlert}>
+          <strong>Pourquoi créer un compte?</strong><br />
+          La réservation en ligne est réservée aux membres. Votre compte vous permet de choisir votre créneau, modifier ou annuler, et recevoir des rappels SMS.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} style={styles.formContent}>
         <div style={styles.inputGroup}>
@@ -86,12 +103,12 @@ const LoginForm = ({
         <button
           type="submit"
           style={{
-  ...styles.button,
-  ...(loading? styles.buttonDisabled : {})
+           ...styles.button,
+           ...(loading? styles.buttonDisabled : {})
           }}
           disabled={loading}
         >
-          {loading? "Connexion..." : isLogin? "Me connecter" : "Créer mon compte"}
+          {loading? "Chargement..." : isLogin? "Me connecter" : "Créer mon compte"}
         </button>
 
         <div style={styles.switchContainer}>
@@ -103,7 +120,7 @@ const LoginForm = ({
             onClick={() => setIsLogin((prev) =>!prev)}
             style={styles.switchLink}
           >
-            {isLogin? "Créer un compte" : "Me connecter"}
+            {isLogin? "Créer un compte pour réserver" : "Me connecter"}
           </button>
         </div>
 
@@ -135,7 +152,6 @@ const Login = ({ onLogin }) => {
 
   const API_URL = "https://api.mrrenaudinbarbershop.com";
 
-  // Redirect si déjà connecté ou après login
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -161,7 +177,7 @@ const Login = ({ onLogin }) => {
 
       const endpoint = isLogin? "/login" : "/register";
       const body = isLogin
-? { username, password }
+       ? { username, password }
         : { username, password, role: "client" };
 
       try {
@@ -183,9 +199,8 @@ const Login = ({ onLogin }) => {
 
         onLogin(userRole, userId, userToken);
 
-        toast.success(isLogin? "Bon retour chez Mr. Renaudin!" : "Bienvenue chez Mr. Renaudin!");
+        toast.success(isLogin? "Bon retour chez Mr. Renaudin!" : "Compte créé! Vous pouvez maintenant réserver.");
 
-        // Redirect après login
         const redirect = sessionStorage.getItem('redirectAfterLogin');
         if (redirect) {
           sessionStorage.removeItem('redirectAfterLogin');
@@ -316,6 +331,20 @@ const styles = {
     fontSize: '0.9rem',
     fontWeight: '500',
   },
+  // ✅ NOUVEAU: Box compte requis
+  accountRequiredBox: {
+    backgroundColor: 'rgba(212,168,67,0.1)',
+    border: '1px solid rgba(212,168,67,0.3)',
+    padding: '16px',
+    marginBottom: '24px',
+    borderRadius: '2px',
+  },
+  accountRequiredText: {
+    color: '#d4a843',
+    fontSize: '0.85rem',
+    lineHeight: '1.6',
+    margin: 0,
+  },
   welcomeButton: {
     backgroundColor: '#d4a843',
     color: '#0e1015',
@@ -362,6 +391,16 @@ const styles = {
     marginBottom: '28px',
     color: '#b8c8da',
     lineHeight: '1.5',
+  },
+  // ✅ NOUVEAU: Bannière info inscription
+  infoAlert: {
+    backgroundColor: 'rgba(212,168,67,0.1)',
+    border: '1px solid rgba(212,168,67,0.3)',
+    color: '#d4a843',
+    padding: '12px',
+    fontSize: '0.8rem',
+    lineHeight: '1.5',
+    marginBottom: '18px',
   },
   formContent: {
     display: 'flex',
