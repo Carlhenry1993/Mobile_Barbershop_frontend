@@ -6,40 +6,39 @@ import "react-toastify/dist/ReactToastify.css";
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
 const PHONE = "514-778-8318";
 
-const WelcomeMessage = ({ scrollToForm }) => (
+const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
   <div style={styles.welcomeContainer}>
-    <div style={styles.badge}>Barbershop Premium • Shawinigan</div>
+    <div style={styles.badge}>Mr. Renaudin Barbershop</div>
     <h2 style={styles.welcomeTitle}>
-      L'Excellence du Grooming Masculin
+      Réservation en ligne<br />réservée aux membres
     </h2>
-    <p style={styles.welcomeText}>
-      <strong>Mr. Renaudin Barbershop</strong> — L’excellence du barbier traditionnel au cœur de Shawinigan.
-      Situé au <strong>{ADDRESS}</strong>, notre équipe maîtrise l’art du fade, du rasage à l’ancienne et des coupes signature.
-      Techniques françaises, précision québécoise. Votre style mérite mieux que l’ordinaire.
-    </p>
-    <div style={styles.features}>
-      <div style={styles.feature}>✂️ Fades & Dégradés Haute Précision</div>
-      <div style={styles.feature}>🪒 Rasage Traditionnel au Coupe-Chou</div>
-      <div style={styles.feature}>⭐ Noté 4.9/5 par nos clients</div>
-    </div>
-
-    {/* ✅ NOUVEAU: Message compte requis */}
+    
+    {/* ✅ Message ultra clair */}
     <div style={styles.accountRequiredBox}>
+      <div style={styles.lockIcon}>🔒</div>
       <p style={styles.accountRequiredText}>
-        🔒 <strong>Compte requis pour réserver</strong><br />
-        Créez votre compte client en 30 secondes pour accéder aux créneaux en ligne
+        <strong>Un compte client est obligatoire pour réserver</strong><br />
+        Création gratuite en 30 secondes
       </p>
     </div>
 
+    <p style={styles.welcomeText}>
+      Créez votre compte pour choisir votre créneau, modifier vos rendez-vous et recevoir des rappels.
+    </p>
+
     <button
       style={styles.welcomeButton}
-      onClick={scrollToForm}
+      onClick={() => {
+        setIsLogin(false); // Force mode inscription
+        scrollToForm();
+      }}
     >
-      Créer mon compte client
+      Créer mon compte maintenant
     </button>
+
     <p style={styles.smallText}>
-      {ADDRESS}<br />
-      <a href={`tel:${PHONE}`} style={styles.phoneLink}>{PHONE}</a>
+      Déjà membre ? <button onClick={scrollToForm} style={styles.inlineLink}>Connectez-vous</button><br />
+      {ADDRESS} • <a href={`tel:${PHONE}`} style={styles.phoneLink}>{PHONE}</a>
     </p>
   </div>
 );
@@ -58,20 +57,14 @@ const LoginForm = ({
 }) => (
   <div ref={formRef} id="login-form" style={styles.formContainer}>
     <div style={styles.form}>
+      {/* ✅ Titre dynamique ultra clair */}
       <h1 style={styles.title}>
-        {isLogin? "Espace Membre" : "Rejoindre Mr. Renaudin"}
+        {isLogin? "Connexion" : "Créer un compte"}
       </h1>
-      <p style={styles.subtitle}>
-        {isLogin
-         ? "Gérez vos rendez-vous en ligne"
-          : "Créez votre compte pour réserver en ligne"}
-      </p>
-
-      {/* ✅ NOUVEAU: Bannière info si inscription */}
+      
       {!isLogin && (
         <div style={styles.infoAlert}>
-          <strong>Pourquoi créer un compte?</strong><br />
-          La réservation en ligne est réservée aux membres. Votre compte vous permet de choisir votre créneau, modifier ou annuler, et recevoir des rappels SMS.
+          <strong>Compte requis</strong> pour réserver votre rendez-vous en ligne
         </div>
       )}
 
@@ -80,11 +73,12 @@ const LoginForm = ({
           <label style={styles.label}>Nom d'utilisateur</label>
           <input
             type="text"
-            placeholder="ex: client.shawinigan"
+            placeholder="ex: jean.shawinigan"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={styles.input}
             disabled={loading}
+            autoComplete="username"
           />
         </div>
 
@@ -97,6 +91,7 @@ const LoginForm = ({
             onChange={(e) => setPassword(e.target.value)}
             style={styles.input}
             disabled={loading}
+            autoComplete={isLogin ? "current-password" : "new-password"}
           />
         </div>
 
@@ -113,14 +108,14 @@ const LoginForm = ({
 
         <div style={styles.switchContainer}>
           <p style={styles.switchText}>
-            {isLogin? "Nouveau chez Mr. Renaudin?" : "Déjà membre?"}
+            {isLogin? "Pas encore de compte?" : "Déjà inscrit?"}
           </p>
           <button
             type="button"
             onClick={() => setIsLogin((prev) =>!prev)}
             style={styles.switchLink}
           >
-            {isLogin? "Créer un compte pour réserver" : "Me connecter"}
+            {isLogin? "Créer un compte" : "Se connecter"}
           </button>
         </div>
 
@@ -129,20 +124,13 @@ const LoginForm = ({
             {errorMessage}
           </div>
         )}
-
-        <div style={styles.contactFooter}>
-          <p style={styles.contactText}>
-            {ADDRESS}<br />
-            <a href={`tel:${PHONE}`} style={styles.contactLink}>{PHONE}</a>
-          </p>
-        </div>
       </form>
     </div>
   </div>
 );
 
 const Login = ({ onLogin }) => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(false); // ✅ Défaut sur inscription
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -199,14 +187,14 @@ const Login = ({ onLogin }) => {
 
         onLogin(userRole, userId, userToken);
 
-        toast.success(isLogin? "Bon retour chez Mr. Renaudin!" : "Compte créé! Vous pouvez maintenant réserver.");
+        toast.success(isLogin? "Bon retour!" : "Compte créé! Vous pouvez réserver.");
 
         const redirect = sessionStorage.getItem('redirectAfterLogin');
         if (redirect) {
           sessionStorage.removeItem('redirectAfterLogin');
           navigate(redirect);
         } else {
-          navigate('/');
+          navigate('/reserver'); // ✅ Redirige direct vers réservation après inscription
         }
       } catch (error) {
         console.error("Erreur:", error);
@@ -231,7 +219,7 @@ const Login = ({ onLogin }) => {
       <div style={styles.content}>
         <main style={styles.main}>
           <div style={styles.splitLayout}>
-            <WelcomeMessage scrollToForm={scrollToForm} />
+            <WelcomeMessage scrollToForm={scrollToForm} setIsLogin={setIsLogin} />
             <LoginForm
               isLogin={isLogin}
               username={username}
@@ -307,57 +295,49 @@ const styles = {
   },
   welcomeTitle: {
     color: '#eef2f7',
-    fontSize: 'clamp(2rem, 8vw, 3rem)',
+    fontSize: 'clamp(1.8rem, 6vw, 2.5rem)',
     fontWeight: '700',
     marginBottom: '20px',
     fontFamily: "'Playfair Display', serif",
     lineHeight: '1.15',
   },
-  welcomeText: {
-    color: '#b8c8da',
-    fontSize: '1rem',
-    lineHeight: '1.7',
-    marginBottom: '28px',
-  },
-  features: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    marginBottom: '28px',
-    alignItems: 'center',
-  },
-  feature: {
-    color: '#eef2f7',
-    fontSize: '0.9rem',
-    fontWeight: '500',
-  },
-  // ✅ NOUVEAU: Box compte requis
+  // ✅ Box compte requis - gros et visible
   accountRequiredBox: {
-    backgroundColor: 'rgba(212,168,67,0.1)',
-    border: '1px solid rgba(212,168,67,0.3)',
-    padding: '16px',
+    backgroundColor: 'rgba(212,168,67,0.15)',
+    border: '2px solid #d4a843',
+    padding: '20px',
     marginBottom: '24px',
     borderRadius: '2px',
   },
+  lockIcon: {
+    fontSize: '2rem',
+    marginBottom: '8px',
+  },
   accountRequiredText: {
-    color: '#d4a843',
-    fontSize: '0.85rem',
+    color: '#eef2f7',
+    fontSize: '0.95rem',
     lineHeight: '1.6',
     margin: 0,
+  },
+  welcomeText: {
+    color: '#b8c8da',
+    fontSize: '0.95rem',
+    lineHeight: '1.7',
+    marginBottom: '28px',
   },
   welcomeButton: {
     backgroundColor: '#d4a843',
     color: '#0e1015',
     fontWeight: '700',
-    padding: '14px 32px',
+    padding: '16px 32px',
     border: 'none',
-    fontSize: '0.85rem',
+    fontSize: '0.9rem',
     textTransform: 'uppercase',
     letterSpacing: '0.08em',
     cursor: 'pointer',
     transition: 'all 0.2s',
     width: '100%',
-    maxWidth: '280px',
+    maxWidth: '320px',
   },
   smallText: {
     color: '#6b7280',
@@ -368,6 +348,14 @@ const styles = {
   phoneLink: {
     color: '#d4a843',
     textDecoration: 'none',
+  },
+  inlineLink: {
+    background: 'none',
+    border: 'none',
+    color: '#d4a843',
+    textDecoration: 'underline',
+    cursor: 'pointer',
+    fontSize: 'inherit',
   },
   formContainer: {
     width: '100%',
@@ -386,13 +374,6 @@ const styles = {
     color: '#eef2f7',
     fontFamily: "'Playfair Display', serif",
   },
-  subtitle: {
-    fontSize: '0.85rem',
-    marginBottom: '28px',
-    color: '#b8c8da',
-    lineHeight: '1.5',
-  },
-  // ✅ NOUVEAU: Bannière info inscription
   infoAlert: {
     backgroundColor: 'rgba(212,168,67,0.1)',
     border: '1px solid rgba(212,168,67,0.3)',
@@ -473,21 +454,6 @@ const styles = {
     fontSize: '0.8rem',
     textAlign: 'center',
   },
-  contactFooter: {
-    marginTop: '24px',
-    paddingTop: '20px',
-    borderTop: '1px solid #2a3348',
-    textAlign: 'center',
-  },
-  contactText: {
-    color: '#6b7280',
-    fontSize: '0.75rem',
-    lineHeight: '1.6',
-  },
-  contactLink: {
-    color: '#d4a843',
-    textDecoration: 'none',
-  },
 };
 
 // Media query pour desktop
@@ -497,12 +463,11 @@ if (typeof window!== 'undefined' && window.matchMedia('(min-width: 768px)').matc
   styles.splitLayout.alignItems = 'center';
   styles.welcomeContainer.textAlign = 'left';
   styles.welcomeContainer.padding = '20px';
-  styles.features.alignItems = 'flex-start';
   styles.welcomeButton.width = 'auto';
   styles.welcomeButton.maxWidth = 'none';
   styles.form.padding = '48px 40px';
   styles.main.padding = '60px 20px';
-  styles.welcomeTitle.fontSize = '3rem';
+  styles.welcomeTitle.fontSize = '2.5rem';
 }
 
 export default Login;
