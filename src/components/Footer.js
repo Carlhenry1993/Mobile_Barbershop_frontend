@@ -389,7 +389,7 @@ const Footer = () => {
           <p className="ft-cta-sub">
             Shawinigan · Barbershop Premium · Sur rendez-vous
           </p>
-          <a href="/booking" className="ft-cta-btn" aria-label="Réserver un rendez-vous maintenant">
+          <a href="/reserver" className="ft-cta-btn" aria-label="Réserver un rendez-vous maintenant">
             Réserver maintenant
           </a>
         </div>
