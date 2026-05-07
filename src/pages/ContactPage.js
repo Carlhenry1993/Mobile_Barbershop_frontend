@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import { useForm } from "react-hook-form";
 import { motion, useInView, useReducedMotion, AnimatePresence } from "framer-motion";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
+// ❌ SUPPRIMÉ: import Header from "../components/Header";
+// ❌ SUPPRIMÉ: import Footer from "../components/Footer";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -287,7 +287,7 @@ const FadeIn = ({ children, delay = 0, className = "" }) => {
       ref={ref}
       className={className}
       initial="hidden"
-      animate={inView? "show" : "hidden"}
+      animate={inView ? "show" : "hidden"}
       custom={delay}
       variants={fadeUp}
     >
@@ -339,7 +339,6 @@ const ContactPage = () => {
 
   return (
     <div className="ct-root">
-      <Header />
       <div className="ct-inner">
         
         {/* Hero */}
@@ -347,7 +346,7 @@ const ContactPage = () => {
           <div className="relative z-10 max-w-4xl mx-auto">
             <motion.p
               className="ct-eyebrow"
-              initial={shouldReduceMotion? {} : { opacity: 0, y: 20 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
@@ -357,7 +356,7 @@ const ContactPage = () => {
             <motion.h1
               className="ct-display"
               style={{ fontSize: "clamp(2.5rem, 6vw, 4.5rem)", marginBottom: "1.5rem" }}
-              initial={shouldReduceMotion? {} : { opacity: 0, y: 40 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
             >
@@ -368,7 +367,7 @@ const ContactPage = () => {
             <motion.p
               className="ct-serif-body"
               style={{ maxWidth: "680px", margin: "0 auto 2.5rem" }}
-              initial={shouldReduceMotion? {} : { opacity: 0 }}
+              initial={shouldReduceMotion ? {} : { opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
@@ -614,7 +613,6 @@ const ContactPage = () => {
         </section>
 
       </div>
-      <Footer />
 
       <ToastContainer
         position="top-right"
