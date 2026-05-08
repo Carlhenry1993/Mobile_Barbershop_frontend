@@ -1,317 +1,688 @@
-import React, { useState, useCallback, useEffect } from "react";
-import Header from "../components/Header";
-import Footer from "../components/Footer";
-import "animate.css"; // Importer animate.css
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
+
+const useBookingStyles = () => {
+  useEffect(() => {
+    const styleId = "mr-renaudin-booking-styles";
+    if (document.getElementById(styleId)) return;
+
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+  .bk-root {
+        --bk-black: #0e1015;
+        --bk-charcoal: #161b24;
+        --bk-card: #1e2535;
+        --bk-border: #2a3348;
+        --bk-gold: #d4a843;
+        --bk-gold-lt: #f0c96a;
+        --bk-gold-dim: rgba(212,168,67,0.13);
+        --bk-steel: #8ba8c8;
+        --bk-cream: #eef2f7;
+        --bk-light: #b8c8da;
+        --bk-muted: #7888a0;
+        --bk-danger: #e74c3c;
+        --bk-success: #27ae60;
+
+        background: var(--bk-black);
+        color: var(--bk-cream);
+        font-family: 'DM Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        min-height: 100svh;
+      }
+
+  .bk-inner { position: relative; z-index: 1; }
+
+  .bk-section-pad { padding: 6rem 1.5rem; }
+      @media (max-width: 768px) {
+  .bk-section-pad { padding: 4rem 1.25rem; }
+      }
+
+  .bk-eyebrow {
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.68rem;
+        letter-spacing: 0.25em;
+        text-transform: uppercase;
+        color: var(--bk-gold);
+        margin-bottom: 1rem;
+      }
+
+  .bk-display {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-weight: 900;
+        line-height: 1.05;
+        color: var(--bk-cream);
+      }
+
+  .bk-gold-rule {
+        display: block;
+        width: 60px;
+        height: 2px;
+        background: var(--bk-gold);
+        margin: 0 auto 1.5rem;
+      }
+
+  .bk-btn-gold, .bk-btn-outline {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-family: 'DM Sans', sans-serif;
+        font-weight: 500;
+        font-size: 0.85rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 1rem 2rem;
+        border: none;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s, border-color 0.3s, color 0.3s;
+        text-decoration: none;
+        will-change: transform;
+      }
+  .bk-btn-gold {
+        background: var(--bk-gold);
+        color: var(--bk-black);
+      }
+  .bk-btn-gold:hover, .bk-btn-gold:focus-visible { 
+        background: var(--bk-gold-lt); 
+        transform: translateY(-2px);
+        outline: 2px solid var(--bk-gold-lt);
+        outline-offset: 2px;
+      }
+  .bk-btn-gold:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+  .bk-btn-outline {
+        background: transparent;
+        color: var(--bk-cream);
+        border: 1px solid rgba(184,200,218,0.3);
+      }
+  .bk-btn-outline:hover, .bk-btn-outline:focus-visible { 
+        border-color: var(--bk-gold); 
+        color: var(--bk-gold); 
+        transform: translateY(-2px);
+        outline: 2px solid var(--bk-gold);
+        outline-offset: 2px;
+      }
+
+  .bk-card {
+        background: var(--bk-card);
+        border: 1px solid var(--bk-border);
+        padding: 2rem;
+        transition: border-color 0.3s, transform 0.3s;
+        cursor: pointer;
+        will-change: transform;
+      }
+  .bk-card:hover { 
+        border-color: var(--bk-gold); 
+        transform: translateY(-4px);
+      }
+  .bk-card.selected {
+        border-color: var(--bk-gold);
+        background: rgba(212,168,67,0.08);
+      }
+
+  .bk-steps {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 3rem;
+        flex-wrap: wrap;
+      }
+
+  .bk-step {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--bk-muted);
+        letter-spacing: 0.05em;
+      }
+
+  .bk-step.active { color: var(--bk-gold); }
+  .bk-step.done { color: var(--bk-success); }
+
+  .bk-step-num {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid currentColor;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+      }
+
+  .bk-step.active .bk-step-num {
+        background: var(--bk-gold);
+        color: var(--bk-black);
+        border-color: var(--bk-gold);
+      }
+
+  .bk-slot {
+        background: var(--bk-card);
+        border: 1px solid var(--bk-border);
+        padding: 0.75rem 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        font-size: 0.9rem;
+      }
+  .bk-slot:hover { border-color: var(--bk-gold); }
+  .bk-slot.selected {
+        background: var(--bk-gold);
+        color: var(--bk-black);
+        border-color: var(--bk-gold);
+        font-weight: 600;
+      }
+
+  .bk-input {
+        width: 100%;
+        background: var(--bk-black);
+        border: 1px solid var(--bk-border);
+        color: var(--bk-cream);
+        font-family: 'DM Sans', sans-serif;
+        font-size: 0.95rem;
+        padding: 1rem 1.25rem;
+        transition: border-color 0.3s;
+      }
+  .bk-input:focus {
+        outline: none;
+        border-color: var(--bk-gold);
+      }
+
+  .bk-error {
+        background: rgba(231,76,60,0.1);
+        border: 1px solid rgba(231,76,60,0.3);
+        color: #ff8a7a;
+        padding: 1rem;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+      }
+
+  .bk-success {
+        background: rgba(39,174,96,0.1);
+        border: 1px solid rgba(39,174,96,0.3);
+        color: #7dd87d;
+        padding: 2rem;
+        text-align: center;
+      }
+
+  .bk-login-wall {
+        background: rgba(212,168,67,0.1);
+        border: 2px solid var(--bk-gold);
+        padding: 3rem 2rem;
+        text-align: center;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+  .bk-login-wall h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.75rem;
+        color: var(--bk-gold);
+        margin-bottom: 1rem;
+      }
+
+  .bk-login-wall p {
+        color: var(--bk-light);
+        line-height: 1.7;
+        margin-bottom: 2rem;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+
+    return () => {
+      const el = document.getElementById(styleId);
+      if (el) el.remove();
+    };
+  }, []);
+};
 
 const BookingPage = () => {
-  // Scroll to the top when the component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  useBookingStyles();
+  const navigate = useNavigate();
+  const shouldReduceMotion = useReducedMotion();
 
-  // Données initiales du formulaire centralisées
-  const initialFormData = {
-    fullName: "",
-    phoneNumber: "",
-    email: "",
-    address: "",
-    shavingType: "",
-    preferredDate: "",
-    preferredTime: "",
-    memo: "",
-  };
+  const [step, setStep] = useState(1);
+  const [services, setServices] = useState([]);
+  const [barbers, setBarbers] = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedBarber, setSelectedBarber] = useState(null);
+  const [selectedDate, setSelectedDate] = useState("");
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedSlot, setSelectedSlot] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [submitted, setSubmitted] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
 
-  const shavingOptions = [
-    "Rasage complet",
-    "Coupe classique",
-    "Dégradé moderne",
-    "Rasage de la barbe uniquement",
-  ];
-
-  const availability = {
-    Lundi: "11h30 AM - 08h30 PM",
-    Mardi: "11h30 AM - 08h30 PM",
-    Mercredi: "11h30 AM - 08h30 PM",
-    Jeudi: "11h30 AM - 08h30 PM",
-    Vendredi: "11h30 AM - 08h30 PM",
-    Samedi: "11h30 AM - 08h30 PM",
-    Dimanche: "11h30 AM - 08h30 PM",
-  };
-
-  // Utilisation de useCallback pour éviter la recréation de la fonction à chaque rendu
-  const handleInputChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }, []);
-
-  const validateForm = () => {
-    if (!formData.fullName || !formData.phoneNumber || !formData.email) {
-      setErrorMessage("Veuillez remplir tous les champs obligatoires.");
-      return false;
-    }
-    // Comparaison de la date sans tenir compte de l'heure
-    const selectedDate = new Date(formData.preferredDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (selectedDate < today) {
-      setErrorMessage("Veuillez sélectionner une date future.");
-      return false;
-    }
-    // Effacer le message d'erreur en cas de validation réussie
-    setErrorMessage("");
-    return true;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setIsLoading(true);
-
-    // Normalisation de la date pour le format ISO (YYYY-MM-DD)
-    const normalizedFormData = {
-      ...formData,
-      preferredDate: new Date(formData.preferredDate).toISOString().split("T")[0],
-    };
-
+  const fetchAvailability = useCallback(async () => {
+    if (!selectedService || !selectedBarber || !selectedDate) return;
+    
+    setLoading(true);
+    setError("");
     try {
-      const response = await fetch("https://mobile-barbershop-backend.onrender.com/send-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(normalizedFormData),
+      const res = await axios.get("/api/booking/availability", {
+        params: {
+          date: selectedDate,
+          barberId: selectedBarber.id,
+          serviceId: selectedService.id,
+        },
       });
-
-      if (response.ok) {
-        setSubmitted(true);
-        setFormData(initialFormData);
-      } else {
-        const errorData = await response.json();
-        setErrorMessage(errorData.message || "Une erreur s'est produite.");
-      }
-    } catch (error) {
-      setErrorMessage("Une erreur réseau s'est produite. Veuillez réessayer.");
+      setAvailableSlots(res.data);
+    } catch (err) {
+      setError("Impossible de charger les créneaux");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+    }
+  }, [selectedService, selectedBarber, selectedDate]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsLoggedIn(true);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    } else {
+      sessionStorage.setItem('redirectAfterLogin', '/reserver');
+    }
+
+    fetchServices();
+  }, []);
+
+  useEffect(() => {
+    fetchAvailability();
+  }, [fetchAvailability]);
+
+  const fetchServices = async () => {
+    try {
+      const res = await axios.get("/api/booking/services");
+      setServices(res.data);
+    } catch (err) {
+      setError("Impossible de charger les services");
     }
   };
 
-  // Composant pour l'affichage de chaque horaire
-  const AvailabilityCard = ({ day, hours }) => (
-    <div
-      className="bg-blue-50 p-4 sm:p-6 rounded-lg text-center shadow-lg hover:bg-blue-100 transition-all duration-300 animate__animated animate__fadeInUp"
-    >
-      <p className="text-lg sm:text-xl font-medium text-gray-800">{day}</p>
-      <p className="text-sm sm:text-base text-gray-600">{hours}</p>
-    </div>
-  );
+  const fetchBarbers = async () => {
+    try {
+      const res = await axios.get("/api/booking/barbers");
+      setBarbers(res.data);
+    } catch (err) {
+      setError("Impossible de charger les barbiers");
+    }
+  };
+
+  const handleServiceSelect = (service) => {
+    setSelectedService(service);
+    fetchBarbers();
+    setStep(2);
+  };
+
+  const handleBarberSelect = (barber) => {
+    setSelectedBarber(barber);
+    setStep(3);
+  };
+
+  const handleDateChange = (e) => {
+    setSelectedDate(e.target.value);
+    setSelectedSlot(null);
+  };
+
+  const handleSlotSelect = (slot) => {
+    setSelectedSlot(slot);
+    setStep(4);
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!isLoggedIn) {
+      sessionStorage.setItem('redirectAfterLogin', '/reserver');
+      navigate('/login');
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+    try {
+      await axios.post("/api/booking/create", {
+        serviceId: selectedService.id,
+        barberId: selectedBarber.id,
+        startTime: selectedSlot,
+      });
+      setSuccess(true);
+      toast.success("Réservation confirmée!");
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError("Ce créneau vient d'être réservé. Choisissez-en un autre.");
+        fetchAvailability();
+        setStep(3);
+      } else {
+        setError(err.response?.data?.error || "Erreur lors de la réservation");
+      }
+      toast.error("Erreur de réservation");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  };
+
+  const formatTime = (dateStr) => {
+    return new Date(dateStr).toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getMinDate = () => {
+    return new Date().toISOString().split("T")[0];
+  };
+
+  if (!isLoggedIn) {
+    return (
+      <div className="bk-root">
+        <div className="bk-inner">
+          <section className="bk-section-pad" style={{ minHeight: "80vh", display: "flex", alignItems: "center" }}>
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+              <div className="bk-login-wall">
+                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>
+                <h2>Compte requis pour réserver</h2>
+                <p>
+                  La réservation en ligne est réservée aux membres Mr. Renaudin.<br />
+                  Créez votre compte gratuit en 30 secondes pour accéder aux créneaux.
+                </p>
+                <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+                  <button onClick={() => navigate("/login")} className="bk-btn-gold">
+                    Créer mon compte
+                  </button>
+                  <button onClick={() => navigate("/login")} className="bk-btn-outline">
+                    J'ai déjà un compte
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+        <ToastContainer theme="dark" position="top-center" />
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="bk-root">
+        <div className="bk-inner">
+          <section className="bk-section-pad" style={{ minHeight: "80vh", display: "flex", alignItems: "center" }}>
+            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+              <div className="bk-success">
+                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✓</div>
+                <h2 className="bk-display" style={{ fontSize: "2rem", marginBottom: "1rem" }}>
+                  Réservation confirmée!
+                </h2>
+                <p style={{ color: "var(--bk-light)", lineHeight: "1.7", marginBottom: "2rem" }}>
+                  <strong>{selectedService.name}</strong> avec <strong>{selectedBarber.name}</strong><br />
+                  {formatDate(selectedSlot)} à {formatTime(selectedSlot)}<br />
+                  {ADDRESS}
+                </p>
+                <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "2rem" }}>
+                  Un email de confirmation vous a été envoyé. Annulation gratuite jusqu'à 24h avant.
+                </p>
+                <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
+                  <button onClick={() => navigate("/compte")} className="bk-btn-gold">
+                    Mes réservations
+                  </button>
+                  <button onClick={() => navigate("/")} className="bk-btn-outline">
+                    Retour accueil
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+        <ToastContainer theme="dark" position="top-center" />
+      </div>
+    );
+  }
 
   return (
-    <>
-      <Header />
-
-      <main className="bg-gradient-to-b from-blue-100 to-blue-200 min-h-screen py-8 sm:py-10">
-        {/* Section Hero */}
-        <section className="text-center py-16 px-4 sm:px-6 md:px-12 bg-blue-50 shadow-lg rounded-lg mx-2 sm:mx-10 mb-10">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-gray-900 mb-3 sm:mb-4 leading-tight animate__animated animate__fadeInUp">
-            Offrez-vous le meilleur soin capillaire avec Mr. Renaudin Barbershop
-          </h1>
-          <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-4 sm:mb-6 animate__animated animate__fadeInUp">
-            Prenez rendez-vous dès aujourd'hui pour vivre une expérience coiffure inoubliable.
-          </p>
-        </section>
-
-        {/* Section Horaires */}
-        <section className="py-12 px-4 sm:px-8 bg-white shadow-md rounded-lg mx-2 sm:mx-10 mb-10">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-6 animate__animated animate__bounceIn">
-            Nos horaires flexibles
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {Object.entries(availability).map(([day, hours], index) => (
-              <AvailabilityCard key={index} day={day} hours={hours} />
-            ))}
-          </div>
-        </section>
-
-        {/* Section Réservation */}
-        <section className="container mx-auto px-4 sm:px-6 py-12 bg-white shadow-xl rounded-lg mx-2 sm:mx-10 mb-10">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-center text-gray-900 mb-6 animate__animated animate__fadeInUp">
-            Réservez votre service maintenant
-          </h2>
-
-          {submitted ? (
-            <div className="text-center animate__animated animate__fadeInUp">
-              <h3 className="text-2xl sm:text-3xl font-semibold text-green-600 mb-3">
-                Votre demande de réservation a bien été envoyée !
-              </h3>
-              <p className="text-base sm:text-lg text-gray-600 mb-3">
-                Merci d'avoir choisi Mr. Renaudin Barbershop. Nous traitons actuellement votre demande.
-              </p>
-              <p className="text-base sm:text-lg text-gray-600 mb-3">
-                Vous recevrez bientôt un e-mail avec l'état de votre réservation.
-              </p>
-              <p className="text-base sm:text-lg text-gray-600">
-                Merci pour votre confiance et à très bientôt.
-              </p>
+    <div className="bk-root">
+      <div className="bk-inner">
+        <section className="bk-section-pad">
+          <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: "3rem" }}>
+              <p className="bk-eyebrow">Réservation en ligne</p>
+              <span className="bk-gold-rule" />
+              <h1 className="bk-display" style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}>
+                Prenez rendez-vous
+              </h1>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6 animate__animated animate__fadeInUp">
-              {errorMessage && (
-                <p className="text-red-500 text-center font-semibold">{errorMessage}</p>
+
+            <div className="bk-steps">
+              <div className={`bk-step ${step >= 1 ? "active" : ""} ${step > 1 ? "done" : ""}`}>
+                <div className="bk-step-num">{step > 1 ? "✓" : "1"}</div>
+                <span>Service</span>
+              </div>
+              <div className={`bk-step ${step >= 2 ? "active" : ""} ${step > 2 ? "done" : ""}`}>
+                <div className="bk-step-num">{step > 2 ? "✓" : "2"}</div>
+                <span>Barbier</span>
+              </div>
+              <div className={`bk-step ${step >= 3 ? "active" : ""} ${step > 3 ? "done" : ""}`}>
+                <div className="bk-step-num">{step > 3 ? "✓" : "3"}</div>
+                <span>Date & Heure</span>
+              </div>
+              <div className={`bk-step ${step >= 4 ? "active" : ""}`}>
+                <div className="bk-step-num">4</div>
+                <span>Confirmation</span>
+              </div>
+            </div>
+
+            {error && <div className="bk-error">{error}</div>}
+
+            <AnimatePresence mode="wait">
+              {step === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
+                    Choisissez votre service
+                  </h2>
+                  <div style={{ display: "grid", gap: "1rem" }}>
+                    {services.map((service) => (
+                      <div
+                        key={service.id}
+                        className="bk-card"
+                        onClick={() => handleServiceSelect(service)}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                          <div>
+                            <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
+                              {service.name}
+                            </h3>
+                            <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
+                              {service.duration} min
+                            </p>
+                            {service.description && (
+                              <p style={{ color: "var(--bk-light)", fontSize: "0.85rem", lineHeight: "1.6" }}>
+                                {service.description}
+                              </p>
+                            )}
+                          </div>
+                          <div style={{ color: "var(--bk-gold)", fontSize: "1.2rem", fontWeight: 700 }}>
+                            {service.price}$
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
               )}
 
-              {/* Informations client */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                    Nom complet
-                  </label>
-                  <input
-                    type="text"
-                    id="fullName"
-                    name="fullName"
-                    value={formData.fullName}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
-                    Numéro de téléphone
-                  </label>
-                  <input
-                    type="tel"
-                    id="phoneNumber"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Adresse e-mail
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-                  Adresse
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                />
-              </div>
-
-              {/* Sélection du type de rasage */}
-              <div>
-                <label htmlFor="shavingType" className="block text-sm font-medium text-gray-700">
-                  Type de rasage
-                </label>
-                <select
-                  id="shavingType"
-                  name="shavingType"
-                  value={formData.shavingType}
-                  onChange={handleInputChange}
-                  required
-                  className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+              {step === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  <option value="" disabled>
-                    Sélectionnez un type de rasage
-                  </option>
-                  {shavingOptions.map((option, index) => (
-                    <option key={index} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
+                    Choisissez votre barbier
+                  </h2>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
+                    {barbers.map((barber) => (
+                      <div
+                        key={barber.id}
+                        className="bk-card"
+                        onClick={() => handleBarberSelect(barber)}
+                      >
+                        {barber.avatar_url && (
+                          <img
+                            src={barber.avatar_url}
+                            alt={barber.name}
+                            style={{ width: "100%", aspectRatio: "1", objectFit: "cover", marginBottom: "1rem" }}
+                          />
+                        )}
+                        <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
+                          {barber.name}
+                        </h3>
+                        {barber.specialties && (
+                          <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem" }}>
+                            {barber.specialties.join(" • ")}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => setStep(1)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>
+                    ← Retour
+                  </button>
+                </motion.div>
+              )}
 
-              {/* Date et heure préférées */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                <div>
-                  <label htmlFor="preferredDate" className="block text-sm font-medium text-gray-700">
-                    Date préférée
-                  </label>
-                  <input
-                    type="date"
-                    id="preferredDate"
-                    name="preferredDate"
-                    value={formData.preferredDate}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="preferredTime" className="block text-sm font-medium text-gray-700">
-                    Heure préférée
-                  </label>
-                  <input
-                    type="time"
-                    id="preferredTime"
-                    name="preferredTime"
-                    value={formData.preferredTime}
-                    onChange={handleInputChange}
-                    required
-                    className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                  />
-                </div>
-              </div>
-
-              {/* Zone de texte pour le memo */}
-              <div>
-                <label htmlFor="memo" className="block text-sm font-medium text-gray-700">
-                  Memo (facultatif)
-                </label>
-                <textarea
-                  id="memo"
-                  name="memo"
-                  value={formData.memo}
-                  onChange={handleInputChange}
-                  className="mt-1 w-full border border-gray-300 rounded-lg p-2 sm:p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                />
-              </div>
-
-              {/* Bouton de soumission */}
-              <div className="text-center">
-                <button
-                  type="submit"
-                  className="mt-4 w-full sm:w-auto bg-blue-600 text-white px-6 sm:px-8 py-3 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300 animate__animated animate__bounceIn"
+              {step === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  {isLoading ? "Envoi en cours..." : "Envoyer la demande"}
-                </button>
-              </div>
-            </form>
-          )}
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
+                    Choisissez une date et heure
+                  </h2>
+                  <div style={{ marginBottom: "2rem" }}>
+                    <label style={{ color: "var(--bk-light)", fontSize: "0.9rem", display: "block", marginBottom: "0.5rem" }}>
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={handleDateChange}
+                      min={getMinDate()}
+                      className="bk-input"
+                    />
+                  </div>
+
+                  {loading && <p style={{ color: "var(--bk-muted)" }}>Chargement des créneaux...</p>}
+
+                  {selectedDate && availableSlots.length === 0 && !loading && (
+                    <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>
+                      Aucun créneau disponible ce jour-là
+                    </p>
+                  )}
+
+                  {availableSlots.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "0.75rem" }}>
+                      {availableSlots.map((slot) => (
+                        <div
+                          key={slot}
+                          className={`bk-slot ${selectedSlot === slot ? "selected" : ""}`}
+                          onClick={() => handleSlotSelect(slot)}
+                        >
+                          {formatTime(slot)}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button onClick={() => setStep(2)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>
+                    ← Retour
+                  </button>
+                </motion.div>
+              )}
+
+              {step === 4 && (
+                <motion.div
+                  key="step4"
+                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
+                    Confirmer votre réservation
+                  </h2>
+                  <div style={{ background: "var(--bk-card)", border: "1px solid var(--bk-border)", padding: "2rem", marginBottom: "2rem" }}>
+                    <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
+                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Service</p>
+                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedService.name}</p>
+                      <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem" }}>{selectedService.duration} min • {selectedService.price}$</p>
+                    </div>
+                    <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
+                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Barbier</p>
+                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedBarber.name}</p>
+                    </div>
+                    <div>
+                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Date & Heure</p>
+                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>
+                        {formatDate(selectedSlot)} à {formatTime(selectedSlot)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+                    <button onClick={() => setStep(3)} className="bk-btn-outline">
+                      ← Modifier
+                    </button>
+                    <button onClick={handleConfirmBooking} className="bk-btn-gold" disabled={loading}>
+                      {loading ? "Confirmation..." : "Confirmer la réservation"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </section>
-      </main>
-
-      <Footer />
-    </>
+      </div>
+      <ToastContainer theme="dark" position="top-center" />
+    </div>
   );
 };
 
