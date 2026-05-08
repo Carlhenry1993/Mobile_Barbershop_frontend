@@ -29,21 +29,17 @@ const useBookingStyles = () => {
         --bk-muted: #7888a0;
         --bk-danger: #e74c3c;
         --bk-success: #27ae60;
-
         background: var(--bk-black);
         color: var(--bk-cream);
         font-family: 'DM Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
         min-height: 100svh;
       }
-
   .bk-inner { position: relative; z-index: 1; }
-
   .bk-section-pad { padding: 6rem 1.5rem; }
       @media (max-width: 768px) {
   .bk-section-pad { padding: 4rem 1.25rem; }
       }
-
   .bk-eyebrow {
         font-family: 'DM Sans', sans-serif;
         font-size: 0.68rem;
@@ -52,14 +48,12 @@ const useBookingStyles = () => {
         color: var(--bk-gold);
         margin-bottom: 1rem;
       }
-
   .bk-display {
         font-family: 'Playfair Display', Georgia, serif;
         font-weight: 900;
         line-height: 1.05;
         color: var(--bk-cream);
       }
-
   .bk-gold-rule {
         display: block;
         width: 60px;
@@ -67,7 +61,6 @@ const useBookingStyles = () => {
         background: var(--bk-gold);
         margin: 0 auto 1.5rem;
       }
-
   .bk-btn-gold, .bk-btn-outline {
         display: inline-flex;
         align-items: center;
@@ -112,7 +105,6 @@ const useBookingStyles = () => {
         outline: 2px solid var(--bk-gold);
         outline-offset: 2px;
       }
-
   .bk-card {
         background: var(--bk-card);
         border: 1px solid var(--bk-border);
@@ -129,7 +121,6 @@ const useBookingStyles = () => {
         border-color: var(--bk-gold);
         background: rgba(212,168,67,0.08);
       }
-
   .bk-steps {
         display: flex;
         justify-content: center;
@@ -137,7 +128,6 @@ const useBookingStyles = () => {
         margin-bottom: 3rem;
         flex-wrap: wrap;
       }
-
   .bk-step {
         display: flex;
         align-items: center;
@@ -146,10 +136,8 @@ const useBookingStyles = () => {
         color: var(--bk-muted);
         letter-spacing: 0.05em;
       }
-
   .bk-step.active { color: var(--bk-gold); }
   .bk-step.done { color: var(--bk-success); }
-
   .bk-step-num {
         width: 28px;
         height: 28px;
@@ -161,13 +149,11 @@ const useBookingStyles = () => {
         font-weight: 600;
         font-size: 0.75rem;
       }
-
   .bk-step.active .bk-step-num {
         background: var(--bk-gold);
         color: var(--bk-black);
         border-color: var(--bk-gold);
       }
-
   .bk-slot {
         background: var(--bk-card);
         border: 1px solid var(--bk-border);
@@ -184,7 +170,6 @@ const useBookingStyles = () => {
         border-color: var(--bk-gold);
         font-weight: 600;
       }
-
   .bk-input {
         width: 100%;
         background: var(--bk-black);
@@ -199,7 +184,6 @@ const useBookingStyles = () => {
         outline: none;
         border-color: var(--bk-gold);
       }
-
   .bk-error {
         background: rgba(231,76,60,0.1);
         border: 1px solid rgba(231,76,60,0.3);
@@ -208,7 +192,6 @@ const useBookingStyles = () => {
         font-size: 0.85rem;
         margin-bottom: 1.5rem;
       }
-
   .bk-success {
         background: rgba(39,174,96,0.1);
         border: 1px solid rgba(39,174,96,0.3);
@@ -216,7 +199,6 @@ const useBookingStyles = () => {
         padding: 2rem;
         text-align: center;
       }
-
   .bk-login-wall {
         background: rgba(212,168,67,0.1);
         border: 2px solid var(--bk-gold);
@@ -225,20 +207,17 @@ const useBookingStyles = () => {
         max-width: 600px;
         margin: 0 auto;
       }
-
   .bk-login-wall h2 {
         font-family: 'Playfair Display', serif;
         font-size: 1.75rem;
         color: var(--bk-gold);
         margin-bottom: 1rem;
       }
-
   .bk-login-wall p {
         color: var(--bk-light);
         line-height: 1.7;
         margin-bottom: 2rem;
       }
-
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
@@ -247,7 +226,6 @@ const useBookingStyles = () => {
       }
     `;
     document.head.appendChild(style);
-
     return () => {
       const el = document.getElementById(styleId);
       if (el) el.remove();
@@ -269,6 +247,7 @@ const BookingPage = () => {
   const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingBarbers, setLoadingBarbers] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -288,9 +267,10 @@ const BookingPage = () => {
           serviceId: selectedService.id,
         },
       });
-      setAvailableSlots(res.data);
+      setAvailableSlots(res.data || []);
     } catch (err) {
       setError("Impossible de charger les créneaux");
+      setAvailableSlots([]);
     } finally {
       setLoading(false);
     }
@@ -304,7 +284,6 @@ const BookingPage = () => {
     } else {
       sessionStorage.setItem('redirectAfterLogin', '/reserver');
     }
-
     fetchServices();
   }, []);
 
@@ -315,29 +294,42 @@ const BookingPage = () => {
   const fetchServices = async () => {
     try {
       const res = await axios.get("/api/booking/services");
-      setServices(res.data);
+      setServices(res.data || []);
     } catch (err) {
       setError("Impossible de charger les services");
+      setServices([]);
     }
   };
 
   const fetchBarbers = async () => {
+    setLoadingBarbers(true);
+    setError("");
     try {
       const res = await axios.get("/api/booking/barbers");
-      setBarbers(res.data);
+      setBarbers(res.data || []);
     } catch (err) {
       setError("Impossible de charger les barbiers");
+      setBarbers([]);
+    } finally {
+      setLoadingBarbers(false);
     }
   };
 
   const handleServiceSelect = (service) => {
     setSelectedService(service);
+    setSelectedBarber(null);
+    setSelectedDate("");
+    setSelectedSlot(null);
+    setAvailableSlots([]);
     fetchBarbers();
     setStep(2);
   };
 
   const handleBarberSelect = (barber) => {
     setSelectedBarber(barber);
+    setSelectedDate("");
+    setSelectedSlot(null);
+    setAvailableSlots([]);
     setStep(3);
   };
 
@@ -357,7 +349,6 @@ const BookingPage = () => {
       navigate('/login');
       return;
     }
-
     setLoading(true);
     setError("");
     try {
@@ -397,9 +388,7 @@ const BookingPage = () => {
     });
   };
 
-  const getMinDate = () => {
-    return new Date().toISOString().split("T")[0];
-  };
+  const getMinDate = () => new Date().toISOString().split("T")[0];
 
   if (!isLoggedIn) {
     return (
@@ -443,7 +432,7 @@ const BookingPage = () => {
                   Réservation confirmée!
                 </h2>
                 <p style={{ color: "var(--bk-light)", lineHeight: "1.7", marginBottom: "2rem" }}>
-                  <strong>{selectedService.name}</strong> avec <strong>{selectedBarber.name}</strong><br />
+                  <strong>{selectedService?.name}</strong> avec <strong>{selectedBarber?.name}</strong><br />
                   {formatDate(selectedSlot)} à {formatTime(selectedSlot)}<br />
                   {ADDRESS}
                 </p>
@@ -515,11 +504,7 @@ const BookingPage = () => {
                   </h2>
                   <div style={{ display: "grid", gap: "1rem" }}>
                     {services.map((service) => (
-                      <div
-                        key={service.id}
-                        className="bk-card"
-                        onClick={() => handleServiceSelect(service)}
-                      >
+                      <div key={service.id} className="bk-card" onClick={() => handleServiceSelect(service)}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
                           <div>
                             <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
@@ -555,31 +540,44 @@ const BookingPage = () => {
                   <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
                     Choisissez votre barbier
                   </h2>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
-                    {barbers.map((barber) => (
-                      <div
-                        key={barber.id}
-                        className="bk-card"
-                        onClick={() => handleBarberSelect(barber)}
-                      >
-                        {barber.avatar_url && (
-                          <img
-                            src={barber.avatar_url}
-                            alt={barber.name}
-                            style={{ width: "100%", aspectRatio: "1", objectFit: "cover", marginBottom: "1rem" }}
-                          />
-                        )}
-                        <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
-                          {barber.name}
-                        </h3>
-                        {barber.specialties && (
-                          <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem" }}>
-                            {barber.specialties.join(" • ")}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                  
+                  {loadingBarbers && <p style={{ color: "var(--bk-muted)", textAlign: "center" }}>Chargement des barbiers...</p>}
+                  
+                  {!loadingBarbers && barbers.length === 0 && (
+                    <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>
+                      Aucun barbier disponible pour le moment.
+                    </p>
+                  )}
+                  
+                  {!loadingBarbers && barbers.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
+                      {barbers.map((barber) => (
+                        <div key={barber.id} className="bk-card" onClick={() => handleBarberSelect(barber)}>
+                          {barber.avatar_url && (
+                            <img
+                              src={barber.avatar_url}
+                              alt={barber.name}
+                              style={{ width: "100%", aspectRatio: "1", objectFit: "cover", marginBottom: "1rem" }}
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                          )}
+                          <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
+                            {barber.name}
+                          </h3>
+                          {barber.specialties && (
+                            <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem" }}>
+                              {typeof barber.specialties === 'string' 
+                                ? barber.specialties 
+                                : Array.isArray(barber.specialties) 
+                                  ? barber.specialties.join(" • ") 
+                                  : ""}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
                   <button onClick={() => setStep(1)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>
                     ← Retour
                   </button>
@@ -652,17 +650,17 @@ const BookingPage = () => {
                   <div style={{ background: "var(--bk-card)", border: "1px solid var(--bk-border)", padding: "2rem", marginBottom: "2rem" }}>
                     <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
                       <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Service</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedService.name}</p>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem" }}>{selectedService.duration} min • {selectedService.price}$</p>
+                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedService?.name}</p>
+                      <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem" }}>{selectedService?.duration} min • {selectedService?.price}$</p>
                     </div>
                     <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
                       <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Barbier</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedBarber.name}</p>
+                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedBarber?.name}</p>
                     </div>
                     <div>
                       <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Date & Heure</p>
                       <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>
-                        {formatDate(selectedSlot)} à {formatTime(selectedSlot)}
+                        {selectedSlot && formatDate(selectedSlot)} à {selectedSlot && formatTime(selectedSlot)}
                       </p>
                     </div>
                   </div>
