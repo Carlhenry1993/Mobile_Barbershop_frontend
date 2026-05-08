@@ -16,6 +16,7 @@ import ContactPage from "./pages/ContactPage";
 import ServicesPage from "./pages/ServicesPage";
 import AboutPage from "./pages/AboutPage";
 import AnnoncePage from "./pages/AnnoncePage";
+import AdminBookingsPage from "./pages/AdminBookingsPage"; // ✅ Ajout
 
 // Import components
 import Login from "./components/Login";
@@ -136,6 +137,16 @@ const App = () => {
           element={
             <ProtectedRoute token={token} role={role} allowedRoles={["client", "admin"]}>
               <BookingPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ✅ Route Admin */}
+        <Route
+          path="/admin/bookings"
+          element={
+            <ProtectedRoute token={token} role={role} allowedRoles={["admin"]}>
+              <AdminBookingsPage />
             </ProtectedRoute>
           }
         />
