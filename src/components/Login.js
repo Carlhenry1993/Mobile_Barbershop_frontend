@@ -13,7 +13,6 @@ const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
       Réservation en ligne<br />réservée aux membres
     </h2>
     
-    {/* ✅ Message ultra clair */}
     <div style={styles.accountRequiredBox}>
       <div style={styles.lockIcon}>🔒</div>
       <p style={styles.accountRequiredText}>
@@ -29,7 +28,7 @@ const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
     <button
       style={styles.welcomeButton}
       onClick={() => {
-        setIsLogin(false); // Force mode inscription
+        setIsLogin(false);
         scrollToForm();
       }}
     >
@@ -45,19 +44,16 @@ const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
 
 const LoginForm = ({
   isLogin,
-  username,
-  password,
+  formData,
   errorMessage,
   handleSubmit,
-  setUsername,
-  setPassword,
+  handleChange,
   setIsLogin,
   loading,
   formRef,
 }) => (
   <div ref={formRef} id="login-form" style={styles.formContainer}>
     <div style={styles.form}>
-      {/* ✅ Titre dynamique ultra clair */}
       <h1 style={styles.title}>
         {isLogin? "Connexion" : "Créer un compte"}
       </h1>
@@ -69,16 +65,83 @@ const LoginForm = ({
       )}
 
       <form onSubmit={handleSubmit} style={styles.formContent}>
+        {!isLogin && (
+          <>
+            <div style={styles.grid2}>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Prénom *</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="Jean"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  style={styles.input}
+                  disabled={loading}
+                  required
+                />
+              </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Nom *</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Tremblay"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  style={styles.input}
+                  disabled={loading}
+                  required
+                />
+              </div>
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Email *</label>
+              <input
+                type="email"
+                name="email"
+                placeholder="jean@email.com"
+                value={formData.email}
+                onChange={handleChange}
+                style={styles.input}
+                disabled={loading}
+                required
+                autoComplete="email"
+              />
+              <span style={styles.hint}>Requis pour confirmation de réservation</span>
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Téléphone</label>
+              <input
+                type="tel"
+                name="phone"
+                placeholder="514-555-1234"
+                value={formData.phone}
+                onChange={handleChange}
+                style={styles.input}
+                disabled={loading}
+              />
+              <span style={styles.hint}>Optionnel - pour rappels SMS</span>
+            </div>
+          </>
+        )}
+
         <div style={styles.inputGroup}>
-          <label style={styles.label}>Nom d'utilisateur</label>
+          <label style={styles.label}>
+            {isLogin? "Nom d'utilisateur ou Email" : "Nom d'utilisateur *"}
+          </label>
           <input
             type="text"
-            placeholder="ex: jean.shawinigan"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            name={isLogin? "login" : "username"}
+            placeholder={isLogin? "jean.shawinigan ou email" : "jean.shawinigan"}
+            value={isLogin? formData.login : formData.username}
+            onChange={handleChange}
             style={styles.input}
             disabled={loading}
             autoComplete="username"
+            required
           />
         </div>
 
@@ -86,14 +149,46 @@ const LoginForm = ({
           <label style={styles.label}>Mot de passe</label>
           <input
             type="password"
+            name="password"
             placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            value={formData.password}
+            onChange={handleChange}
             style={styles.input}
             disabled={loading}
-            autoComplete={isLogin ? "current-password" : "new-password"}
+            autoComplete={isLogin? "current-password" : "new-password"}
+            required
           />
+          {!isLogin && <span style={styles.hint}>6 caractères minimum</span>}
         </div>
+
+        {!isLogin && (
+          <>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Confirmer mot de passe *</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="••••••••"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                style={styles.input}
+                disabled={loading}
+                required
+              />
+            </div>
+
+            <label style={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                name="smsOptIn"
+                checked={formData.smsOptIn}
+                onChange={handleChange}
+                style={styles.checkbox}
+              />
+              <span>Recevoir rappels SMS 24h avant mon RDV</span>
+            </label>
+          </>
+        )}
 
         <button
           type="submit"
@@ -130,9 +225,18 @@ const LoginForm = ({
 );
 
 const Login = ({ onLogin }) => {
-  const [isLogin, setIsLogin] = useState(false); // ✅ Défaut sur inscription
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [isLogin, setIsLogin] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    username: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    smsOptIn: true,
+    login: '' // pour login = username ou email
+  });
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const formRef = useRef(null);
@@ -153,20 +257,53 @@ const Login = ({ onLogin }) => {
     }
   }, [navigate]);
 
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+     ...prev,
+      [name]: type === 'checkbox'? checked : value
+    }));
+  };
+
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
-      if (!username ||!password) {
-        setErrorMessage("Nom d'utilisateur et mot de passe requis.");
-        return;
-      }
-      setLoading(true);
       setErrorMessage("");
+
+      if (isLogin) {
+        if (!formData.login ||!formData.password) {
+          setErrorMessage("Champs requis.");
+          return;
+        }
+      } else {
+        if (!formData.firstName ||!formData.lastName ||!formData.username ||!formData.email ||!formData.password) {
+          setErrorMessage("Champs obligatoires manquants.");
+          return;
+        }
+        if (formData.password!== formData.confirmPassword) {
+          setErrorMessage("Les mots de passe ne correspondent pas.");
+          return;
+        }
+        if (formData.password.length < 6) {
+          setErrorMessage("Mot de passe 6 caractères minimum.");
+          return;
+        }
+      }
+
+      setLoading(true);
 
       const endpoint = isLogin? "/login" : "/register";
       const body = isLogin
-       ? { username, password }
-        : { username, password, role: "client" };
+       ? { login: formData.login, password: formData.password }
+        : {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            username: formData.username,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+            smsOptIn: formData.smsOptIn
+          };
 
       try {
         const response = await fetch(`${API_URL}/api/auth${endpoint}`, {
@@ -194,7 +331,7 @@ const Login = ({ onLogin }) => {
           sessionStorage.removeItem('redirectAfterLogin');
           navigate(redirect);
         } else {
-          navigate('/reserver'); // ✅ Redirige direct vers réservation après inscription
+          navigate('/reserver');
         }
       } catch (error) {
         console.error("Erreur:", error);
@@ -204,7 +341,7 @@ const Login = ({ onLogin }) => {
         setLoading(false);
       }
     },
-    [isLogin, username, password, onLogin, navigate]
+    [isLogin, formData, onLogin, navigate]
   );
 
   const scrollToForm = () => {
@@ -222,12 +359,10 @@ const Login = ({ onLogin }) => {
             <WelcomeMessage scrollToForm={scrollToForm} setIsLogin={setIsLogin} />
             <LoginForm
               isLogin={isLogin}
-              username={username}
-              password={password}
+              formData={formData}
               errorMessage={errorMessage}
               handleSubmit={handleSubmit}
-              setUsername={setUsername}
-              setPassword={setPassword}
+              handleChange={handleChange}
               setIsLogin={setIsLogin}
               loading={loading}
               formRef={formRef}
@@ -301,7 +436,6 @@ const styles = {
     fontFamily: "'Playfair Display', serif",
     lineHeight: '1.15',
   },
-  // ✅ Box compte requis - gros et visible
   accountRequiredBox: {
     backgroundColor: 'rgba(212,168,67,0.15)',
     border: '2px solid #d4a843',
@@ -388,6 +522,11 @@ const styles = {
     flexDirection: 'column',
     gap: '18px',
   },
+  grid2: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '12px',
+  },
   inputGroup: {
     display: 'flex',
     flexDirection: 'column',
@@ -409,6 +548,24 @@ const styles = {
     outline: 'none',
     transition: 'border-color 0.2s',
     boxSizing: 'border-box',
+  },
+  hint: {
+    color: '#6b7280',
+    fontSize: '0.7rem',
+    marginTop: '2px',
+  },
+  checkboxLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    color: '#b8c8da',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+  },
+  checkbox: {
+    width: '18px',
+    height: '18px',
+    cursor: 'pointer',
   },
   button: {
     width: '100%',
@@ -456,7 +613,6 @@ const styles = {
   },
 };
 
-// Media query pour desktop
 if (typeof window!== 'undefined' && window.matchMedia('(min-width: 768px)').matches) {
   styles.splitLayout.gridTemplateColumns = '1fr 1fr';
   styles.splitLayout.gap = '60px';
