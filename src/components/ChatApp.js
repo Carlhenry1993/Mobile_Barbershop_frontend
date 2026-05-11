@@ -410,16 +410,21 @@ const ChatApp = ({ clientId, isAdmin }) => {
           </div>
 
           {/* ================= FLOAT BUTTON ================= */}
-          <button
-            className="chat-bubble-icon"
-            onClick={chatState === "closed"? openChat : closeChat}
-            aria-label={isChatVisible? "Fermer le chat" : "Ouvrir le chat"}
-          >
-            {isChatVisible? "✕" : "💬"}
-            {chatState === "closed" && unreadCount > 0 && (
-              <span className="unread-count">{unreadCount}</span>
-            )}
-          </button>
+         {/* ================= FLOAT BUTTON ================= */}
+<button
+  className="chat-bubble-icon"
+  onClick={() => {
+    if (chatState === "closed") openChat();
+    else if (chatState === "minimized") openChat();
+  }}
+  aria-label="Ouvrir le chat"
+  style={{ display: chatState === "open" ? "none" : "flex" }}
+>
+  💬
+  {chatState !== "open" && unreadCount > 0 && (
+    <span className="unread-count">{unreadCount}</span>
+  )}
+</button>
         </div>
 
         <ToastContainer position="bottom-right" autoClose={3000} />
