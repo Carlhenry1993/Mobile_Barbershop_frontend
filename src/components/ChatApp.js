@@ -49,7 +49,7 @@ const getUserFromToken = () => {
   if (!token) return null;
   try {
     const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload; // { id, username, role,... }
+    return payload;
   } catch {
     return null;
   }
@@ -126,19 +126,17 @@ const ChatApp = ({ isAdmin }) => {
     }
   }, [isAdmin]);
 
-  // Charge historique au mount
+  // Charge historique
   useEffect(() => {
     if (!isAdmin && clientId) fetchMessages();
     if (isAdmin && selectedClientId) fetchMessages(selectedClientId);
+    if (isAdmin &&!selectedClientId) setMessages([]); // Vide si aucun client sélectionné
   }, [isAdmin, clientId, selectedClientId, fetchMessages]);
 
   // ================= SOCKET =================
   const connectSocket = useCallback(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.error("Missing auth token");
-      return;
-    }
+    if (!token) return;
 
     const socket = io(SOCKET_SERVER_URL, {
       auth: { token },
@@ -151,25 +149,25 @@ const ChatApp = ({ isAdmin }) => {
 
     socketRef.current = socket;
 
-    socket.on("connect", () => {
-      setIsConnected(true);
-    });
-
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-    });
-
+    socket.on("connect", () => setIsConnected(true));
+    socket.on("disconnect", () => setIsConnected(false));
     socket.on("connect_error", (err) => {
       console.error("Socket connection error:", err.message);
       toast.error("Connexion chat échouée");
     });
 
     socket.on("new_message", (data) => {
-      // Admin : ignore si pas le bon client sélectionné
+      // Admin : si aucun client sélectionné, on garde quand même le msg en mémoire
+      // mais on n'incrémente unread que si c'est pas le client actuel
       if (isAdmin && selectedClientId) {
         const isRelevant =
           data.senderId === selectedClientId || data.recipientId === selectedClientId;
-        if (!isRelevant) return;
+        if (!isRelevant) {
+          // Nouveau msg d'un autre client : juste unread + notif
+          setUnreadCount((prev) => prev + 1);
+          toast.info(`Nouveau message de ${data.sender}`);
+          return;
+        }
       }
 
       setMessages((prev) => {
@@ -180,20 +178,27 @@ const ChatApp = ({ isAdmin }) => {
       const shouldIncrementUnread =
         chatState!== "open" || (isAdmin && data.senderId!== selectedClientId);
 
-      if (shouldIncrementUnread) {
+      if (shouldIncrementUnread && data.senderId!== "admin" && data.senderId!== clientId) {
         setUnreadCount((prev) => prev + 1);
       }
 
+      // Auto read si chat ouvert et bon client
       if (chatState === "open" && data.id && (!isAdmin || data.senderId === selectedClientId)) {
-        socket.emit("message_read", {
-          messageIds: [data.id],
-          to: data.senderId === "admin"? "admin" : data.senderId,
-        });
+        if (data.senderId!== "admin" && data.senderId!== clientId) {
+          socket.emit("message_read", {
+            messageIds: [data.id],
+            to: data.senderId,
+          });
+        }
       }
     });
 
     socket.on("update_client_list", (list) => {
       setClients(list || []);
+      // Auto-select premier client si aucun sélectionné
+      if (isAdmin &&!selectedClientId && list?.length > 0) {
+        setSelectedClientId(list[0].id);
+      }
     });
 
     socket.on("admin_status", (data) => {
@@ -211,7 +216,7 @@ const ChatApp = ({ isAdmin }) => {
         )
       );
     });
-  }, [chatState, isAdmin, selectedClientId]);
+  }, [chatState, isAdmin, selectedClientId, clientId]);
 
   useEffect(() => {
     connectSocket();
@@ -229,8 +234,8 @@ const ChatApp = ({ isAdmin }) => {
     setChatState("open");
     setUnreadCount(0);
     const unreadIds = messages
-     .filter((m) =>!m.is_read && (isAdmin? m.sender === selectedClientId : m.sender === "admin"))
-     .map((m) => m.id);
+    .filter((m) =>!m.is_read && (isAdmin? m.sender === selectedClientId : m.sender === "admin"))
+    .map((m) => m.id);
     if (unreadIds.length && socketRef.current) {
       socketRef.current.emit("message_read", {
         messageIds: unreadIds,
@@ -239,13 +244,8 @@ const ChatApp = ({ isAdmin }) => {
     }
   }, [messages, isAdmin, selectedClientId]);
 
-  const minimizeChat = useCallback(() => {
-    setChatState("minimized");
-  }, []);
-
-  const closeChat = useCallback(() => {
-    setChatState("closed");
-  }, []);
+  const minimizeChat = useCallback(() => setChatState("minimized"), []);
+  const closeChat = useCallback(() => setChatState("closed"), []);
 
   // ================= SEND MESSAGE =================
   const handleSendMessage = useCallback(() => {
@@ -294,11 +294,6 @@ const ChatApp = ({ isAdmin }) => {
     }, 1000);
   };
 
-  // ================= FILTERED MESSAGES =================
-  const filteredMessages = messages; // Le backend filtre déjà
-
-  const isChatVisible = chatState!== "closed";
-
   if (!currentUser.current) {
     return <div>Veuillez vous connecter</div>;
   }
@@ -310,7 +305,7 @@ const ChatApp = ({ isAdmin }) => {
         <div className="chat-bubble-container">
           <div
             className={`chat-container ${chatState}`}
-            style={{ display: isChatVisible? "flex" : "none" }}
+            style={{ display: chatState!== "closed"? "flex" : "none" }}
           >
             <div className="chat-header">
               <div className="chat-header-info">
@@ -362,7 +357,7 @@ const ChatApp = ({ isAdmin }) => {
                       <option value="">Sélection client</option>
                       {clients.map((c) => (
                         <option key={c.id} value={c.id}>
-                          {c.name}
+                          {c.name} {c.online? "🟢" : ""}
                         </option>
                       ))}
                     </select>
@@ -370,7 +365,12 @@ const ChatApp = ({ isAdmin }) => {
                 )}
 
                 <div className="messages">
-                  {filteredMessages.map((m) => {
+                  {messages.length === 0 && isAdmin &&!selectedClientId && (
+                    <div style={{ color: "#94a3b8", textAlign: "center", marginTop: 20 }}>
+                      Sélectionnez un client pour voir la conversation
+                    </div>
+                  )}
+                  {messages.map((m) => {
                     const isMine = isAdmin? m.sender === "admin" : m.sender === clientId;
                     return (
                       <div
@@ -396,7 +396,7 @@ const ChatApp = ({ isAdmin }) => {
 
                   {Object.values(typingUsers).includes(true) && (
                     <div className="message-bubble msg-in typing-indicator">
-                      <span></span><span></span><span></span>
+                      <span></span><span></span>
                     </div>
                   )}
                   <div ref={messagesEndRef} />
@@ -410,9 +410,14 @@ const ChatApp = ({ isAdmin }) => {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleSendMessage();
                     }}
-                    placeholder="Votre message..."
+                    placeholder={isAdmin &&!selectedClientId? "Sélectionnez un client" : "Votre message..."}
+                    disabled={isAdmin &&!selectedClientId}
                   />
-                  <button className="send-btn" onClick={handleSendMessage}>
+                  <button
+                    className="send-btn"
+                    onClick={handleSendMessage}
+                    disabled={isAdmin &&!selectedClientId}
+                  >
                     ➤
                   </button>
                 </div>
