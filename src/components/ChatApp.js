@@ -43,23 +43,59 @@ const SHOP_INFO = {
 // ================= CONFIG =================
 const SOCKET_SERVER_URL = "https://api.mrrenaudinbarbershop.com";
 
+// ================= HELPER: GET USER FROM TOKEN =================
+const getUserFromToken = () => {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    return payload; // { id, username, role,... }
+  } catch {
+    return null;
+  }
+};
+
 // ================= COMPONENT =================
-const ChatApp = ({ clientId, isAdmin }) => {
+const ChatApp = ({ isAdmin }) => {
+  const currentUser = useRef(getUserFromToken());
+  const clientId = currentUser.current?.id?.toString();
+
   // ================= STATE =================
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
-  const [selectedClientId, setSelectedClientId] = useState(null);
+  const [selectedClientId, setSelectedClientId] = useState(() => {
+    return localStorage.getItem("selectedClientId") || null;
+  });
   const [isConnected, setIsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
-  const [chatState, setChatState] = useState("closed"); // closed | minimized | open
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [chatState, setChatState] = useState(() => {
+    return localStorage.getItem("chatState") || "closed";
+  });
+  const [unreadCount, setUnreadCount] = useState(() => {
+    return Number(localStorage.getItem("unreadCount")) || 0;
+  });
   const [typingUsers, setTypingUsers] = useState({});
 
   // ================= REFS =================
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // ================= PERSIST STATE =================
+  useEffect(() => {
+    localStorage.setItem("chatState", chatState);
+  }, [chatState]);
+
+  useEffect(() => {
+    localStorage.setItem("unreadCount", String(unreadCount));
+  }, [unreadCount]);
+
+  useEffect(() => {
+    if (selectedClientId) {
+      localStorage.setItem("selectedClientId", selectedClientId);
+    }
+  }, [selectedClientId]);
 
   // ================= SCROLL =================
   const scrollToBottom = useCallback(() => {
@@ -70,24 +106,31 @@ const ChatApp = ({ clientId, isAdmin }) => {
     if (chatState === "open") scrollToBottom();
   }, [messages, chatState, scrollToBottom]);
 
-  // ================= LOAD OLD MESSAGES =================
+  // ================= LOAD MESSAGES =================
+  const fetchMessages = useCallback(async (targetClientId = null) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const query = isAdmin && targetClientId? `?clientId=${targetClientId}` : "";
+
+      const res = await fetch(`${SOCKET_SERVER_URL}/api/messages${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Unable to load messages");
+      const data = await res.json();
+      setMessages(data);
+    } catch (err) {
+      console.error("Load messages error:", err);
+      toast.error("Erreur chargement historique");
+    }
+  }, [isAdmin]);
+
+  // Charge historique au mount
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        const res = await fetch(`${SOCKET_SERVER_URL}/api/messages`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error("Unable to load messages");
-        const data = await res.json();
-        setMessages(data);
-      } catch (err) {
-        console.error("Load messages error:", err);
-      }
-    };
-    fetchMessages();
-  }, []);
+    if (!isAdmin && clientId) fetchMessages();
+    if (isAdmin && selectedClientId) fetchMessages(selectedClientId);
+  }, [isAdmin, clientId, selectedClientId, fetchMessages]);
 
   // ================= SOCKET =================
   const connectSocket = useCallback(() => {
@@ -109,12 +152,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
     socketRef.current = socket;
 
     socket.on("connect", () => {
-      console.log("Socket connected:", socket.id);
       setIsConnected(true);
     });
 
-    socket.on("disconnect", (reason) => {
-      console.log("Socket disconnected:", reason);
+    socket.on("disconnect", () => {
       setIsConnected(false);
     });
 
@@ -124,27 +165,26 @@ const ChatApp = ({ clientId, isAdmin }) => {
     });
 
     socket.on("new_message", (data) => {
+      // Admin : ignore si pas le bon client sélectionné
+      if (isAdmin && selectedClientId) {
+        const isRelevant =
+          data.senderId === selectedClientId || data.recipientId === selectedClientId;
+        if (!isRelevant) return;
+      }
+
       setMessages((prev) => {
         if (prev.some((m) => m.id === data.id)) return prev;
-        return [
-         ...prev,
-          {
-            id: data.id || Date.now() + Math.random(),
-            sender: data.senderId || data.sender,
-            senderName: data.sender,
-            recipientId: data.recipientId,
-            message: data.message,
-            timestamp: data.timestamp,
-            read: data.read,
-          },
-        ];
+        return [...prev, data];
       });
 
-      if (chatState!== "open") {
+      const shouldIncrementUnread =
+        chatState!== "open" || (isAdmin && data.senderId!== selectedClientId);
+
+      if (shouldIncrementUnread) {
         setUnreadCount((prev) => prev + 1);
       }
 
-      if (chatState === "open" && data.id) {
+      if (chatState === "open" && data.id && (!isAdmin || data.senderId === selectedClientId)) {
         socket.emit("message_read", {
           messageIds: [data.id],
           to: data.senderId === "admin"? "admin" : data.senderId,
@@ -167,11 +207,11 @@ const ChatApp = ({ clientId, isAdmin }) => {
     socket.on("messages_read", ({ messageIds }) => {
       setMessages((prev) =>
         prev.map((msg) =>
-          messageIds.includes(msg.id)? {...msg, read: true } : msg
+          messageIds.includes(msg.id)? {...msg, is_read: true } : msg
         )
       );
     });
-  }, [chatState]);
+  }, [chatState, isAdmin, selectedClientId]);
 
   useEffect(() => {
     connectSocket();
@@ -188,7 +228,16 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const openChat = useCallback(() => {
     setChatState("open");
     setUnreadCount(0);
-  }, []);
+    const unreadIds = messages
+     .filter((m) =>!m.is_read && (isAdmin? m.sender === selectedClientId : m.sender === "admin"))
+     .map((m) => m.id);
+    if (unreadIds.length && socketRef.current) {
+      socketRef.current.emit("message_read", {
+        messageIds: unreadIds,
+        to: isAdmin? selectedClientId : "admin",
+      });
+    }
+  }, [messages, isAdmin, selectedClientId]);
 
   const minimizeChat = useCallback(() => {
     setChatState("minimized");
@@ -207,21 +256,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
       return;
     }
 
-    const addMessageToState = (saved, sender, senderName, recipientId) => {
-      setMessages((prev) => [
-       ...prev,
-        {
-          id: saved.id,
-          sender,
-          senderName,
-          recipientId,
-          message: saved.message,
-          timestamp: saved.timestamp,
-          read: saved.is_read,
-        },
-      ]);
-    };
-
     if (isAdmin) {
       if (!selectedClientId) {
         toast.error("Choisissez un client");
@@ -231,11 +265,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
         "send_message_to_client",
         { clientId: selectedClientId, message: text },
         (response) => {
-          if (!response?.success) {
-            toast.error("Erreur d'envoi");
-            return;
-          }
-          addMessageToState(response.message, "admin", "admin", selectedClientId);
+          if (!response?.success) toast.error("Erreur d'envoi");
         }
       );
     } else {
@@ -243,16 +273,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
         "send_message_to_admin",
         { message: text },
         (response) => {
-          if (!response?.success) {
-            toast.error("Erreur d'envoi");
-            return;
-          }
-          addMessageToState(response.message, clientId, "Vous", "admin");
+          if (!response?.success) toast.error("Erreur d'envoi");
         }
       );
     }
     setMessage("");
-  }, [message, isAdmin, selectedClientId, clientId, isConnected]);
+  }, [message, isAdmin, selectedClientId, isConnected]);
 
   // ================= TYPING =================
   const handleTyping = (value) => {
@@ -269,26 +295,23 @@ const ChatApp = ({ clientId, isAdmin }) => {
   };
 
   // ================= FILTERED MESSAGES =================
-  const filteredMessages =
-    isAdmin && selectedClientId
-     ? messages.filter(
-          (m) => m.sender === selectedClientId || m.recipientId === selectedClientId
-        )
-      : messages;
+  const filteredMessages = messages; // Le backend filtre déjà
 
   const isChatVisible = chatState!== "closed";
+
+  if (!currentUser.current) {
+    return <div>Veuillez vous connecter</div>;
+  }
 
   // ================= UI =================
   return (
     <ErrorBoundary>
       <div className="chat-app">
         <div className="chat-bubble-container">
-          {/* ================= CHAT WINDOW ================= */}
           <div
             className={`chat-container ${chatState}`}
             style={{ display: isChatVisible? "flex" : "none" }}
           >
-            {/* ================= HEADER ================= */}
             <div className="chat-header">
               <div className="chat-header-info">
                 <span className="chat-header-avatar">✂️</span>
@@ -311,24 +334,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
                 </div>
               </div>
               <div className="chat-header-actions">
-                <button
-                  className="chat-action-btn"
-                  onClick={minimizeChat}
-                  aria-label="Minimiser"
-                >
+                <button className="chat-action-btn" onClick={minimizeChat} aria-label="Minimiser">
                   –
                 </button>
-                <button
-                  className="chat-action-btn"
-                  onClick={closeChat}
-                  aria-label="Fermer"
-                >
+                <button className="chat-action-btn" onClick={closeChat} aria-label="Fermer">
                   ✕
                 </button>
               </div>
             </div>
 
-            {/* ================= MINIMIZED BAR ================= */}
             {chatState === "minimized"? (
               <div className="minimized-bar" onClick={openChat}>
                 <span>Cliquez pour agrandir</span>
@@ -338,7 +352,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
               </div>
             ) : (
               <>
-                {/* ================= CLIENT SELECT ================= */}
                 {isAdmin && (
                   <div className="client-select-wrap">
                     <select
@@ -356,7 +369,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
                   </div>
                 )}
 
-                {/* ================= MESSAGES ================= */}
                 <div className="messages">
                   {filteredMessages.map((m) => {
                     const isMine = isAdmin? m.sender === "admin" : m.sender === clientId;
@@ -366,7 +378,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                         className={`message-bubble ${isMine? "msg-out" : "msg-in"}`}
                       >
                         <span className="msg-sender">
-                          {m.senderName || m.sender}
+                          {isMine? "Vous" : m.sender === "admin"? "Barbershop" : m.sender}
                         </span>
                         <span className="msg-text">{m.message}</span>
                         {m.timestamp && (
@@ -375,7 +387,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}
-                            {m.read && isMine && " ✓✓"}
+                            {m.is_read && isMine && " ✓✓"}
                           </span>
                         )}
                       </div>
@@ -390,7 +402,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* ================= INPUT ================= */}
                 <div className="input-box">
                   <input
                     className="chat-input"
@@ -409,22 +420,20 @@ const ChatApp = ({ clientId, isAdmin }) => {
             )}
           </div>
 
-          {/* ================= FLOAT BUTTON ================= */}
-         {/* ================= FLOAT BUTTON ================= */}
-<button
-  className="chat-bubble-icon"
-  onClick={() => {
-    if (chatState === "closed") openChat();
-    else if (chatState === "minimized") openChat();
-  }}
-  aria-label="Ouvrir le chat"
-  style={{ display: chatState === "open" ? "none" : "flex" }}
->
-  💬
-  {chatState !== "open" && unreadCount > 0 && (
-    <span className="unread-count">{unreadCount}</span>
-  )}
-</button>
+          <button
+            className="chat-bubble-icon"
+            onClick={() => {
+              if (chatState === "closed") openChat();
+              else if (chatState === "minimized") openChat();
+            }}
+            aria-label="Ouvrir le chat"
+            style={{ display: chatState === "open"? "none" : "flex" }}
+          >
+            💬
+            {chatState!== "open" && unreadCount > 0 && (
+              <span className="unread-count">{unreadCount}</span>
+            )}
+          </button>
         </div>
 
         <ToastContainer position="bottom-right" autoClose={3000} />
