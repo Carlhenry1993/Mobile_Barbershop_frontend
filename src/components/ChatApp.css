@@ -422,36 +422,6 @@
    SEND BUTTON
 ========================= */
 
-/* =========================
-   SEND BUTTON
-========================= */
-
-.send-btn {
-  width: 48px;
-  height: 48px;
-
-  border: none;
-  border-radius: 16px;
-
-  background:
-    linear-gradient(
-      135deg,
-      #d4af37,
-      #b8860b
-    );
-
-  color: #111827;
-
-  font-size: 18px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: 0.25s ease;
-
-  box-shadow:
-    0 10px 25px rgba(212,175,55,0.35);
-}
 
 
 /* =========================
