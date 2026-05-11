@@ -34,7 +34,7 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// ================= SHOP INFO =================
+// ================= SHOP =================
 const SHOP_INFO = {
   name: "Mr. Renaudin Barbershop",
   email: "mrrenaudinbarber@gmail.com",
@@ -51,11 +51,13 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
-  const [selectedClientId, setSelectedClientId] =
-    useState(null);
+  const [selectedClientId, setSelectedClientId] = useState(null);
 
   const [isConnected, setIsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
+
+  // 🔥 BUBBLE STATE FIX
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -83,7 +85,6 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
     socketRef.current = socket;
 
-    // CONNECT
     socket.on("connect", () => {
       setIsConnected(true);
 
@@ -95,12 +96,10 @@ const ChatApp = ({ clientId, isAdmin }) => {
       }
     });
 
-    // DISCONNECT
     socket.on("disconnect", () => {
       setIsConnected(false);
     });
 
-    // MESSAGES
     socket.on("new_message", (data) => {
       setMessages((prev) => [
         ...prev,
@@ -113,27 +112,21 @@ const ChatApp = ({ clientId, isAdmin }) => {
       ]);
     });
 
-    // CLIENT LIST (ADMIN)
     socket.on("update_client_list", (list) => {
       setClients(list);
     });
 
-    // ADMIN STATUS
     socket.on("admin_status", (data) => {
       setAdminOnline(data.online);
     });
   }, [clientId, isAdmin]);
 
-  // INIT SOCKET
   useEffect(() => {
     connectSocket();
-
-    return () => {
-      socketRef.current?.disconnect();
-    };
+    return () => socketRef.current?.disconnect();
   }, [connectSocket]);
 
-  // ================= SEND MESSAGE =================
+  // ================= SEND =================
   const handleSendMessage = useCallback(() => {
     const text = message.trim();
     if (!text) return;
@@ -155,74 +148,97 @@ const ChatApp = ({ clientId, isAdmin }) => {
   return (
     <ErrorBoundary>
       <div className="chat-app">
-        <div className="chat-box">
 
-          {/* HEADER */}
-          <div className="chat-header">
-            <h3>{SHOP_INFO.name}</h3>
-            <span>
-              {isConnected ? "🟢" : "🔴"}
-            </span>
-          </div>
+        {/* ================= BUBBLE BUTTON ================= */}
+        {!isChatOpen && (
+          <button
+            className="chat-bubble"
+            onClick={() => setIsChatOpen(true)}
+          >
+            💬
+            {!isAdmin && (
+              <span className="pulse-dot" />
+            )}
+          </button>
+        )}
 
-          {/* ADMIN STATUS (IMPORTANT FIX ICI) */}
-          {!isAdmin && (
-            <div className="admin-status">
-              Service client :{" "}
-              {adminOnline
-                ? "🟢 Disponible"
-                : "🔴 Indisponible"}
+        {/* ================= CHAT WINDOW ================= */}
+        {isChatOpen && (
+          <div className="chat-box">
+
+            {/* HEADER */}
+            <div className="chat-header">
+              <h3>{SHOP_INFO.name}</h3>
+
+              <button
+                onClick={() => setIsChatOpen(false)}
+              >
+                ✕
+              </button>
             </div>
-          )}
 
-          {/* CLIENT SELECT */}
-          {isAdmin && (
-            <select
-              onChange={(e) =>
-                setSelectedClientId(e.target.value)
-              }
-            >
-              <option value="">
-                Sélectionner client
-              </option>
-              {clients.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
+            {/* STATUS */}
+            <div className="status">
+              {isConnected ? "🟢 Online" : "🔴 Offline"}
+              {!isAdmin && (
+                <span>
+                  {" "}
+                  | Admin:{" "}
+                  {adminOnline
+                    ? "Disponible"
+                    : "Indisponible"}
+                </span>
+              )}
+            </div>
+
+            {/* CLIENT SELECT */}
+            {isAdmin && (
+              <select
+                onChange={(e) =>
+                  setSelectedClientId(e.target.value)
+                }
+              >
+                <option value="">
+                  Sélection client
                 </option>
+                {clients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+
+            {/* MESSAGES */}
+            <div className="messages">
+              {messages.map((m) => (
+                <div key={m.id}>
+                  <b>{m.sender}</b>: {m.message}
+                </div>
               ))}
-            </select>
-          )}
+              <div ref={messagesEndRef} />
+            </div>
 
-          {/* MESSAGES */}
-          <div className="messages">
-            {messages.map((m) => (
-              <div key={m.id}>
-                <b>{m.sender}</b>: {m.message}
-              </div>
-            ))}
-            <div ref={messagesEndRef} />
+            {/* INPUT */}
+            <div className="input-box">
+              <input
+                value={message}
+                onChange={(e) =>
+                  setMessage(e.target.value)
+                }
+                onKeyDown={(e) =>
+                  e.key === "Enter" &&
+                  handleSendMessage()
+                }
+                placeholder="Message..."
+              />
+
+              <button onClick={handleSendMessage}>
+                Envoyer
+              </button>
+            </div>
           </div>
-
-          {/* INPUT */}
-          <div className="input-box">
-            <input
-              value={message}
-              onChange={(e) =>
-                setMessage(e.target.value)
-              }
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                handleSendMessage()
-              }
-              placeholder="Message..."
-            />
-
-            <button onClick={handleSendMessage}>
-              Envoyer
-            </button>
-          </div>
-
-        </div>
+        )}
 
         <ToastContainer />
       </div>
