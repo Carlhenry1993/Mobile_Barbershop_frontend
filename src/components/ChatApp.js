@@ -43,8 +43,7 @@ const SHOP_INFO = {
   city: "Shawinigan, QC G9N 1G7",
 };
 
-const SOCKET_SERVER_URL =
-  "https://api.mrrenaudinbarbershop.com";
+const SOCKET_SERVER_URL = "https://api.mrrenaudinbarbershop.com";
 
 // ================= COMPONENT =================
 const ChatApp = ({ clientId, isAdmin }) => {
@@ -52,21 +51,17 @@ const ChatApp = ({ clientId, isAdmin }) => {
   const [messages, setMessages] = useState([]);
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState(null);
-
   const [isConnected, setIsConnected] = useState(false);
   const [adminOnline, setAdminOnline] = useState(false);
-
-  // 🔥 BUBBLE STATE FIX
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
 
   // ================= SCROLL =================
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-    });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
   useEffect(() => {
@@ -76,9 +71,7 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // ================= SOCKET =================
   const connectSocket = useCallback(() => {
     const socket = io(SOCKET_SERVER_URL, {
-      auth: {
-        token: localStorage.getItem("token"),
-      },
+      auth: { token: localStorage.getItem("token") },
       transports: ["websocket"],
       reconnection: true,
     });
@@ -87,18 +80,12 @@ const ChatApp = ({ clientId, isAdmin }) => {
 
     socket.on("connect", () => {
       setIsConnected(true);
-
       if (isAdmin) {
-        socket.emit("admin_status", {
-          adminId: clientId,
-          online: true,
-        });
+        socket.emit("admin_status", { adminId: clientId, online: true });
       }
     });
 
-    socket.on("disconnect", () => {
-      setIsConnected(false);
-    });
+    socket.on("disconnect", () => setIsConnected(false));
 
     socket.on("new_message", (data) => {
       setMessages((prev) => [
@@ -110,15 +97,15 @@ const ChatApp = ({ clientId, isAdmin }) => {
           timestamp: data.timestamp,
         },
       ]);
+      // Increment unread badge when chat is closed
+      setIsChatOpen((open) => {
+        if (!open) setUnreadCount((n) => n + 1);
+        return open;
+      });
     });
 
-    socket.on("update_client_list", (list) => {
-      setClients(list);
-    });
-
-    socket.on("admin_status", (data) => {
-      setAdminOnline(data.online);
-    });
+    socket.on("update_client_list", (list) => setClients(list));
+    socket.on("admin_status", (data) => setAdminOnline(data.online));
   }, [clientId, isAdmin]);
 
   useEffect(() => {
@@ -126,19 +113,24 @@ const ChatApp = ({ clientId, isAdmin }) => {
     return () => socketRef.current?.disconnect();
   }, [connectSocket]);
 
+  // ================= OPEN / CLOSE =================
+  const openChat = useCallback(() => {
+    setIsChatOpen(true);
+    setUnreadCount(0); // clear badge on open
+  }, []);
+
+  const closeChat = useCallback(() => {
+    setIsChatOpen(false);
+  }, []);
+
   // ================= SEND =================
   const handleSendMessage = useCallback(() => {
     const text = message.trim();
     if (!text) return;
 
     socketRef.current.emit(
-      isAdmin
-        ? "send_message_to_client"
-        : "send_message_to_admin",
-      {
-        clientId: selectedClientId,
-        message: text,
-      }
+      isAdmin ? "send_message_to_client" : "send_message_to_admin",
+      { clientId: selectedClientId, message: text }
     );
 
     setMessage("");
@@ -147,73 +139,83 @@ const ChatApp = ({ clientId, isAdmin }) => {
   // ================= UI =================
   return (
     <ErrorBoundary>
+      {/*
+        .chat-app must NOT be position:relative/absolute/fixed.
+        The floating wrapper below handles all positioning.
+      */}
       <div className="chat-app">
 
-        {/* ================= BUBBLE BUTTON ================= */}
-        {!isChatOpen && (
-          <button
-            className="chat-bubble"
-            onClick={() => setIsChatOpen(true)}
+        {/* ================= FLOATING WRAPPER ================= */}
+        {/* Single fixed anchor — bubble + window stack inside */}
+        <div className="chat-bubble-container">
+
+          {/* CHAT WINDOW — always rendered, toggled via CSS */}
+          <div
+            className="chat-container"
+            style={{ display: isChatOpen ? "flex" : "none" }}
           >
-            💬
-            {!isAdmin && (
-              <span className="pulse-dot" />
-            )}
-          </button>
-        )}
-
-        {/* ================= CHAT WINDOW ================= */}
-        {isChatOpen && (
-          <div className="chat-box">
-
             {/* HEADER */}
             <div className="chat-header">
-              <h3>{SHOP_INFO.name}</h3>
-
-              <button
-                onClick={() => setIsChatOpen(false)}
-              >
+              <div className="chat-header-info">
+                <span className="chat-header-avatar">✂️</span>
+                <div>
+                  <div className="chat-header-name">{SHOP_INFO.name}</div>
+                  <div className="chat-header-status">
+                    <span
+                      className="status-dot"
+                      style={{ background: isConnected ? "#2ecc71" : "#e74c3c" }}
+                    />
+                    {isConnected ? "En ligne" : "Hors ligne"}
+                    {!isAdmin && (
+                      <span className="admin-status">
+                        {" · "}Admin:{" "}
+                        {adminOnline ? "Disponible" : "Indisponible"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button className="chat-close-btn" onClick={closeChat} aria-label="Fermer">
                 ✕
               </button>
             </div>
 
-            {/* STATUS */}
-            <div className="status">
-              {isConnected ? "🟢 Online" : "🔴 Offline"}
-              {!isAdmin && (
-                <span>
-                  {" "}
-                  | Admin:{" "}
-                  {adminOnline
-                    ? "Disponible"
-                    : "Indisponible"}
-                </span>
-              )}
-            </div>
-
-            {/* CLIENT SELECT */}
+            {/* CLIENT SELECT (admin only) */}
             {isAdmin && (
-              <select
-                onChange={(e) =>
-                  setSelectedClientId(e.target.value)
-                }
-              >
-                <option value="">
-                  Sélection client
-                </option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+              <div className="client-select-wrap">
+                <select
+                  className="client-select"
+                  onChange={(e) => setSelectedClientId(e.target.value)}
+                >
+                  <option value="">Sélection client</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
 
             {/* MESSAGES */}
             <div className="messages">
               {messages.map((m) => (
-                <div key={m.id}>
-                  <b>{m.sender}</b>: {m.message}
+                <div
+                  key={m.id}
+                  className={`message-bubble ${
+                    m.sender === clientId ? "msg-out" : "msg-in"
+                  }`}
+                >
+                  <span className="msg-sender">{m.sender}</span>
+                  <span className="msg-text">{m.message}</span>
+                  {m.timestamp && (
+                    <span className="msg-time">
+                      {new Date(m.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  )}
                 </div>
               ))}
               <div ref={messagesEndRef} />
@@ -222,23 +224,32 @@ const ChatApp = ({ clientId, isAdmin }) => {
             {/* INPUT */}
             <div className="input-box">
               <input
+                className="chat-input"
                 value={message}
-                onChange={(e) =>
-                  setMessage(e.target.value)
-                }
-                onKeyDown={(e) =>
-                  e.key === "Enter" &&
-                  handleSendMessage()
-                }
-                placeholder="Message..."
+                onChange={(e) => setMessage(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                placeholder="Votre message..."
               />
-
-              <button onClick={handleSendMessage}>
-                Envoyer
+              <button className="send-btn" onClick={handleSendMessage}>
+                ➤
               </button>
             </div>
           </div>
-        )}
+
+          {/* BUBBLE BUTTON */}
+          <button
+            className="chat-bubble-icon"
+            onClick={isChatOpen ? closeChat : openChat}
+            aria-label={isChatOpen ? "Fermer le chat" : "Ouvrir le chat"}
+          >
+            {isChatOpen ? "✕" : "💬"}
+            {!isChatOpen && unreadCount > 0 && (
+              <span className="unread-count">{unreadCount}</span>
+            )}
+          </button>
+
+        </div>
+        {/* END FLOATING WRAPPER */}
 
         <ToastContainer />
       </div>
