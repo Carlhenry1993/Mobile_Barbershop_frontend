@@ -1,26 +1,76 @@
-/* =========================
-   CHAT APP — LUXURY GOLD EDITION 2026
-========================= */
+/* ==========================================================================
+   1. DESIGN TOKENS
+   ========================================================================== */
 
 :root {
+  /* Colors */
   --gold: #d4af37;
   --gold-light: #f2cf63;
   --gold-dark: #b8860b;
+  --gold-rgb: 212, 175, 55;
+  
   --navy: #0b1220;
   --navy-light: #111827;
+  --navy-dark: #050a14;
+  
   --white: #f8fafc;
   --muted: #94a3b8;
+  --muted-dark: #64748b;
+  
+  --success: #2ecc71;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  
+  /* Surfaces */
   --glass: rgba(255, 255, 255, 0.06);
+  --glass-strong: rgba(255, 255, 255, 0.1);
   --border: rgba(255, 255, 255, 0.08);
-  --shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
-  --incoming: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-  --outgoing: linear-gradient(135deg, #d4af37, #b8860b);
+  --border-gold: rgba(var(--gold-rgb), 0.2);
+  
+  /* Gradients */
+  --grad-gold: linear-gradient(135deg, var(--gold), var(--gold-dark));
+  --grad-gold-hover: linear-gradient(135deg, var(--gold-light), var(--gold));
+  --grad-incoming: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  --grad-bg: linear-gradient(180deg, rgba(11, 18, 32, 0.9), rgba(17, 24, 39, 0.95));
+  --grad-header: linear-gradient(135deg, rgba(var(--gold-rgb), 0.14), rgba(184, 134, 11, 0.08));
+  
+  /* Shadows */
+  --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.18);
+  --shadow-lg: 0 15px 35px rgba(var(--gold-rgb), 0.42);
+  --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
+  --shadow-gold: 0 10px 25px rgba(var(--gold-rgb), 0.35);
+  --shadow-gold-hover: 0 16px 32px rgba(var(--gold-rgb), 0.45);
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 14px;
+  --space-lg: 18px;
+  --space-xl: 22px;
+  
+  /* Radius */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+  
+  /* Transitions */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --trans-fast: 0.2s var(--ease-in-out);
+  --trans-med: 0.3s var(--ease-out-expo);
+  --trans-slow: 0.4s var(--ease-out-expo);
+  
+  /* Z-index */
+  --z-chat: 9999;
 }
 
-/* =========================
-   BASE
-========================= */
+/* ==========================================================================
+   2. BASE / RESET
+   ========================================================================== */
+
 * {
   margin: 0;
   padding: 0;
@@ -28,27 +78,27 @@
 }
 
 .chat-app {
-  font-family: Inter, "SF Pro Display", system-ui, sans-serif;
+  font-family: Inter, "SF Pro Display", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--white);
 }
 
-/* =========================
-   FLOATING WRAPPER
-========================= */
+/* ==========================================================================
+   3. LAYOUT: FLOATING WRAPPER + CONTAINER
+   ========================================================================== */
+
 .chat-bubble-container {
   position: fixed;
-  right: 22px;
-  bottom: 22px;
-  z-index: 9999;
+  right: var(--space-xl);
+  bottom: var(--space-xl);
+  z-index: var(--z-chat);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 16px;
+  gap: var(--space-md);
 }
 
-/* =========================
-   CHAT WINDOW
-========================= */
 .chat-container {
   width: 390px;
   height: 720px;
@@ -56,18 +106,18 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 28px;
-  background: linear-gradient(180deg, rgba(11, 18, 32, 0.9), rgba(17, 24, 39, 0.95));
+  border-radius: var(--radius-xl);
+  background: var(--grad-bg);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  box-shadow: var(--shadow), 0 0 0 1px rgba(212, 175, 55, 0.1);
-  transition: all 0.4s var(--ease-out-expo);
+  border: 1px solid var(--border-gold);
+  box-shadow: var(--shadow-xl), 0 0 0 1px rgba(var(--gold-rgb), 0.1);
+  transition: all var(--trans-slow);
   transform-origin: bottom right;
 }
 
 .chat-container.open {
-  animation: openChat 0.4s var(--ease-out-expo);
+  animation: openChat var(--trans-slow);
 }
 
 .chat-container.minimized {
@@ -77,36 +127,39 @@
   cursor: pointer;
 }
 
-/* =========================
-   HEADER
-========================= */
+/* ==========================================================================
+   4. HEADER
+   ========================================================================== */
+
 .chat-header {
-  padding: 16px 20px;
+  padding: var(--space-md) 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: linear-gradient(135deg, rgba(212, 175, 55, 0.14), rgba(184, 134, 11, 0.08));
-  border-bottom: 1px solid rgba(212, 175, 55, 0.12);
+  background: var(--grad-header);
+  border-bottom: 1px solid rgba(var(--gold-rgb), 0.12);
   flex-shrink: 0;
 }
 
 .chat-header-info {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-md);
+  min-width: 0;
 }
 
 .chat-header-avatar {
   width: 48px;
   height: 48px;
-  border-radius: 16px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #d4af37, #b8860b);
-  color: #111827;
+  background: var(--grad-gold);
+  color: var(--navy);
   font-size: 22px;
-  box-shadow: 0 8px 22px rgba(212, 175, 55, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-gold), inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .chat-header-name {
@@ -114,6 +167,9 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-header-status {
@@ -128,47 +184,51 @@
 .status-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   box-shadow: 0 0 8px currentColor;
+  flex-shrink: 0;
 }
 
 .admin-status {
   color: #cbd5e1;
 }
 
-/* =========================
-   HEADER ACTIONS
-========================= */
+/* Header Actions */
 .chat-header-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 
 .chat-action-btn {
   width: 32px;
   height: 32px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   border: none;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass);
   color: var(--muted);
   font-size: 18px;
   font-weight: 400;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--trans-fast);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .chat-action-btn:hover {
-  background: rgba(212, 175, 55, 0.15);
+  background: rgba(var(--gold-rgb), 0.15);
   color: var(--gold-light);
   transform: translateY(-1px);
 }
 
-/* =========================
-   MINIMIZED BAR
-========================= */
+.chat-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================================================
+   5. MINIMIZED STATE
+   ========================================================================== */
+
 .minimized-bar {
   flex: 1;
   display: flex;
@@ -179,7 +239,8 @@
   font-weight: 500;
   gap: 10px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background var(--trans-fast);
+  padding: 0 var(--space-lg);
 }
 
 .minimized-bar:hover {
@@ -187,97 +248,136 @@
 }
 
 .unread-count-inline {
-  background: #ef4444;
+  background: var(--danger);
   color: white;
   font-size: 11px;
   font-weight: 700;
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
-/* =========================
-   SELECT
-========================= */
+/* ==========================================================================
+   6. ADMIN: CLIENT SELECT
+   ========================================================================== */
+
 .client-select-wrap {
-  padding: 14px 18px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
 
 .client-select {
   width: 100%;
-  padding: 14px 16px;
-  border-radius: 16px;
-  border: 1px solid rgba(212, 175, 55, 0.15);
+  padding: var(--space-md) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(var(--gold-rgb), 0.15);
   background: rgba(255, 255, 255, 0.04);
-  color: white;
+  color: var(--white);
   outline: none;
   font-size: 14px;
-  transition: all 0.2s ease;
+  font-weight: 500;
+  transition: all var(--trans-fast);
+  cursor: pointer;
+}
+
+.client-select:hover {
+  border-color: rgba(var(--gold-rgb), 0.25);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .client-select:focus {
-  border-color: rgba(212, 175, 55, 0.4);
-  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.12);
+  border-color: rgba(var(--gold-rgb), 0.4);
+  box-shadow: 0 0 0 4px rgba(var(--gold-rgb), 0.12);
 }
 
 .client-select option {
-  background: #0b1220;
-  color: white;
+  background: var(--navy);
+  color: var(--white);
+  padding: var(--space-sm);
 }
 
-/* =========================
-   MESSAGES
-========================= */
+/* ==========================================================================
+   7. MESSAGES AREA
+   ========================================================================== */
+
 .messages {
   flex: 1;
   overflow-y: auto;
-  padding: 22px 18px;
+  padding: var(--space-xl) var(--space-lg);
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  background: radial-gradient(circle at top, rgba(212, 175, 55, 0.08), transparent 35%);
+  gap: var(--space-md);
+  background: radial-gradient(circle at top, rgba(var(--gold-rgb), 0.08), transparent 35%);
 }
 
 .messages::-webkit-scrollbar {
   width: 6px;
 }
 
-.messages::-webkit-scrollbar-thumb {
-  background: rgba(212, 175, 55, 0.25);
-  border-radius: 20px;
+.messages::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* =========================
-   MESSAGE BUBBLES
-========================= */
+.messages::-webkit-scrollbar-thumb {
+  background: rgba(var(--gold-rgb), 0.25);
+  border-radius: var(--radius-full);
+}
+
+.messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--gold-rgb), 0.35);
+}
+
+/* Empty State */
+.messages-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+  gap: var(--space-sm);
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.messages-empty-icon {
+  font-size: 48px;
+  opacity: 0.3;
+}
+
+/* ==========================================================================
+   8. MESSAGE BUBBLES
+   ========================================================================== */
+
 .message-bubble {
   max-width: 82%;
   padding: 12px 16px 10px;
-  border-radius: 22px;
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   gap: 4px;
   word-break: break-word;
   position: relative;
-  animation: bubbleIn 0.3s var(--ease-out-expo);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+  animation: bubbleIn var(--trans-med);
+  box-shadow: var(--shadow-md);
 }
 
 .msg-in {
   align-self: flex-start;
-  background: var(--incoming);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--grad-incoming);
+  border: 1px solid var(--border);
   border-bottom-left-radius: 8px;
-  color: white;
+  color: var(--white);
   backdrop-filter: blur(10px);
 }
 
 .msg-out {
   align-self: flex-end;
-  background: var(--outgoing);
-  color: #111827;
+  background: var(--grad-gold);
+  color: var(--navy);
   border-bottom-right-radius: 8px;
-  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.35);
+  box-shadow: var(--shadow-gold);
 }
 
 .msg-sender {
@@ -298,11 +398,15 @@
   align-self: flex-end;
   font-size: 11px;
   opacity: 0.65;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-/* =========================
-   TYPING INDICATOR
-========================= */
+/* ==========================================================================
+   9. TYPING INDICATOR
+   ========================================================================== */
+
 .typing-indicator {
   padding: 16px 20px;
   display: flex;
@@ -313,29 +417,30 @@
 .typing-indicator span {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   background: var(--muted);
   animation: typingDot 1.4s infinite ease-in-out;
 }
 
-.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
-.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes typingDot {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
-  30% { transform: translateY(-8px); opacity: 1; }
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
 }
 
-/* =========================
-   INPUT AREA
-========================= */
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ==========================================================================
+   10. INPUT AREA
+   ========================================================================== */
+
 .input-box {
-  padding: 16px 18px 18px;
+  padding: var(--space-md) var(--space-lg) var(--space-lg);
   display: flex;
   align-items: center;
   gap: 12px;
   background: linear-gradient(to top, rgba(11, 18, 32, 0.98), rgba(11, 18, 32, 0.88));
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
 
@@ -343,55 +448,72 @@
   flex: 1;
   height: 52px;
   padding: 0 20px;
-  border-radius: 16px;
-  border: 1px solid rgba(212, 175, 55, 0.12);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(var(--gold-rgb), 0.12);
   background: rgba(255, 255, 255, 0.05);
-  color: white;
+  color: var(--white);
   font-size: 15px;
+  font-weight: 500;
   outline: none;
-  transition: 0.25s ease;
+  transition: all var(--trans-fast);
 }
 
 .chat-input::placeholder {
-  color: #94a3b8;
+  color: var(--muted);
+}
+
+.chat-input:hover:not(:disabled) {
+  border-color: rgba(var(--gold-rgb), 0.25);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .chat-input:focus {
-  border-color: rgba(212, 175, 55, 0.45);
+  border-color: rgba(var(--gold-rgb), 0.45);
   background: rgba(255, 255, 255, 0.07);
-  box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.12);
+  box-shadow: 0 0 0 4px rgba(var(--gold-rgb), 0.12);
 }
 
-/* =========================
-   SEND BUTTON
-========================= */
+.chat-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Send Button */
 .send-btn {
   width: 52px;
   height: 52px;
   border: none;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #d4af37, #b8860b);
-  color: #111827;
+  border-radius: var(--radius-md);
+  background: var(--grad-gold);
+  color: var(--navy);
   font-size: 20px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.25s var(--ease-out-expo);
-  box-shadow: 0 10px 25px rgba(212, 175, 55, 0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: all var(--trans-med);
+  box-shadow: var(--shadow-gold), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  flex-shrink: 0;
 }
 
-.send-btn:hover {
+.send-btn:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.04);
-  background: linear-gradient(135deg, #f2cf63, #d4af37);
-  box-shadow: 0 16px 32px rgba(212, 175, 55, 0.45);
+  background: var(--grad-gold-hover);
+  box-shadow: var(--shadow-gold-hover);
 }
 
-.send-btn:active {
+.send-btn:active:not(:disabled) {
   transform: scale(0.96);
 }
 
-/* =========================
-   FLOATING BUTTON
-========================= */
+.send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   11. FLOATING BUBBLE BUTTON
+   ========================================================================== */
+
 .chat-bubble-icon {
   width: 70px;
   height: 70px;
@@ -401,28 +523,26 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  background: linear-gradient(135deg, #d4af37, #b8860b);
-  color: #111827;
+  background: var(--grad-gold);
+  color: var(--navy);
   font-size: 28px;
   font-weight: bold;
   cursor: pointer;
-  box-shadow: 0 15px 35px rgba(212, 175, 55, 0.42), inset 0 1px 0 rgba(255,255,255,0.2);
-  transition: all 0.3s var(--ease-out-expo);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all var(--trans-med);
 }
 
 .chat-bubble-icon:hover {
   transform: translateY(-4px) scale(1.05);
-  background: linear-gradient(135deg, #f2cf63, #d4af37);
-  box-shadow: 0 20px 45px rgba(212, 175, 55, 0.55);
+  background: var(--grad-gold-hover);
+  box-shadow: 0 20px 45px rgba(var(--gold-rgb), 0.55);
 }
 
 .chat-bubble-icon:active {
   transform: scale(0.96);
 }
 
-/* =========================
-   BADGE
-========================= */
+/* Unread Badge */
 .unread-count {
   position: absolute;
   top: -4px;
@@ -430,21 +550,23 @@
   min-width: 24px;
   height: 24px;
   padding: 0 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #ef4444;
+  background: var(--danger);
   color: white;
   font-size: 12px;
   font-weight: 700;
-  border: 2px solid white;
+  border: 2px solid var(--white);
   animation: pulse 1.5s infinite;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
-/* =========================
-   ANIMATIONS
-========================= */
+/* ==========================================================================
+   12. ANIMATIONS
+   ========================================================================== */
+
 @keyframes bubbleIn {
   from {
     opacity: 0;
@@ -468,34 +590,87 @@
 }
 
 @keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.12); }
-  100% { transform: scale(1); }
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
 }
 
-/* =========================
-   MOBILE
-========================= */
-@media (max-width: 640px) {
- .chat-bubble-container {
-    right: 14px;
-    bottom: 14px;
+@keyframes typingDot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.5;
   }
- .chat-container {
+  30% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   13. RESPONSIVE / MOBILE
+   ========================================================================== */
+
+@media (max-width: 640px) {
+  .chat-bubble-container {
+    right: var(--space-md);
+    bottom: var(--space-md);
+  }
+  
+  .chat-container {
     width: calc(100vw - 18px);
     height: calc(100vh - 95px);
     border-radius: 24px;
   }
- .chat-container.minimized {
+  
+  .chat-container.minimized {
     width: calc(100vw - 18px);
     height: 60px;
   }
- .chat-bubble-icon {
+  
+  .chat-bubble-icon {
     width: 64px;
     height: 64px;
     font-size: 26px;
   }
- .message-bubble {
+  
+  .message-bubble {
     max-width: 90%;
   }
+  
+  .chat-header {
+    padding: var(--space-md) var(--space-md);
+  }
+  
+  .chat-header-avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 20px;
+  }
+}
+
+/* ==========================================================================
+   14. ACCESSIBILITY / STATES
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus visible pour clavier */
+.chat-action-btn:focus-visible,
+.send-btn:focus-visible,
+.chat-bubble-icon:focus-visible,
+.chat-input:focus-visible,
+.client-select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
