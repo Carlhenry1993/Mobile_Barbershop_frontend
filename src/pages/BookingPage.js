@@ -1,687 +1,689 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+const express = require('express');
+const router = express.Router();
+const pool = require('../db/pool');
+const jwt = require('jsonwebtoken');
+const sgMail = require('@sendgrid/mail');
 
-const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
+// ─── EMAIL CONFIG SENDGRID API ───────────────────────────────────────────────
+console.log('--- SENDGRID API INIT ---');
+console.log('API KEY set:',!!process.env.SMTP_PASS);
 
-const useBookingStyles = () => {
-  useEffect(() => {
-    const styleId = "mr-renaudin-booking-styles";
-    if (document.getElementById(styleId)) return;
+sgMail.setApiKey(process.env.SMTP_PASS);
 
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.innerHTML = `
-  .bk-root {
-        --bk-black: #0e1015;
-        --bk-charcoal: #161b24;
-        --bk-card: #1e2535;
-        --bk-border: #2a3348;
-        --bk-gold: #d4a843;
-        --bk-gold-lt: #f0c96a;
-        --bk-gold-dim: rgba(212,168,67,0.13);
-        --bk-steel: #8ba8c8;
-        --bk-cream: #eef2f7;
-        --bk-light: #b8c8da;
-        --bk-muted: #7888a0;
-        --bk-danger: #e74c3c;
-        --bk-success: #27ae60;
-        background: var(--bk-black);
-        color: var(--bk-cream);
-        font-family: 'DM Sans', sans-serif;
-        -webkit-font-smoothing: antialiased;
-        min-height: 100svh;
-      }
-  .bk-inner { position: relative; z-index: 1; }
-  .bk-section-pad { padding: 6rem 1.5rem; }
-      @media (max-width: 768px) {
-  .bk-section-pad { padding: 4rem 1.25rem; }
-      }
-  .bk-eyebrow {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.68rem;
-        letter-spacing: 0.25em;
-        text-transform: uppercase;
-        color: var(--bk-gold);
-        margin-bottom: 1rem;
-      }
-  .bk-display {
-        font-family: 'Playfair Display', Georgia, serif;
-        font-weight: 900;
-        line-height: 1.05;
-        color: var(--bk-cream);
-      }
-  .bk-gold-rule {
-        display: block;
-        width: 60px;
-        height: 2px;
-        background: var(--bk-gold);
-        margin: 0 auto 1.5rem;
-      }
-  .bk-btn-gold, .bk-btn-outline {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        font-family: 'DM Sans', sans-serif;
-        font-weight: 500;
-        font-size: 0.85rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        padding: 1rem 2rem;
-        border: none;
-        cursor: pointer;
-        transition: background 0.3s, transform 0.2s, border-color 0.3s, color 0.3s;
-        text-decoration: none;
-        will-change: transform;
-      }
-  .bk-btn-gold {
-        background: var(--bk-gold);
-        color: var(--bk-black);
-      }
-  .bk-btn-gold:hover, .bk-btn-gold:focus-visible { 
-        background: var(--bk-gold-lt); 
-        transform: translateY(-2px);
-        outline: 2px solid var(--bk-gold-lt);
-        outline-offset: 2px;
-      }
-  .bk-btn-gold:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
-  .bk-btn-outline {
-        background: transparent;
-        color: var(--bk-cream);
-        border: 1px solid rgba(184,200,218,0.3);
-      }
-  .bk-btn-outline:hover, .bk-btn-outline:focus-visible { 
-        border-color: var(--bk-gold); 
-        color: var(--bk-gold); 
-        transform: translateY(-2px);
-        outline: 2px solid var(--bk-gold);
-        outline-offset: 2px;
-      }
-  .bk-card {
-        background: var(--bk-card);
-        border: 1px solid var(--bk-border);
-        padding: 2rem;
-        transition: border-color 0.3s, transform 0.3s;
-        cursor: pointer;
-        will-change: transform;
-      }
-  .bk-card:hover { 
-        border-color: var(--bk-gold); 
-        transform: translateY(-4px);
-      }
-  .bk-card.selected {
-        border-color: var(--bk-gold);
-        background: rgba(212,168,67,0.08);
-      }
-  .bk-steps {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-bottom: 3rem;
-        flex-wrap: wrap;
-      }
-  .bk-step {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.8rem;
-        color: var(--bk-muted);
-        letter-spacing: 0.05em;
-      }
-  .bk-step.active { color: var(--bk-gold); }
-  .bk-step.done { color: var(--bk-success); }
-  .bk-step-num {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 1px solid currentColor;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.75rem;
-      }
-  .bk-step.active .bk-step-num {
-        background: var(--bk-gold);
-        color: var(--bk-black);
-        border-color: var(--bk-gold);
-      }
-  .bk-slot {
-        background: var(--bk-card);
-        border: 1px solid var(--bk-border);
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-align: center;
-        font-size: 0.9rem;
-      }
-  .bk-slot:hover { border-color: var(--bk-gold); }
-  .bk-slot.selected {
-        background: var(--bk-gold);
-        color: var(--bk-black);
-        border-color: var(--bk-gold);
-        font-weight: 600;
-      }
-  .bk-input {
-        width: 100%;
-        background: var(--bk-black);
-        border: 1px solid var(--bk-border);
-        color: var(--bk-cream);
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.95rem;
-        padding: 1rem 1.25rem;
-        transition: border-color 0.3s;
-      }
-  .bk-input:focus {
-        outline: none;
-        border-color: var(--bk-gold);
-      }
-  .bk-error {
-        background: rgba(231,76,60,0.1);
-        border: 1px solid rgba(231,76,60,0.3);
-        color: #ff8a7a;
-        padding: 1rem;
-        font-size: 0.85rem;
-        margin-bottom: 1.5rem;
-      }
-  .bk-success {
-        background: rgba(39,174,96,0.1);
-        border: 1px solid rgba(39,174,96,0.3);
-        color: #7dd87d;
-        padding: 2rem;
-        text-align: center;
-      }
-  .bk-login-wall {
-        background: rgba(212,168,67,0.1);
-        border: 2px solid var(--bk-gold);
-        padding: 3rem 2rem;
-        text-align: center;
-        max-width: 600px;
-        margin: 0 auto;
-      }
-  .bk-login-wall h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 1.75rem;
-        color: var(--bk-gold);
-        margin-bottom: 1rem;
-      }
-  .bk-login-wall p {
-        color: var(--bk-light);
-        line-height: 1.7;
-        margin-bottom: 2rem;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after {
-          animation-duration: 0.01ms !important;
-          transition-duration: 0.01ms !important;
-        }
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      const el = document.getElementById(styleId);
-      if (el) el.remove();
-    };
-  }, []);
+const FROM_EMAIL = {
+  email: 'reservations@mrrenaudinbarbershop.com', // Change après Domain Auth
+  name: 'Mr. Renaudin Barbershop'
 };
 
-const BookingPage = () => {
-  useBookingStyles();
-  const navigate = useNavigate();
-  const shouldReduceMotion = useReducedMotion();
+const sendBookingEmail = async (to, subject, html, text) => {
+  if (!to) {
+    console.log('Email skip: no recipient');
+    return;
+  }
 
-  const [step, setStep] = useState(1);
-  const [services, setServices] = useState([]);
-  const [barbers, setBarbers] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedBarber, setSelectedBarber] = useState(null);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingBarbers, setLoadingBarbers] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  console.log('Sending email to:', to);
 
-  axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
+  const msg = {
+    to,
+    from: FROM_EMAIL,
+    replyTo: 'mrrenaudinbarber@gmail.com',
+    subject,
+    text,
+    html,
+  };
 
-  const fetchAvailability = useCallback(async () => {
-    if (!selectedService || !selectedBarber || !selectedDate) return;
-    
-    setLoading(true);
-    setError("");
-    try {
-      const res = await axios.get("/api/booking/availability", {
-        params: {
-          date: selectedDate,
-          barberId: selectedBarber.id,
-          serviceId: selectedService.id,
-        },
+  try {
+    await sgMail.send(msg);
+    console.log('Email sent to:', to);
+  } catch (err) {
+    console.error('EMAIL FAILED:', err.message);
+    if (err.response) {
+      console.error('SendGrid errors:', err.response.body.errors);
+    }
+  }
+};
+
+// ─── Middlewares ────────────────────────────────────────────────
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Non autorisé" });
+  }
+  try {
+    req.user = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET);
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Token invalide" });
+  }
+};
+
+const authenticateAdmin = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "Non autorisé" });
+  }
+  try {
+    const user = jwt.verify(authHeader.split(" ")[1], process.env.JWT_SECRET);
+    if (user.role!== 'admin') return res.status(403).json({ error: "Accès admin requis" });
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Token invalide" });
+  }
+};
+
+// ─── CLIENT ROUTES ──────────────────────────────────────────────
+
+router.get('/services', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, duration, price, description FROM services WHERE active = true ORDER BY price'
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching services:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.get('/barbers', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT u.id, u.username as name, b.specialties, b.avatar_url
+       FROM users u
+       JOIN barbers b ON u.id = b.user_id
+       WHERE u.role = 'barber' AND b.active = true
+       ORDER BY u.username`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching barbers:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.get('/availability', async (req, res) => {
+  const { date, barberId, serviceId } = req.query;
+  if (!date ||!barberId ||!serviceId) {
+    return res.status(400).json({ error: "date, barberId, serviceId requis" });
+  }
+
+  try {
+    const serviceRes = await pool.query('SELECT duration FROM services WHERE id = $1 AND active = true', [serviceId]);
+    if (!serviceRes.rows.length) return res.status(404).json({ error: "Service introuvable" });
+    const duration = serviceRes.rows[0].duration;
+
+    const dayOfWeek = new Date(date + 'T12:00:00Z').getUTCDay();
+    const scheduleRes = await pool.query(
+      'SELECT start_time, end_time FROM barber_schedules WHERE barber_id = $1 AND day_of_week = $2',
+      [barberId, dayOfWeek]
+    );
+    if (!scheduleRes.rows.length) return res.json([]);
+
+    const { start_time, end_time } = scheduleRes.rows[0];
+
+    const bookingsRes = await pool.query(
+      `SELECT start_time, end_time FROM bookings
+       WHERE barber_id = $1 AND DATE(start_time) = $2 AND status!= 'cancelled'
+       UNION ALL
+       SELECT start_time, end_time FROM barber_blocks
+       WHERE barber_id = $1 AND DATE(start_time) = $2`,
+      [barberId, date]
+    );
+
+    const slots = [];
+    const workStart = new Date(`${date}T${start_time}Z`);
+    const workEnd = new Date(`${date}T${end_time}Z`);
+    const now = new Date();
+
+    for (let slot = new Date(workStart); slot < workEnd; slot.setMinutes(slot.getMinutes() + 15)) {
+      const slotEnd = new Date(slot.getTime() + duration * 60000);
+      if (slotEnd > workEnd) break;
+
+      const isBooked = bookingsRes.rows.some(b => {
+        const bStart = new Date(b.start_time);
+        const bEnd = new Date(b.end_time);
+        return (slot < bEnd && slotEnd > bStart);
       });
-      setAvailableSlots(res.data || []);
-    } catch (err) {
-      setError("Impossible de charger les créneaux");
-      setAvailableSlots([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedService, selectedBarber, selectedDate]);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsLoggedIn(true);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    } else {
-      sessionStorage.setItem('redirectAfterLogin', '/reserver');
-    }
-    fetchServices();
-  }, []);
-
-  useEffect(() => {
-    fetchAvailability();
-  }, [fetchAvailability]);
-
-  const fetchServices = async () => {
-    try {
-      const res = await axios.get("/api/booking/services");
-      setServices(res.data || []);
-    } catch (err) {
-      setError("Impossible de charger les services");
-      setServices([]);
-    }
-  };
-
-  const fetchBarbers = async () => {
-    setLoadingBarbers(true);
-    setError("");
-    try {
-      const res = await axios.get("/api/booking/barbers");
-      setBarbers(res.data || []);
-    } catch (err) {
-      setError("Impossible de charger les barbiers");
-      setBarbers([]);
-    } finally {
-      setLoadingBarbers(false);
-    }
-  };
-
-  const handleServiceSelect = (service) => {
-    setSelectedService(service);
-    setSelectedBarber(null);
-    setSelectedDate("");
-    setSelectedSlot(null);
-    setAvailableSlots([]);
-    fetchBarbers();
-    setStep(2);
-  };
-
-  const handleBarberSelect = (barber) => {
-    setSelectedBarber(barber);
-    setSelectedDate("");
-    setSelectedSlot(null);
-    setAvailableSlots([]);
-    setStep(3);
-  };
-
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-    setSelectedSlot(null);
-  };
-
-  const handleSlotSelect = (slot) => {
-    setSelectedSlot(slot);
-    setStep(4);
-  };
-
-  const handleConfirmBooking = async () => {
-    if (!isLoggedIn) {
-      sessionStorage.setItem('redirectAfterLogin', '/reserver');
-      navigate('/login');
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      await axios.post("/api/booking/create", {
-        serviceId: selectedService.id,
-        barberId: selectedBarber.id,
-        startTime: selectedSlot,
-      });
-      setSuccess(true);
-      toast.success("Réservation confirmée!");
-    } catch (err) {
-      if (err.response?.status === 409) {
-        setError("Ce créneau vient d'être réservé. Choisissez-en un autre.");
-        fetchAvailability();
-        setStep(3);
-      } else {
-        setError(err.response?.data?.error || "Erreur lors de la réservation");
+      if (!isBooked && slot > now) {
+        slots.push(slot.toISOString());
       }
-      toast.error("Erreur de réservation");
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-  };
+    res.json(slots);
+  } catch (err) {
+    console.error('Error fetching availability:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
 
-  const formatTime = (dateStr) => {
-    return new Date(dateStr).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+router.post('/create', authenticate, async (req, res) => {
+  const { serviceId, barberId, startTime } = req.body;
+  const clientId = req.user.id;
 
-  const getMinDate = () => new Date().toISOString().split("T")[0];
-
-  if (!isLoggedIn) {
-    return (
-      <div className="bk-root">
-        <div className="bk-inner">
-          <section className="bk-section-pad" style={{ minHeight: "80vh", display: "flex", alignItems: "center" }}>
-            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-              <div className="bk-login-wall">
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>
-                <h2>Compte requis pour réserver</h2>
-                <p>
-                  La réservation en ligne est réservée aux membres Mr. Renaudin.<br />
-                  Créez votre compte gratuit en 30 secondes pour accéder aux créneaux.
-                </p>
-                <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => navigate("/login")} className="bk-btn-gold">
-                    Créer mon compte
-                  </button>
-                  <button onClick={() => navigate("/login")} className="bk-btn-outline">
-                    J'ai déjà un compte
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-        <ToastContainer theme="dark" position="top-center" />
-      </div>
-    );
+  if (!serviceId ||!barberId ||!startTime) {
+    return res.status(400).json({ error: "Champs manquants" });
   }
 
-  if (success) {
-    return (
-      <div className="bk-root">
-        <div className="bk-inner">
-          <section className="bk-section-pad" style={{ minHeight: "80vh", display: "flex", alignItems: "center" }}>
-            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-              <div className="bk-success">
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✓</div>
-                <h2 className="bk-display" style={{ fontSize: "2rem", marginBottom: "1rem" }}>
-                  Réservation confirmée!
-                </h2>
-                <p style={{ color: "var(--bk-light)", lineHeight: "1.7", marginBottom: "2rem" }}>
-                  <strong>{selectedService?.name}</strong> avec <strong>{selectedBarber?.name}</strong><br />
-                  {formatDate(selectedSlot)} à {formatTime(selectedSlot)}<br />
-                  {ADDRESS}
-                </p>
-                <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "2rem" }}>
-                  Un email de confirmation vous a été envoyé. Annulation gratuite jusqu'à 24h avant.
-                </p>
-                <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => navigate("/compte")} className="bk-btn-gold">
-                    Mes réservations
-                  </button>
-                  <button onClick={() => navigate("/")} className="bk-btn-outline">
-                    Retour accueil
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-        <ToastContainer theme="dark" position="top-center" />
-      </div>
-    );
-  }
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-  return (
-    <div className="bk-root">
-      <div className="bk-inner">
-        <section className="bk-section-pad">
-          <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-              <p className="bk-eyebrow">Réservation en ligne</p>
-              <span className="bk-gold-rule" />
-              <h1 className="bk-display" style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}>
-                Prenez rendez-vous
+    const serviceRes = await client.query('SELECT name, duration, price FROM services WHERE id = $1 AND active = true', [serviceId]);
+    if (!serviceRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: "Service introuvable" });
+    }
+    const { name: serviceName, duration, price } = serviceRes.rows[0];
+    const start = new Date(startTime);
+    const endTime = new Date(start.getTime() + duration * 60000);
+
+    if (start < new Date()) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: "Impossible de réserver dans le passé" });
+    }
+
+    const conflict = await client.query(
+      `SELECT id FROM bookings
+       WHERE barber_id = $1 AND status!= 'cancelled'
+       AND ($2, $3) OVERLAPS (start_time, end_time)
+       UNION ALL
+       SELECT id FROM barber_blocks
+       WHERE barber_id = $1 AND ($2, $3) OVERLAPS (start_time, end_time)`,
+      [barberId, start, endTime]
+    );
+
+    if (conflict.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: "Ce créneau vient d'être réservé" });
+    }
+
+    const [clientRes, barberRes] = await Promise.all([
+      client.query('SELECT username, email FROM users WHERE id = $1', [clientId]),
+      client.query('SELECT username, email FROM users WHERE id = $1', [barberId])
+    ]);
+
+    const result = await client.query(
+      `INSERT INTO bookings (client_id, barber_id, service_id, start_time, end_time, status, created_at)
+       VALUES ($1, $2, $3, $4, $5, 'confirmed', NOW()) RETURNING *`,
+      [clientId, barberId, serviceId, start, endTime]
+    );
+
+    await client.query('COMMIT');
+
+    const booking = result.rows[0];
+    const clientEmail = clientRes.rows[0]?.email;
+    const clientName = clientRes.rows[0]?.username;
+    const barberEmail = barberRes.rows[0]?.email;
+    const barberName = barberRes.rows[0]?.username;
+
+    console.log('Client email:', clientEmail);
+    console.log('Barber email:', barberEmail);
+
+    const dateStr = start.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      timeZone: 'America/Toronto'
+    });
+    const timeStr = start.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'America/Toronto'
+    });
+    const bookingId = booking.id;
+
+    // EMAIL CLIENT - PROFESSIONNEL
+    const clientSubject = `Confirmation de réservation - ${dateStr}`;
+    const clientText = `
+Bonjour ${clientName},
+
+Votre rendez-vous chez Mr. Renaudin Barbershop est confirmé.
+
+DÉTAILS DE LA RÉSERVATION
+Numéro de réservation : #${bookingId}
+Service : ${serviceName}
+Barbier : ${barberName}
+Date : ${dateStr}
+Heure : ${timeStr}
+Durée : ${duration} minutes
+Prix : ${price}$ CAD
+
+ADRESSE
+Mr. Renaudin Barbershop
+462 4e Rue de la Pointe
+Shawinigan, QC G9N 1G7
+
+POLITIQUE D'ANNULATION
+Annulation gratuite jusqu'à 24 heures avant le rendez-vous.
+Pour annuler ou modifier : https://mrrenaudinbarbershop.com/compte
+
+Merci de votre confiance.
+L'équipe Mr. Renaudin Barbershop
+`;
+
+    const clientHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border:1px solid #e0e0e0;">
+          <tr>
+            <td style="background-color:#0e1015;padding:40px 40px 30px;text-align:center;">
+              <h1 style="margin:0;color:#d4a843;font-family:Georgia,serif;font-size:28px;font-weight:900;letter-spacing:1px;">
+                MR. RENAUDIN
               </h1>
-            </div>
+              <p style="margin:10px 0 0;color:#b8c8da;font-size:11px;letter-spacing:3px;text-transform:uppercase;">
+                Barbershop
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="margin:0 0 20px;color:#0e1015;font-size:22px;font-weight:600;">
+                Réservation confirmée
+              </h2>
+              <p style="margin:0 0 30px;color:#333;font-size:15px;line-height:1.6;">
+                Bonjour ${clientName},<br><br>
+                Votre rendez-vous chez Mr. Renaudin Barbershop est confirmé. Nous avons hâte de vous recevoir.
+              </p>
 
-            <div className="bk-steps">
-              <div className={`bk-step ${step >= 1 ? "active" : ""} ${step > 1 ? "done" : ""}`}>
-                <div className="bk-step-num">{step > 1 ? "✓" : "1"}</div>
-                <span>Service</span>
-              </div>
-              <div className={`bk-step ${step >= 2 ? "active" : ""} ${step > 2 ? "done" : ""}`}>
-                <div className="bk-step-num">{step > 2 ? "✓" : "2"}</div>
-                <span>Barbier</span>
-              </div>
-              <div className={`bk-step ${step >= 3 ? "active" : ""} ${step > 3 ? "done" : ""}`}>
-                <div className="bk-step-num">{step > 3 ? "✓" : "3"}</div>
-                <span>Date & Heure</span>
-              </div>
-              <div className={`bk-step ${step >= 4 ? "active" : ""}`}>
-                <div className="bk-step-num">4</div>
-                <span>Confirmation</span>
-              </div>
-            </div>
-
-            {error && <div className="bk-error">{error}</div>}
-
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Choisissez votre service
-                  </h2>
-                  <div style={{ display: "grid", gap: "1rem" }}>
-                    {services.map((service) => (
-                      <div key={service.id} className="bk-card" onClick={() => handleServiceSelect(service)}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                          <div>
-                            <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
-                              {service.name}
-                            </h3>
-                            <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
-                              {service.duration} min
-                            </p>
-                            {service.description && (
-                              <p style={{ color: "var(--bk-light)", fontSize: "0.85rem", lineHeight: "1.6" }}>
-                                {service.description}
-                              </p>
-                            )}
-                          </div>
-                          <div style={{ color: "var(--bk-gold)", fontSize: "1.2rem", fontWeight: 700 }}>
-                            {service.price}$
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Choisissez votre barbier
-                  </h2>
-                  
-                  {loadingBarbers && <p style={{ color: "var(--bk-muted)", textAlign: "center" }}>Chargement des barbiers...</p>}
-                  
-                  {!loadingBarbers && barbers.length === 0 && (
-                    <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>
-                      Aucun barbier disponible pour le moment.
+              <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e0e0;margin-bottom:30px;">
+                <tr>
+                  <td style="background-color:#f8f9fa;padding:15px 20px;border-bottom:1px solid #e0e0e0;">
+                    <p style="margin:0;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">
+                      Numéro de réservation
                     </p>
-                  )}
-                  
-                  {!loadingBarbers && barbers.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
-                      {barbers.map((barber) => (
-                        <div key={barber.id} className="bk-card" onClick={() => handleBarberSelect(barber)}>
-                          {barber.avatar_url && (
-                            <img
-                              src={barber.avatar_url}
-                              alt={barber.name}
-                              style={{ width: "100%", aspectRatio: "1", objectFit: "cover", marginBottom: "1rem" }}
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          )}
-                          <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
-                            {barber.name}
-                          </h3>
-                          {barber.specialties && (
-                            <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem" }}>
-                              {typeof barber.specialties === 'string' 
-                                ? barber.specialties 
-                                : Array.isArray(barber.specialties) 
-                                  ? barber.specialties.join(" • ") 
-                                  : ""}
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  
-                  <button onClick={() => setStep(1)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>
-                    ← Retour
-                  </button>
-                </motion.div>
-              )}
-
-              {step === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Choisissez une date et heure
-                  </h2>
-                  <div style={{ marginBottom: "2rem" }}>
-                    <label style={{ color: "var(--bk-light)", fontSize: "0.9rem", display: "block", marginBottom: "0.5rem" }}>
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={handleDateChange}
-                      min={getMinDate()}
-                      className="bk-input"
-                    />
-                  </div>
-
-                  {loading && <p style={{ color: "var(--bk-muted)" }}>Chargement des créneaux...</p>}
-
-                  {selectedDate && availableSlots.length === 0 && !loading && (
-                    <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>
-                      Aucun créneau disponible ce jour-là
+                    <p style="margin:5px 0 0;color:#0e1015;font-size:16px;font-weight:600;">
+                      #${bookingId}
                     </p>
-                  )}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px;">
+                    <table width="100%" cellpadding="8" cellspacing="0">
+                      <tr>
+                        <td style="color:#666;font-size:13px;width:120px;">Service</td>
+                        <td style="color:#0e1015;font-size:15px;font-weight:600;">${serviceName}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Barbier</td>
+                        <td style="color:#0e1015;font-size:15px;">${barberName}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Date</td>
+                        <td style="color:#0e1015;font-size:15px;">${dateStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Heure</td>
+                        <td style="color:#0e1015;font-size:15px;font-weight:600;">${timeStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Durée</td>
+                        <td style="color:#0e1015;font-size:15px;">${duration} minutes</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Prix</td>
+                        <td style="color:#0e1015;font-size:15px;font-weight:600;">${price}$ CAD</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
 
-                  {availableSlots.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "0.75rem" }}>
-                      {availableSlots.map((slot) => (
-                        <div
-                          key={slot}
-                          className={`bk-slot ${selectedSlot === slot ? "selected" : ""}`}
-                          onClick={() => handleSlotSelect(slot)}
-                        >
-                          {formatTime(slot)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+              <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8f9fa;border-left:3px solid #d4a843;margin-bottom:30px;">
+                <tr>
+                  <td style="padding:20px;">
+                    <p style="margin:0 0 8px;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">
+                      Adresse
+                    </p>
+                    <p style="margin:0;color:#0e1015;font-size:14px;line-height:1.6;">
+                      <strong>Mr. Renaudin Barbershop</strong><br>
+                      462 4e Rue de la Pointe<br>
+                      Shawinigan, QC G9N 1G7
+                    </p>
+                  </td>
+                </tr>
+              </table>
 
-                  <button onClick={() => setStep(2)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>
-                    ← Retour
-                  </button>
-                </motion.div>
-              )}
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:30px;">
+                <tr>
+                  <td style="padding:15px;background-color:#fff8e1;border:1px solid #d4a843;">
+                    <p style="margin:0;color:#0e1015;font-size:13px;line-height:1.6;">
+                      <strong>Politique d'annulation :</strong> Annulation gratuite jusqu'à 24 heures avant le rendez-vous.
+                      Passé ce délai, des frais peuvent s'appliquer.
+                    </p>
+                  </td>
+                </tr>
+              </table>
 
-              {step === 4 && (
-                <motion.div
-                  key="step4"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Confirmer votre réservation
-                  </h2>
-                  <div style={{ background: "var(--bk-card)", border: "1px solid var(--bk-border)", padding: "2rem", marginBottom: "2rem" }}>
-                    <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Service</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedService?.name}</p>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem" }}>{selectedService?.duration} min • {selectedService?.price}$</p>
-                    </div>
-                    <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Barbier</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedBarber?.name}</p>
-                    </div>
-                    <div>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Date & Heure</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>
-                        {selectedSlot && formatDate(selectedSlot)} à {selectedSlot && formatTime(selectedSlot)}
-                      </p>
-                    </div>
-                  </div>
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center">
+                    <a href="https://mrrenaudinbarbershop.com/compte" style="display:inline-block;background-color:#d4a843;color:#0e1015;text-decoration:none;padding:14px 32px;font-size:13px;font-weight:600;letter-spacing:1px;text-transform:uppercase;">
+                      Gérer ma réservation
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#f8f9fa;padding:30px 40px;border-top:1px solid #e0e0e0;text-align:center;">
+              <p style="margin:0 0 10px;color:#666;font-size:12px;line-height:1.6;">
+                Merci de votre confiance<br>
+                <strong style="color:#0e1015;">L'équipe Mr. Renaudin Barbershop</strong>
+              </p>
+              <p style="margin:15px 0 0;color:#999;font-size:11px;">
+                Cet email a été envoyé à ${clientEmail}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
 
-                  <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                    <button onClick={() => setStep(3)} className="bk-btn-outline">
-                      ← Modifier
-                    </button>
-                    <button onClick={handleConfirmBooking} className="bk-btn-gold" disabled={loading}>
-                      {loading ? "Confirmation..." : "Confirmer la réservation"}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </section>
-      </div>
-      <ToastContainer theme="dark" position="top-center" />
-    </div>
-  );
-};
+    await sendBookingEmail(clientEmail, clientSubject, clientHtml, clientText);
 
-export default BookingPage;
+    // EMAIL BARBIER - PROFESSIONNEL
+    const barberSubject = `Nouvelle réservation - ${clientName} - ${timeStr}`;
+    const barberText = `
+Nouvelle réservation reçue
+
+CLIENT
+Nom : ${clientName}
+Email : ${clientEmail}
+
+DÉTAILS DU RENDEZ-VOUS
+Numéro : #${bookingId}
+Service : ${serviceName}
+Date : ${dateStr}
+Heure : ${timeStr}
+Durée : ${duration} minutes
+Prix : ${price}$ CAD
+
+Le client a reçu une confirmation automatique.
+`;
+
+    const barberHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f4;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f4;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border:1px solid #e0e0e0;">
+          <tr>
+            <td style="background-color:#0e1015;padding:30px 40px;text-align:center;">
+              <h1 style="margin:0;color:#d4a843;font-family:Georgia,serif;font-size:24px;font-weight:900;">
+                NOUVELLE RÉSERVATION
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e0e0;margin-bottom:25px;">
+                <tr>
+                  <td style="background-color:#f8f9fa;padding:15px 20px;border-bottom:1px solid #e0e0e0;">
+                    <p style="margin:0;color:#666;font-size:11px;text-transform:uppercase;letter-spacing:1px;">
+                      Client
+                    </p>
+                    <p style="margin:5px 0 0;color:#0e1015;font-size:18px;font-weight:600;">
+                      ${clientName}
+                    </p>
+                    <p style="margin:5px 0 0;color:#666;font-size:13px;">
+                      ${clientEmail}
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e0e0e0;">
+                <tr>
+                  <td style="background-color:#0e1015;padding:15px 20px;">
+                    <p style="margin:0;color:#d4a843;font-size:11px;text-transform:uppercase;letter-spacing:1px;">
+                      Détails du rendez-vous
+                    </p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:20px;">
+                    <table width="100%" cellpadding="8" cellspacing="0">
+                      <tr>
+                        <td style="color:#666;font-size:13px;width:140px;">Numéro</td>
+                        <td style="color:#0e1015;font-size:15px;font-weight:600;">#${bookingId}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Service</td>
+                        <td style="color:#0e1015;font-size:15px;font-weight:600;">${serviceName}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Date</td>
+                        <td style="color:#0e1015;font-size:15px;">${dateStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Heure</td>
+                        <td style="color:#0e1015;font-size:15px;font-weight:600;">${timeStr}</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Durée</td>
+                        <td style="color:#0e1015;font-size:15px;">${duration} minutes</td>
+                      </tr>
+                      <tr>
+                        <td style="color:#666;font-size:13px;">Prix</td>
+                        <td style="color:#0e1015;font-size:15px;font-weight:600;">${price}$ CAD</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:25px 0 0;color:#666;font-size:13px;text-align:center;">
+                Le client a reçu une confirmation automatique avec tous les détails.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color:#f8f9fa;padding:20px;text-align:center;border-top:1px solid #e0e0e0;">
+              <p style="margin:0;color:#999;font-size:11px;">
+                Mr. Renaudin Barbershop - Système de réservation
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+`;
+
+    await sendBookingEmail(barberEmail, barberSubject, barberHtml, barberText);
+
+    res.json(booking);
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Booking ERROR:', err.message);
+    res.status(500).json({ error: "Erreur serveur lors de la réservation" });
+  } finally {
+    client.release();
+  }
+});
+
+router.get('/my-bookings', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT b.id, b.start_time, b.end_time, b.status,
+              s.name as service_name, s.price, s.duration,
+              u.username as barber_name, u.id as barber_id
+       FROM bookings b
+       JOIN services s ON b.service_id = s.id
+       JOIN users u ON b.barber_id = u.id
+       WHERE b.client_id = $1
+       ORDER BY b.start_time DESC`,
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching my bookings:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.patch('/:id', authenticate, async (req, res) => {
+  const { startTime } = req.body;
+  const bookingId = req.params.id;
+
+  if (!startTime) return res.status(400).json({ error: "startTime requis" });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    const bookingRes = await client.query(
+      `SELECT b.*, s.duration FROM bookings b
+       JOIN services s ON b.service_id = s.id
+       WHERE b.id = $1 AND b.client_id = $2 AND b.status = 'confirmed'
+       AND b.start_time > NOW() + INTERVAL '24 hours'`,
+      [bookingId, req.user.id]
+    );
+
+    if (!bookingRes.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: "Impossible de modifier. Moins de 24h ou résa introuvable" });
+    }
+
+    const oldBooking = bookingRes.rows[0];
+    const newStart = new Date(startTime);
+    const newEnd = new Date(newStart.getTime() + oldBooking.duration * 60000);
+
+    const conflict = await client.query(
+      `SELECT id FROM bookings
+       WHERE barber_id = $1 AND status!= 'cancelled' AND id!= $2
+       AND ($3, $4) OVERLAPS (start_time, end_time)
+       UNION ALL
+       SELECT id FROM barber_blocks
+       WHERE barber_id = $1 AND ($3, $4) OVERLAPS (start_time, end_time)`,
+      [oldBooking.barber_id, bookingId, newStart, newEnd]
+    );
+
+    if (conflict.rows.length) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ error: "Nouveau créneau indisponible" });
+    }
+
+    await client.query(
+      `UPDATE bookings SET start_time = $1, end_time = $2 WHERE id = $3`,
+      [newStart, newEnd, bookingId]
+    );
+
+    await client.query('COMMIT');
+    res.json({ success: true });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error updating booking:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  } finally {
+    client.release();
+  }
+});
+
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE bookings SET status = 'cancelled'
+       WHERE id = $1 AND client_id = $2 AND start_time > NOW() + INTERVAL '24 hours' AND status = 'confirmed'
+       RETURNING *`,
+      [req.params.id, req.user.id]
+    );
+    if (!result.rows.length) {
+      return res.status(400).json({ error: "Impossible d'annuler. Moins de 24h ou résa introuvable" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error cancelling booking:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ─── ADMIN ROUTES ───────────────────────────────────────────────
+
+router.get('/admin/all', authenticateAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT b.id, b.start_time, b.end_time, b.status,
+              s.name as service_name, s.price,
+              c.username as client_name, c.email as client_email,
+              u.username as barber_name,
+              b.client_id, b.barber_id, b.service_id
+       FROM bookings b
+       JOIN services s ON b.service_id = s.id
+       JOIN users c ON b.client_id = c.id
+       JOIN users u ON b.barber_id = u.id
+       ORDER BY b.start_time DESC
+       LIMIT 500`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching all bookings:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.patch('/admin/:id/cancel', authenticateAdmin, async (req, res) => {
+  try {
+    await pool.query(`UPDATE bookings SET status = 'cancelled' WHERE id = $1`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error cancelling booking:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.patch('/admin/:id/complete', authenticateAdmin, async (req, res) => {
+  try {
+    await pool.query(`UPDATE bookings SET status = 'completed' WHERE id = $1`, [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error completing booking:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+router.patch('/admin/:id', authenticateAdmin, async (req, res) => {
+  const { service_id, barber_id, start_time } = req.body;
+  try {
+    const serviceRes = await pool.query('SELECT duration FROM services WHERE id = $1', [service_id]);
+    if (!serviceRes.rows.length) return res.status(404).json({ error: "Service introuvable" });
+
+    const end_time = new Date(new Date(start_time).getTime() + serviceRes.rows[0].duration * 60000);
+
+    await pool.query(
+      `UPDATE bookings SET service_id = $1, barber_id = $2, start_time = $3, end_time = $4 WHERE id = $5`,
+      [service_id, barber_id, start_time, end_time, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Error updating booking:', err.message);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+module.exports = router;
