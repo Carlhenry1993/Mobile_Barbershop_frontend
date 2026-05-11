@@ -1,4 +1,4 @@
-/* =========================
+/* ========================= 
    CHAT APP — LUXURY GOLD EDITION
    Synchronisé avec votre site
 ========================= */
@@ -116,7 +116,7 @@
 
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
 
   background:
     linear-gradient(
@@ -193,32 +193,11 @@
 }
 
 /* =========================
-   CLOSE BUTTON
+   CLOSE BUTTON (HIDDEN)
 ========================= */
 
 .chat-close-btn {
-  width: 42px;
-  height: 42px;
-
-  border: none;
-  border-radius: 14px;
-
-  background: rgba(255,255,255,0.05);
-
-  color: white;
-
-  cursor: pointer;
-
-  font-size: 18px;
-
-  transition: 0.25s ease;
-}
-
-.chat-close-btn:hover {
-  background:
-    rgba(212,175,55,0.18);
-
-  transform: scale(1.05);
+  display: none !important;
 }
 
 /* =========================
