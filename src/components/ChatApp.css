@@ -422,7 +422,52 @@
    SEND BUTTON
 ========================= */
 
+.send-btn {
+  width: 56px;
+  height: 56px;
 
+  border: none;
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #d4af37,
+      #b8860b
+    );
+
+  color: #111827;
+
+  font-size: 20px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+
+  box-shadow:
+    0 10px 25px rgba(212,175,55,0.35);
+}
+
+.send-btn:hover {
+  transform:
+    translateY(-2px)
+    scale(1.04);
+
+  background:
+    linear-gradient(
+      135deg,
+      #f2cf63,
+      #d4af37
+    );
+
+  box-shadow:
+    0 16px 32px rgba(212,175,55,0.45);
+}
+
+.send-btn:active {
+  transform: scale(0.96);
+}
 
 /* =========================
    FLOATING BUTTON
