@@ -225,8 +225,8 @@ const ChatApp = ({ isAdmin }) => {
     setChatState("open");
     setUnreadCount(0);
     const unreadIds = messages
-   .filter((m) =>!m.is_read && (isAdmin? m.senderId === selectedClientIdRef.current : m.senderId === "admin"))
-   .map((m) => m.id);
+     .filter((m) =>!m.is_read && (isAdmin? m.senderId === selectedClientIdRef.current : m.senderId === "admin"))
+     .map((m) => m.id);
     if (unreadIds.length && socketRef.current) {
       socketRef.current.emit("message_read", {
         messageIds: unreadIds,
@@ -417,20 +417,27 @@ const ChatApp = ({ isAdmin }) => {
             )}
           </div>
 
-          <button
-            className="chat-bubble-icon"
-            onClick={() => {
-              if (chatState === "closed") openChat();
-              else if (chatState === "minimized") openChat();
-            }}
-            aria-label="Ouvrir le chat"
-            style={{ display: chatState === "open"? "none" : "flex" }}
-          >
-            💬
-            {chatState!== "open" && unreadCount > 0 && (
-              <span className="unread-count">{unreadCount}</span>
+          <div className="chat-bubble-wrapper">
+            {chatState!== "open" && (
+              <div className="chat-bubble-label">
+                Chatter avec nous!
+              </div>
             )}
-          </button>
+            <button
+              className="chat-bubble-icon"
+              onClick={() => {
+                if (chatState === "closed") openChat();
+                else if (chatState === "minimized") openChat();
+              }}
+              aria-label="Ouvrir le chat"
+              style={{ display: chatState === "open"? "none" : "flex" }}
+            >
+              💬
+              {chatState!== "open" && unreadCount > 0 && (
+                <span className="unread-count">{unreadCount}</span>
+              )}
+            </button>
+          </div>
         </div>
 
         <ToastContainer position="bottom-right" autoClose={3000} />
