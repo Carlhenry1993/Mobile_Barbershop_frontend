@@ -193,6 +193,7 @@
   color: #cbd5e1;
 }
 
+/* Header Actions */
 .chat-header-actions {
   display: flex;
   gap: var(--space-sm);
@@ -270,7 +271,7 @@
   padding: var(--space-md) var(--space-md);
   border-radius: var(--radius-md);
   border: 1px solid rgba(var(--gold-rgb), 0.15);
-  background: rgba(255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.04);
   color: var(--white);
   outline: none;
   font-size: 14px;
@@ -326,6 +327,7 @@
   background: rgba(var(--gold-rgb), 0.35);
 }
 
+/* Empty State */
 .messages-empty {
   flex: 1;
   display: flex;
@@ -345,7 +347,7 @@
 }
 
 /* ==========================================================================
-   8. MESSAGE BUBBLES - DIFFÉRENCIATION PRO
+   8. MESSAGE BUBBLES
    ========================================================================== */
 
 .message-bubble {
@@ -358,41 +360,24 @@
   word-break: break-word;
   position: relative;
   animation: bubbleIn var(--trans-med);
-  transition: transform var(--trans-fast);
+  box-shadow: var(--shadow-md);
 }
 
-.message-bubble:hover {
-  transform: translateY(-1px);
-}
-
-/* Messages reçus = Client ou Admin qui parle */
 .msg-in {
   align-self: flex-start;
-  background: linear-gradient(135deg, #1e293b, #0f172a);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-bottom-left-radius: 6px;
-  color: #e2e8f0;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25), 
-              inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  background: var(--grad-incoming);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 8px;
+  color: var(--white);
+  backdrop-filter: blur(10px);
 }
 
-/* Messages envoyés = Moi */
 .msg-out {
   align-self: flex-end;
-  background: linear-gradient(135deg, #d4af37, #b8860b);
-  color: #0b1220;
-  border-bottom-right-radius: 6px;
-  box-shadow: 0 6px 20px rgba(var(--gold-rgb), 0.4),
-              inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  font-weight: 500;
-}
-
-.msg-out .msg-sender {
-  color: rgba(11, 18, 32, 0.7);
-}
-
-.msg-out .msg-time {
-  color: rgba(11, 18, 32, 0.6);
+  background: var(--grad-gold);
+  color: var(--navy);
+  border-bottom-right-radius: 8px;
+  box-shadow: var(--shadow-gold);
 }
 
 .msg-sender {
@@ -491,9 +476,9 @@
 .chat-input:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.02);
 }
 
+/* Send Button */
 .send-btn {
   width: 52px;
   height: 52px;
@@ -523,7 +508,6 @@
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
 /* ==========================================================================
@@ -558,6 +542,7 @@
   transform: scale(0.96);
 }
 
+/* Unread Badge */
 .unread-count {
   position: absolute;
   top: -4px;
@@ -575,7 +560,7 @@
   font-weight: 700;
   border: 2px solid var(--white);
   animation: pulse 1.5s infinite;
-  box-shadow: 0 2px 8px rgba(239, 68, 0.4);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
 }
 
 /* ==========================================================================
@@ -680,6 +665,7 @@
   }
 }
 
+/* Focus visible pour clavier */
 .chat-action-btn:focus-visible,
 .send-btn:focus-visible,
 .chat-bubble-icon:focus-visible,
@@ -687,4 +673,45 @@
 .client-select:focus-visible {
   outline: 2px solid var(--gold);
   outline-offset: 2px;
+}
+
+
+/* ==========================================================================
+   15. ADMIN STATES
+   ========================================================================== */
+
+.chat-input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.send-btn:disabled:hover {
+  transform: none;
+  background: var(--grad-gold);
+}
+
+.messages-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 14px;
+  gap: var(--space-sm);
+  text-align: center;
+  padding: var(--space-xl);
+}
+
+.messages-empty-icon {
+  font-size: 48px;
+  opacity: 0.3;
 }
