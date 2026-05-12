@@ -74,14 +74,12 @@ const ChatApp = ({ isAdmin }) => {
   const socketRef = useRef(null);
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
-  const selectedClientIdRef = useRef(selectedClientId); // FIX: ref pour éviter stale closure
+  const selectedClientIdRef = useRef(selectedClientId);
 
-  // Sync ref avec state
   useEffect(() => {
     selectedClientIdRef.current = selectedClientId;
   }, [selectedClientId]);
 
-  // Persist
   useEffect(() => {
     localStorage.setItem("chatState", chatState);
   }, [chatState]);
@@ -154,15 +152,14 @@ const ChatApp = ({ isAdmin }) => {
     });
 
     socket.on("new_message", (data) => {
-      const currentSelected = selectedClientIdRef.current; // FIX: utilise la ref
+      const currentSelected = selectedClientIdRef.current;
 
-      // Admin : si msg pas du client sélectionné, juste notif
       if (isAdmin && currentSelected) {
         const isRelevant =
           data.senderId === currentSelected || data.recipientId === currentSelected;
         if (!isRelevant) {
           setUnreadCount((prev) => prev + 1);
-          toast.info(`Nouveau message de ${data.sender}`);
+          toast.info(`Nouveau message de ${data.senderName}`);
           return;
         }
       }
@@ -211,7 +208,7 @@ const ChatApp = ({ isAdmin }) => {
         )
       );
     });
-  }, [chatState, isAdmin, clientId]); // FIX: plus de selectedClientId ici
+  }, [chatState, isAdmin, clientId]);
 
   useEffect(() => {
     connectSocket();
@@ -228,8 +225,8 @@ const ChatApp = ({ isAdmin }) => {
     setChatState("open");
     setUnreadCount(0);
     const unreadIds = messages
-     .filter((m) =>!m.is_read && (isAdmin? m.sender === selectedClientIdRef.current : m.sender === "admin"))
-     .map((m) => m.id);
+   .filter((m) =>!m.is_read && (isAdmin? m.senderId === selectedClientIdRef.current : m.senderId === "admin"))
+   .map((m) => m.id);
     if (unreadIds.length && socketRef.current) {
       socketRef.current.emit("message_read", {
         messageIds: unreadIds,
@@ -363,14 +360,14 @@ const ChatApp = ({ isAdmin }) => {
                     </div>
                   )}
                   {messages.map((m) => {
-                    const isMine = isAdmin? m.sender === "admin" : m.sender === clientId;
+                    const isMine = isAdmin? m.senderId === "admin" : m.senderId === clientId;
                     return (
                       <div
                         key={m.id}
                         className={`message-bubble ${isMine? "msg-out" : "msg-in"}`}
                       >
                         <span className="msg-sender">
-                          {isMine? "Vous" : m.sender === "admin"? "Barbershop" : m.sender}
+                          {isMine? "Vous" : m.senderName || "Client"}
                         </span>
                         <span className="msg-text">{m.message}</span>
                         {m.timestamp && (
