@@ -350,7 +350,7 @@ const Nav = ({ onBook }) => {
 
   return (
     <nav className={`nav ${scrolled ? "scrolled" : ""}`} role="navigation" aria-label="Navigation principale">
-      <a href="/" className="nav-logo">Mr. Renaudin</a>
+  
       <ul className="nav-links">
         <li><a href="#services">Services</a></li>
         <li><a href="#about">À propos</a></li>
