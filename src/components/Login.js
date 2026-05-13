@@ -182,6 +182,23 @@ const useLoginStyles = () => {
       .lp-submit:disabled { opacity: 0.5; cursor: not-allowed; }
       .lp-switch { text-align: center; margin-top: 0.75rem; }
       .lp-switch p { color: #b8c8da; font-size: 0.82rem; margin-bottom: 6px; }
+      .lp-input-eye {
+        position: relative; display: flex; align-items: center;
+      }
+      .lp-input-pw {
+        flex: 1; padding-right: 2.8rem !important;
+      }
+      .lp-eye-btn {
+        position: absolute; right: 0;
+        height: 100%; width: 2.6rem;
+        background: none; border: none;
+        cursor: pointer; font-size: 1rem;
+        display: flex; align-items: center; justify-content: center;
+        color: #7888a0;
+        transition: color 0.2s;
+        flex-shrink: 0;
+      }
+      .lp-eye-btn:hover { color: #d4a843; }
       .lp-switch-btn {
         background: none; border: none;
         color: #d4a843; font-weight: 600;
@@ -245,7 +262,11 @@ const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
 );
 
 // ─── LoginForm ────────────────────────────────────────────────────────────────
-const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange, setIsLogin, loading, formRef, scrollToForm }) => (
+const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange, setIsLogin, loading, formRef, scrollToForm }) => {
+  const [showPassword, setShowPassword]       = React.useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
+
+  return (
   <div ref={formRef} id="login-form" className="lp-form-wrap">
     <div className="lp-form-card">
       <h1 className="lp-form-title">
@@ -311,17 +332,27 @@ const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange
 
         <div className="lp-field">
           <label className="lp-label">Mot de passe *</label>
-          <input
-            className="lp-input"
-            type="password"
-            name="password"
-            placeholder="••••••••"
-            value={formData.password}
-            onChange={handleChange}
-            disabled={loading}
-            autoComplete={isLogin ? "current-password" : "new-password"}
-            required
-          />
+          <div className="lp-input-eye">
+            <input
+              className="lp-input lp-input-pw"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              disabled={loading}
+              autoComplete={isLogin ? "current-password" : "new-password"}
+              required
+            />
+            <button
+              type="button"
+              className="lp-eye-btn"
+              onClick={() => setShowPassword(p => !p)}
+              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
+          </div>
           {!isLogin && <span className="lp-hint">6 caractères minimum</span>}
         </div>
 
@@ -330,8 +361,26 @@ const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange
           <>
             <div className="lp-field">
               <label className="lp-label">Confirmer mot de passe *</label>
-              <input className="lp-input" type="password" name="confirmPassword" placeholder="••••••••"
-                value={formData.confirmPassword} onChange={handleChange} disabled={loading} required />
+              <div className="lp-input-eye">
+                <input
+                  className="lp-input lp-input-pw"
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  placeholder="••••••••"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  disabled={loading}
+                  required
+                />
+                <button
+                  type="button"
+                  className="lp-eye-btn"
+                  onClick={() => setShowConfirmPassword(p => !p)}
+                  aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  {showConfirmPassword ? "🙈" : "👁️"}
+                </button>
+              </div>
             </div>
 
             <label className="lp-checkbox-row">
@@ -357,7 +406,8 @@ const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange
       </form>
     </div>
   </div>
-);
+  );
+};
 
 // ─── Login (main) ─────────────────────────────────────────────────────────────
 const Login = ({ onLogin }) => {
