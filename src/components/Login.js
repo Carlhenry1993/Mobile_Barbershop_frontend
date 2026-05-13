@@ -245,7 +245,7 @@ const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
 );
 
 // ─── LoginForm ────────────────────────────────────────────────────────────────
-const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange, setIsLogin, loading, formRef }) => (
+const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange, setIsLogin, loading, formRef, scrollToForm }) => (
   <div ref={formRef} id="login-form" className="lp-form-wrap">
     <div className="lp-form-card">
       <h1 className="lp-form-title">
@@ -348,7 +348,7 @@ const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange
 
         <div className="lp-switch">
           <p>{isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}</p>
-          <button type="button" className="lp-switch-btn" onClick={() => setIsLogin(p => !p)}>
+          <button type="button" className="lp-switch-btn" onClick={() => { setIsLogin(p => !p); scrollToForm(); }}>
             {isLogin ? "Créer un compte" : "Se connecter"}
           </button>
         </div>
@@ -466,6 +466,7 @@ const Login = ({ onLogin }) => {
             setIsLogin={setIsLogin}
             loading={loading}
             formRef={formRef}
+            scrollToForm={scrollToForm}
           />
         </div>
       </div>
