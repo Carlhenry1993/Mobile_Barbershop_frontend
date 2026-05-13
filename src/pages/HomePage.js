@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
@@ -245,47 +245,6 @@ const useInjectStyles = () => {
       .wrap { max-width: 1280px; margin: 0 auto; padding: 0 1.25rem; }
       @media (min-width: 640px) { .wrap { padding: 0 2rem; } }
 
-      /* Nav */
-      .nav {
-        position: fixed; top: 0; left: 0; right: 0; z-index: 500;
-        padding: 1rem 1.25rem;
-        display: flex; align-items: center; justify-content: space-between;
-        gap: 1rem;
-        transition: background 0.4s, backdrop-filter 0.4s;
-      }
-      @media (min-width: 640px) { .nav { padding: 1.5rem 2rem; } }
-      .nav.scrolled {
-        background: rgba(12, 13, 15, 0.92);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border-bottom: 1px solid var(--border);
-      }
-      .nav-logo {
-        font-family: 'Bodoni Moda', serif;
-        font-size: 0.95rem;
-        color: var(--cream);
-        letter-spacing: 0.04em;
-        text-decoration: none;
-        flex-shrink: 0;
-      }
-      @media (min-width: 640px) { .nav-logo { font-size: 1.1rem; } }
-      .nav-links {
-        display: none;
-        align-items: center; gap: 2.5rem;
-        list-style: none;
-      }
-      @media (min-width: 900px) { .nav-links { display: flex; } }
-      .nav-links a {
-        font-family: 'DM Mono', monospace;
-        font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
-        color: var(--fog); text-decoration: none;
-        transition: color 0.2s;
-      }
-      .nav-links a:hover { color: var(--gold); }
-      /* Hide nav CTA on very small screens — sticky bottom CTA handles it */
-      .nav-cta { display: none; }
-      @media (min-width: 480px) { .nav-cta { display: inline-flex; } }
-
       /* Buttons — stack full-width on tiny phones */
       @media (max-width: 420px) {
         .hero-ctas { flex-direction: column; }
@@ -339,32 +298,6 @@ const FadeIn = ({ children, delay = 0, className = "", style = {} }) => {
   );
 };
 
-// ─── Scroll-aware nav ─────────────────────────────────────────────────────────
-const Nav = ({ onBook }) => {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 60);
-    window.addEventListener("scroll", fn, { passive: true });
-    return () => window.removeEventListener("scroll", fn);
-  }, []);
-
-  return (
-    <nav className={`nav ${scrolled ? "scrolled" : ""}`} role="navigation" aria-label="Navigation principale">
-  
-      <ul className="nav-links">
-        <li><a href="#services">Services</a></li>
-        <li><a href="#about">À propos</a></li>
-        <li><a href="#temoignages">Témoignages</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
-      <button className="btn-primary nav-cta" onClick={onBook} aria-label="Réserver un rendez-vous" style={{ padding: "0.75rem 1.75rem" }}>
-        Réserver
-        <span aria-hidden="true">→</span>
-      </button>
-    </nav>
-  );
-};
-
 // ─── HomePage ─────────────────────────────────────────────────────────────────
 const HomePage = () => {
   const navigate = useNavigate();
@@ -394,8 +327,6 @@ const HomePage = () => {
         <meta name="description" content="Mr. Renaudin Barbershop — le barbershop premium de Shawinigan. Fades experts, coupes classiques, sculpture de barbe. Réservez en ligne." />
         <script type="application/ld+json">{JSON.stringify(schema)}</script>
       </Helmet>
-
-      <Nav onBook={() => navigate("/reserver")} />
 
       {/* ══════════════════════════════════════════ HERO ══════════════════ */}
       <section
@@ -844,22 +775,6 @@ const HomePage = () => {
           </div>
         </FadeIn>
       </section>
-
-      {/* Footer mini */}
-      <footer style={{
-        background: "var(--surface)",
-        borderTop: "1px solid var(--border)",
-        padding: "2.5rem 2rem",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        flexWrap: "wrap", gap: "1rem",
-      }}>
-        <p style={{ fontFamily: "'Bodoni Moda', serif", fontSize: "1rem", color: "var(--fog)", letterSpacing: "0.03em" }}>
-          Mr. Renaudin Barbershop
-        </p>
-        <p className="t-caption" style={{ textAlign: "right" }}>
-          © {new Date().getFullYear()} · Shawinigan, QC
-        </p>
-      </footer>
 
       {/* Mobile sticky CTA */}
       <div className="sticky-mobile">
