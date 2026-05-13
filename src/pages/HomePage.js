@@ -4,7 +4,6 @@ import { Helmet } from "react-helmet";
 import { motion, useInView, useReducedMotion, useScroll, useTransform } from "framer-motion";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
-
 const PHONE = "514-778-8318";
 const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
 
@@ -169,22 +168,28 @@ const useInjectStyles = () => {
       /* Service row */
       .service-row {
         display: grid;
-        grid-template-columns: 64px 1fr auto;
+        grid-template-columns: 36px 1fr;
         align-items: start;
-        gap: 2rem;
-        padding: 2rem 0;
+        gap: 1rem;
+        padding: 1.4rem 0;
         border-bottom: 1px solid var(--border);
-        transition: background 0.25s;
+        transition: background 0.25s, padding 0.25s;
       }
-      .service-row:hover { background: var(--gold-dim); padding-left: 1rem; padding-right: 1rem; margin: 0 -1rem; border-radius: 2px; }
       .service-row:first-child { border-top: 1px solid var(--border); }
+      .service-arrow { display: none; }
+      @media (min-width: 640px) {
+        .service-row { grid-template-columns: 64px 1fr auto; gap: 2rem; padding: 2rem 0; }
+        .service-arrow { display: block; }
+        .service-row:hover { background: var(--gold-dim); padding-left: 1rem; padding-right: 1rem; margin: 0 -1rem; border-radius: 2px; }
+      }
 
       /* Hours table */
       .hours-row {
-        display: flex; justify-content: space-between;
-        padding: 1rem 0;
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.85rem 0;
         border-bottom: 1px solid var(--border);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
+        gap: 0.75rem;
       }
       .hours-row:last-child { border-bottom: none; }
 
@@ -192,11 +197,12 @@ const useInjectStyles = () => {
       .testi-card {
         background: var(--surface);
         border: 1px solid var(--border);
-        padding: 2.5rem;
+        padding: 1.75rem;
         position: relative;
         overflow: hidden;
         transition: border-color 0.35s;
       }
+      @media (min-width: 640px) { .testi-card { padding: 2.5rem; } }
       .testi-card::before {
         content: '"';
         position: absolute; top: -0.5rem; left: 1.5rem;
@@ -210,7 +216,7 @@ const useInjectStyles = () => {
       /* Stat item */
       .stat-val {
         font-family: 'Bodoni Moda', serif;
-        font-size: clamp(3rem, 5vw, 4.5rem);
+        font-size: clamp(2.4rem, 8vw, 4.5rem);
         font-weight: 700;
         color: var(--gold);
         line-height: 1;
@@ -224,40 +230,51 @@ const useInjectStyles = () => {
       }
       @media (max-width: 768px) { .sticky-mobile { display: block; } }
 
-      /* Grid helpers */
-      .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
-      .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
-      @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
-      @media (max-width: 700px) { .grid-3 { grid-template-columns: 1fr; } }
+      /* Grid helpers — mobile-first */
+      .grid-2 { display: grid; grid-template-columns: 1fr; gap: 3rem; }
+      .grid-3 { display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+      @media (min-width: 680px)  { .grid-3 { grid-template-columns: repeat(3, 1fr); gap: 1.5rem; } }
+      @media (min-width: 900px)  { .grid-2 { grid-template-columns: 1fr 1fr; gap: 5rem; } }
 
-      /* Section spacing */
-      .sect { padding: 10rem 2rem; }
-      @media (max-width: 768px) { .sect { padding: 6rem 1.5rem; } }
+      /* Section spacing — mobile-first */
+      .sect { padding: 4.5rem 1.25rem; }
+      @media (min-width: 640px)  { .sect { padding: 7rem 2rem; } }
+      @media (min-width: 1024px) { .sect { padding: 10rem 2rem; } }
+
+      /* Wrapper padding */
+      .wrap { max-width: 1280px; margin: 0 auto; padding: 0 1.25rem; }
+      @media (min-width: 640px) { .wrap { padding: 0 2rem; } }
 
       /* Nav */
       .nav {
         position: fixed; top: 0; left: 0; right: 0; z-index: 500;
-        padding: 1.5rem 2rem;
+        padding: 1rem 1.25rem;
         display: flex; align-items: center; justify-content: space-between;
+        gap: 1rem;
         transition: background 0.4s, backdrop-filter 0.4s;
       }
+      @media (min-width: 640px) { .nav { padding: 1.5rem 2rem; } }
       .nav.scrolled {
-        background: rgba(12, 13, 15, 0.88);
+        background: rgba(12, 13, 15, 0.92);
         backdrop-filter: blur(16px);
         -webkit-backdrop-filter: blur(16px);
         border-bottom: 1px solid var(--border);
       }
       .nav-logo {
         font-family: 'Bodoni Moda', serif;
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         color: var(--cream);
         letter-spacing: 0.04em;
         text-decoration: none;
+        flex-shrink: 0;
       }
+      @media (min-width: 640px) { .nav-logo { font-size: 1.1rem; } }
       .nav-links {
-        display: flex; align-items: center; gap: 2.5rem;
+        display: none;
+        align-items: center; gap: 2.5rem;
         list-style: none;
       }
+      @media (min-width: 900px) { .nav-links { display: flex; } }
       .nav-links a {
         font-family: 'DM Mono', monospace;
         font-size: 0.65rem; letter-spacing: 0.18em; text-transform: uppercase;
@@ -265,7 +282,26 @@ const useInjectStyles = () => {
         transition: color 0.2s;
       }
       .nav-links a:hover { color: var(--gold); }
-      @media (max-width: 768px) { .nav-links { display: none; } }
+      /* Hide nav CTA on very small screens — sticky bottom CTA handles it */
+      .nav-cta { display: none; }
+      @media (min-width: 480px) { .nav-cta { display: inline-flex; } }
+
+      /* Buttons — stack full-width on tiny phones */
+      @media (max-width: 420px) {
+        .hero-ctas { flex-direction: column; }
+        .hero-ctas .btn-primary,
+        .hero-ctas .btn-ghost { width: 100%; justify-content: center; }
+      }
+
+      /* Hero ghost text — only on wide screens */
+      @media (min-width: 900px) { .hero-ghost-text { display: block !important; } }
+
+      /* Hero CTA row — stack on tiny phones */
+      .hero-ctas { display: flex; flex-wrap: wrap; gap: 1rem; }
+      @media (max-width: 420px) {
+        .hero-ctas { flex-direction: column; }
+        .hero-ctas > * { width: 100%; justify-content: center; }
+      }
 
       /* Reduced motion */
       @media (prefers-reduced-motion: reduce) {
@@ -321,7 +357,7 @@ const Nav = ({ onBook }) => {
         <li><a href="#temoignages">Témoignages</a></li>
         <li><a href="#contact">Contact</a></li>
       </ul>
-      <button className="btn-primary" onClick={onBook} aria-label="Réserver un rendez-vous" style={{ padding: "0.75rem 1.75rem" }}>
+      <button className="btn-primary nav-cta" onClick={onBook} aria-label="Réserver un rendez-vous" style={{ padding: "0.75rem 1.75rem" }}>
         Réserver
         <span aria-hidden="true">→</span>
       </button>
@@ -383,23 +419,27 @@ const HomePage = () => {
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(12,13,15,0.92) 0%, rgba(12,13,15,0.55) 60%, rgba(12,13,15,0.2) 100%)" }} />
         <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(12,13,15,1) 0%, transparent 45%)" }} />
 
-        {/* Vertical "BARBER" ghost text */}
+        {/* Vertical "BARBER" ghost text — hidden on mobile to prevent overflow */}
         <div
           aria-hidden="true"
           style={{
-            position: "absolute", right: "3rem", top: "50%", transform: "translateY(-50%) rotate(90deg)",
-            fontFamily: "'Bodoni Moda', serif", fontSize: "clamp(4rem, 8vw, 7rem)",
+            position: "absolute", right: "3rem", top: "50%",
+            transform: "translateY(-50%) rotate(90deg)",
+            fontFamily: "'Bodoni Moda', serif",
+            fontSize: "clamp(4rem, 8vw, 7rem)",
             fontWeight: 900, letterSpacing: "0.5em",
             color: "rgba(212,168,67,0.06)",
             userSelect: "none", whiteSpace: "nowrap",
+            display: "none",
           }}
+          className="hero-ghost-text"
         >
           BARBERSHOP
         </div>
 
         {/* Main copy */}
         <motion.div
-          style={{ position: "relative", zIndex: 10, padding: "0 2rem 7rem", maxWidth: "860px", opacity: reduce ? 1 : heroOpacity }}
+          style={{ position: "relative", zIndex: 10, padding: "0 1.25rem 5rem", maxWidth: "860px", opacity: reduce ? 1 : heroOpacity, width: "100%" }}
         >
           {/* Eyebrow */}
           <motion.div
@@ -447,6 +487,7 @@ const HomePage = () => {
 
           <motion.div
             style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}
+            className="hero-ctas"
             initial={reduce ? {} : { opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 1 }}
@@ -479,9 +520,9 @@ const HomePage = () => {
       </section>
 
       {/* ═════════════════════════════════════════ STATS ══════════════════ */}
-      <section style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "5rem 2rem" }}>
+      <section style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "4rem 1.25rem" }}>
         <div className="wrap">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "4rem", textAlign: "center" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "2rem", textAlign: "center" }}>
             {[
               { val: "10+",  label: "Années d'expertise" },
               { val: "5 ★",  label: "Note clientèle" },
@@ -502,31 +543,26 @@ const HomePage = () => {
         <div className="wrap">
           <div style={{ maxWidth: "900px", margin: "0 auto" }}>
             <FadeIn>
-              <div style={{ display: "flex", alignItems: "flex-start", gap: "3rem" }}>
-                <div style={{ flexShrink: 0 }}>
-                  <span className="rule" style={{ height: "80px" }} />
-                </div>
-                <div>
-                  <p className="t-mono" style={{ marginBottom: "2rem" }}>Notre philosophie</p>
-                  <h2
-                    className="t-display"
-                    style={{ fontSize: "clamp(2.8rem, 5.5vw, 5rem)", marginBottom: "2.5rem" }}
-                  >
-                    Plus qu'une coupe.<br />
-                    <span style={{ fontStyle: "italic", color: "var(--gold)" }}>Une identité.</span>
-                  </h2>
-                  <p className="t-body" style={{ maxWidth: "640px", marginBottom: "2rem" }}>
-                    Chez Mr. Renaudin Barbershop, chaque rendez-vous est un rituel réfléchi. Nous croyons qu'un excellent soin est le fondement de la confiance — et la confiance ouvre toutes les portes.
-                  </p>
-                  <p className="t-body" style={{ maxWidth: "640px" }}>
-                    Nos barbiers maîtrisent autant les techniques modernes que l'artisanat classique, pour des résultats dignes des meilleurs établissements de Montréal, Toronto et au-delà.
-                  </p>
-                </div>
+              <div>
+                <p className="t-mono" style={{ marginBottom: "2rem" }}>Notre philosophie</p>
+                <h2
+                  className="t-display"
+                  style={{ fontSize: "clamp(2.4rem, 6vw, 5rem)", marginBottom: "2.5rem" }}
+                >
+                  Plus qu'une coupe.<br />
+                  <span style={{ fontStyle: "italic", color: "var(--gold)" }}>Une identité.</span>
+                </h2>
+                <p className="t-body" style={{ maxWidth: "640px", marginBottom: "2rem" }}>
+                  Chez Mr. Renaudin Barbershop, chaque rendez-vous est un rituel réfléchi. Nous croyons qu'un excellent soin est le fondement de la confiance — et la confiance ouvre toutes les portes.
+                </p>
+                <p className="t-body" style={{ maxWidth: "640px" }}>
+                  Nos barbiers maîtrisent autant les techniques modernes que l'artisanat classique, pour des résultats dignes des meilleurs établissements de Montréal, Toronto et au-delà.
+                </p>
               </div>
             </FadeIn>
 
             {/* Why us — horizontal strips */}
-            <div style={{ marginTop: "6rem", display: "flex", flexDirection: "column", gap: "0" }}>
+            <div style={{ marginTop: "4rem", display: "flex", flexDirection: "column" }}>
               {[
                 { n: "I",   title: "Précision constante",   body: "Chaque visite offre la même qualité irréprochable. Aucune approximation." },
                 { n: "II",  title: "Service personnalisé",  body: "La forme de votre visage, votre mode de vie et vos préférences guident chaque décision." },
@@ -534,15 +570,14 @@ const HomePage = () => {
               ].map(({ n, title, body }, i) => (
                 <FadeIn key={n} delay={i * 0.12}>
                   <div style={{
-                    display: "grid", gridTemplateColumns: "60px 1fr",
-                    gap: "2.5rem", alignItems: "start",
-                    padding: "2.5rem 0",
+                    display: "flex", gap: "1.5rem", alignItems: "flex-start",
+                    padding: "1.75rem 0",
                     borderBottom: "1px solid var(--border)",
                   }}>
-                    <span style={{ fontFamily: "'Bodoni Moda', serif", fontSize: "1.1rem", color: "var(--gold)", opacity: 0.6, paddingTop: "0.15rem" }}>{n}</span>
+                    <span style={{ fontFamily: "'Bodoni Moda', serif", fontSize: "0.9rem", color: "var(--gold)", opacity: 0.6, paddingTop: "0.2rem", flexShrink: 0, minWidth: "28px" }}>{n}</span>
                     <div>
-                      <h3 style={{ fontFamily: "'Bodoni Moda', serif", fontSize: "1.4rem", color: "var(--cream)", marginBottom: "0.6rem", letterSpacing: "-0.01em" }}>{title}</h3>
-                      <p style={{ fontSize: "0.95rem", color: "var(--fog)", lineHeight: 1.75 }}>{body}</p>
+                      <h3 style={{ fontFamily: "'Bodoni Moda', serif", fontSize: "clamp(1.05rem, 3vw, 1.35rem)", color: "var(--cream)", marginBottom: "0.5rem", letterSpacing: "-0.01em" }}>{title}</h3>
+                      <p style={{ fontSize: "0.88rem", color: "var(--fog)", lineHeight: 1.75 }}>{body}</p>
                     </div>
                   </div>
                 </FadeIn>
@@ -556,16 +591,11 @@ const HomePage = () => {
       <section id="services" className="sect" style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}>
         <div className="wrap">
           <FadeIn>
-            <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: "2rem", marginBottom: "5rem" }}>
-              <div>
-                <p className="t-mono" style={{ marginBottom: "1rem" }}>Ce que nous offrons</p>
-                <h2 className="t-display" style={{ fontSize: "clamp(2.5rem, 5vw, 4.5rem)" }}>
-                  Nos<br /><span style={{ fontStyle: "italic", color: "var(--gold)" }}>Services</span>
-                </h2>
-              </div>
-              <button className="btn-primary" onClick={() => navigate("/reserver")} aria-label="Réserver votre coupe">
-                Réserver votre place →
-              </button>
+            <div style={{ marginBottom: "3rem" }}>
+              <p className="t-mono" style={{ marginBottom: "1rem" }}>Ce que nous offrons</p>
+              <h2 className="t-display" style={{ fontSize: "clamp(2.2rem, 6vw, 4.5rem)" }}>
+                Nos<br /><span style={{ fontStyle: "italic", color: "var(--gold)" }}>Services</span>
+              </h2>
             </div>
           </FadeIn>
 
@@ -580,11 +610,18 @@ const HomePage = () => {
                     </h3>
                     <p style={{ fontSize: "0.9rem", color: "var(--fog)", lineHeight: 1.7, maxWidth: "480px" }}>{desc}</p>
                   </div>
-                  <span style={{ color: "var(--gold)", fontSize: "1.2rem", paddingTop: "0.2rem", flexShrink: 0 }} aria-hidden="true">→</span>
+                  <span className="service-arrow" style={{ color: "var(--gold)", fontSize: "1.2rem", paddingTop: "0.2rem", flexShrink: 0 }} aria-hidden="true">→</span>
                 </div>
               </FadeIn>
             ))}
           </div>
+          <FadeIn delay={0.2}>
+            <div style={{ marginTop: "3rem" }}>
+              <button className="btn-primary" onClick={() => navigate("/reserver")} aria-label="Réserver votre coupe">
+                Réserver votre place →
+              </button>
+            </div>
+          </FadeIn>
         </div>
       </section>
 
@@ -592,7 +629,8 @@ const HomePage = () => {
       <section
         style={{
           position: "relative",
-          height: "70vh",
+          height: "50vh",
+          minHeight: "280px",
           overflow: "hidden",
           display: "flex",
           alignItems: "center",
@@ -759,7 +797,7 @@ const HomePage = () => {
       <section
         style={{
           position: "relative",
-          padding: "12rem 2rem",
+          padding: "6rem 1.25rem",
           background: "var(--ink)",
           borderTop: "1px solid var(--border)",
           textAlign: "center",
