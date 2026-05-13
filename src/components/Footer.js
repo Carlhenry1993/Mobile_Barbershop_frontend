@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
@@ -373,6 +374,7 @@ const useFooterStyles = () => {
 
 const Footer = () => {
   useFooterStyles();
+  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -389,9 +391,13 @@ const Footer = () => {
           <p className="ft-cta-sub">
             Shawinigan · Barbershop Premium · Sur rendez-vous
           </p>
-          <a href="/reserver" className="ft-cta-btn" aria-label="Réserver un rendez-vous maintenant">
+          <button
+            className="ft-cta-btn"
+            onClick={() => navigate("/reserver")}
+            aria-label="Réserver un rendez-vous maintenant"
+          >
             Réserver maintenant
-          </a>
+          </button>
         </div>
 
         {/* ── Main Grid ── */}
@@ -493,20 +499,17 @@ const Footer = () => {
 
             <div className="ft-contact-row" style={{ marginTop: "1rem" }}>
               <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <span className="ft-contact-text">
-                Lun – Ven<br />
-                11h00 – 19h00
-              </span>
+              <span className="ft-contact-text">Lun – Ven : 11h00 – 19h00</span>
             </div>
 
             <div className="ft-contact-row">
               <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <span className="ft-contact-text">
-                Samedi : 12h00 – 19h00<br />
-                <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <span className="ft-contact-text"></span>
-                Dimanche : 11h00 - 17h00
-              </span>
+              <span className="ft-contact-text">Samedi : 12h00 – 19h00</span>
+            </div>
+
+            <div className="ft-contact-row">
+              <span className="ft-contact-icon" aria-hidden="true">✦</span>
+              <span className="ft-contact-text">Dimanche : 11h00 – 17h00</span>
             </div>
           </div>
         </div>
