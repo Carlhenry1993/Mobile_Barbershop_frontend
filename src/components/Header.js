@@ -5,228 +5,243 @@ import { VscClose } from "react-icons/vsc";
 
 const useHeaderStyles = () => {
   useEffect(() => {
-    const styleId = "mr-renaudin-header-styles";
+    const styleId = "mr-renaudin-header-styles-v2";
     if (document.getElementById(styleId)) return;
 
     const style = document.createElement("style");
     style.id = styleId;
     style.innerHTML = `
-  .hd-root {
-        --hd-black: #0e1015;
-        --hd-charcoal: #161b24;
-        --hd-card: #1e2535;
-        --hd-border: #2a3348;
-        --hd-gold: #d4a843;
-        --hd-gold-lt: #f0c96a;
-        --hd-cream: #eef2f7;
-        --hd-light: #b8c8da;
-        --hd-muted: #7888a0;
+ .hd-root {
+    --hd-black: #0e1015;
+    --hd-charcoal: #161b24;
+    --hd-card: #1e2535;
+    --hd-border: #2a3348;
+    --hd-gold: #d4a843;
+    --hd-gold-lt: #f0c96a;
+    --hd-cream: #eef2f7;
+    --hd-light: #b8c8da;
+    --hd-muted: #7888a0;
 
-        background: rgba(22, 27, 36, 0.95);
-        color: var(--hd-cream);
-        font-family: 'DM Sans', sans-serif;
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        border-bottom: 1px solid var(--hd-border);
-        backdrop-filter: blur(12px);
-      }
+    background: rgba(22, 27, 36, 0.95);
+    color: var(--hd-cream);
+    font-family: 'DM Sans', sans-serif;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 1px solid var(--hd-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
 
-  .hd-nav {
-        max-width: 1200px;
-        margin: 0 auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 1.5rem;
-      }
+ .hd-nav {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    padding: 0.75rem 1.5rem;
+    gap: 2rem;
+  }
 
-  .hd-logo-wrap {
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        gap: 0.75rem;
-      }
+  /* ========== LOGO ZONE ========== */
+ .hd-logo-wrap {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 0.75rem;
+  }
 
-  .hd-logo-img {
-        height: 48px;
-        width: auto;
-        max-width: 160px;
-        object-fit: contain;
-        display: block;
-      }
-      @media (max-width: 540px) {
-    .hd-logo-img { height: 44px; }
-      }
+ .hd-logo-img {
+    height: 48px;
+    width: auto;
+    max-width: 160px;
+    object-fit: contain;
+  }
 
-  .hd-logo-text-wrap {
-        display: flex;
-        flex-direction: column;
-        line-height: 1.1;
-      }
+ .hd-logo-text-wrap {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
 
-  .hd-tagline {
-        font-size: 0.6rem;
-        font-weight: 500;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        color: var(--hd-gold);
-        margin-top: 0.2rem;
-      }
-      @media (min-width: 768px) {
-    .hd-tagline { font-size: 0.65rem; }
-      }
+ .hd-tagline {
+    font-size: 0.6rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--hd-gold);
+    margin-top: 0.2rem;
+  }
 
-  .hd-right {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-      }
+  @media (max-width: 768px) {
+   .hd-logo-img { height: 42px; }
+   .hd-tagline { display: none; }
+  }
 
-  .hd-menu-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: transparent;
-        border: 1px solid var(--hd-border);
-        color: var(--hd-cream);
-        font-size: 1.5rem;
-        padding: 0.5rem 0.75rem;
-        cursor: pointer;
-        transition: border-color 0.2s, color 0.2s;
-      }
+  /* ========== NAV CENTER ========== */
+ .hd-nav-center {
+    display: none;
+    justify-content: center;
+  }
 
-  .hd-menu-btn:hover,.hd-menu-btn:focus-visible {
-        border-color: var(--hd-gold);
-        color: var(--hd-gold);
-        outline: none;
-      }
+  @media (min-width: 1024px) {
+   .hd-nav-center { display: flex; }
+  }
 
-  .hd-menu-btn-text {
-        font-size: 0.75rem;
-        letter-spacing: 0.15em;
-        text-transform: uppercase;
-        font-weight: 500;
-      }
+ .hd-links {
+    display: flex;
+    list-style: none;
+    gap: 0.25rem;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+  }
 
-      @media (min-width: 1024px) {
-    .hd-menu-btn { display: none; }
-      }
+ .hd-link {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--hd-light);
+    text-decoration: none;
+    padding: 0.6rem 1rem;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
 
-  .hd-links {
-        display: none;
-        list-style: none;
-        gap: 0.25rem;
-        align-items: center;
-      }
+ .hd-link:hover,.hd-link:focus-visible {
+    color: var(--hd-gold);
+    border-color: var(--hd-gold);
+    outline: none;
+  }
 
-      @media (min-width: 1024px) {
-    .hd-links { display: flex; }
-      }
+ .hd-link.active {
+    color: var(--hd-black);
+    background: var(--hd-gold);
+    border-color: var(--hd-gold);
+  }
 
-  .hd-link {
-        display: block;
-        font-size: 0.82rem;
-        font-weight: 500;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--hd-light);
-        text-decoration: none;
-        padding: 0.6rem 1rem;
-        border: 1px solid transparent;
-        transition: color 0.2s, border-color 0.2s, background 0.2s;
-      }
+ .hd-link.active:hover {
+    background: var(--hd-gold-lt);
+  }
 
-  .hd-link:hover,.hd-link:focus-visible {
-        color: var(--hd-gold);
-        border-color: var(--hd-gold);
-        outline: none;
-      }
+ .hd-link-admin {
+    background: rgba(212,168,67,0.15)!important;
+    color: var(--hd-gold)!important;
+    border: 1px solid var(--hd-gold)!important;
+  }
 
-  .hd-link.active {
-        color: var(--hd-black);
-        background: var(--hd-gold);
-        border-color: var(--hd-gold);
-      }
+ .hd-link-admin:hover {
+    background: var(--hd-gold)!important;
+    color: var(--hd-black)!important;
+  }
 
-  .hd-link.active:hover {
-        background: var(--hd-gold-lt);
-      }
+  /* ========== ACTIONS RIGHT ========== */
+ .hd-actions {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+  }
 
-   /* ✅ Lien Admin spécifique */
-  .hd-link-admin {
-        background: rgba(212,168,67,0.15)!important;
-        color: var(--hd-gold)!important;
-        border: 1px solid var(--hd-gold)!important;
-      }
+  @media (min-width: 1024px) {
+   .hd-actions { display: flex; }
+  }
 
-  .hd-link-admin:hover {
-        background: var(--hd-gold)!important;
-        color: var(--hd-black)!important;
-      }
+ .hd-cta-btn {
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.65rem 1.3rem;
+    border: 1px solid var(--hd-gold);
+    background: var(--hd-gold);
+    color: var(--hd-black);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    white-space: nowrap;
+  }
 
-  .hd-cta-btn {
-        font-size: 0.78rem;
-        font-weight: 600;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        padding: 0.6rem 1.2rem;
-        border: 1px solid var(--hd-gold);
-        background: var(--hd-gold);
-        color: var(--hd-black);
-        cursor: pointer;
-        transition: background 0.2s, transform 0.2s;
-        text-decoration: none;
-        display: inline-block;
-      }
+ .hd-cta-btn:hover {
+    background: var(--hd-gold-lt);
+    transform: translateY(-1px);
+  }
 
-  .hd-cta-btn:hover {
-        background: var(--hd-gold-lt);
-        transform: translateY(-1px);
-      }
+ .hd-cta-btn-outline {
+    background: transparent;
+    color: var(--hd-gold);
+  }
 
-  .hd-cta-btn-outline {
-        background: transparent;
-        color: var(--hd-gold);
-      }
+ .hd-cta-btn-outline:hover {
+    background: var(--hd-gold);
+    color: var(--hd-black);
+  }
 
-  .hd-cta-btn-outline:hover {
-        background: var(--hd-gold);
-        color: var(--hd-black);
-      }
+  /* ========== MOBILE MENU BTN ========== */
+ .hd-menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 1px solid var(--hd-border);
+    color: var(--hd-cream);
+    font-size: 1.5rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
 
-  .hd-mobile-menu {
-        background: var(--hd-charcoal);
-        border-top: 1px solid var(--hd-border);
-        padding: 1rem 1.5rem 1.5rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.25rem;
-        animation: slideDown 0.3s ease;
-      }
+ .hd-menu-btn:hover {
+    border-color: var(--hd-gold);
+    color: var(--hd-gold);
+  }
 
-      @keyframes slideDown {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
+ .hd-menu-btn-text {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
 
-  .hd-mobile-menu.hd-link {
-        text-align: center;
-        padding: 0.9rem 1rem;
-      }
+  @media (min-width: 1024px) {
+   .hd-menu-btn { display: none; }
+  }
 
-  .hd-mobile-cta {
-        margin-top: 0.75rem;
-        padding-top: 0.75rem;
-        border-top: 1px solid var(--hd-border);
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-      }
+  /* ========== MOBILE MENU ========== */
+ .hd-mobile-menu {
+    background: var(--hd-charcoal);
+    border-top: 1px solid var(--hd-border);
+    padding: 1rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    animation: slideDown 0.3s ease;
+  }
 
-      @media (min-width: 1024px) {
-    .hd-mobile-menu { display: none; }
-      }
+  @keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+ .hd-mobile-menu.hd-link {
+    text-align: center;
+    padding: 0.9rem 1rem;
+  }
+
+ .hd-mobile-cta {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--hd-border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  @media (min-width: 1024px) {
+   .hd-mobile-menu { display: none; }
+  }
     `;
     document.head.appendChild(style);
 
@@ -258,9 +273,9 @@ const Header = ({ role, onLogout }) => {
       if (
         isMenuOpen &&
         menuRef.current &&
-      !menuRef.current.contains(e.target) &&
+       !menuRef.current.contains(e.target) &&
         btnRef.current &&
-      !btnRef.current.contains(e.target)
+       !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -319,6 +334,7 @@ const Header = ({ role, onLogout }) => {
   return (
     <header className="hd-root" role="banner">
       <nav className="hd-nav">
+        {/* ZONE 1: LOGO */}
         <Link to="/" className="hd-logo-wrap" aria-label="Mr. Renaudin Barbershop - Accueil">
           {!logoError? (
             <img
@@ -342,11 +358,10 @@ const Header = ({ role, onLogout }) => {
           </div>
         </Link>
 
-        <div className="hd-right">
+        {/* ZONE 2: NAV CENTER - Desktop only */}
+        <div className="hd-nav-center">
           <ul className="hd-links">
             {renderLinks()}
-
-            {/* ✅ Lien Admin - Desktop */}
             {role === 'admin' && (
               <li>
                 <Link
@@ -357,44 +372,43 @@ const Header = ({ role, onLogout }) => {
                 </Link>
               </li>
             )}
-
-            <li>
-              <button onClick={handleBookingClick} className="hd-cta-btn">
-                Réserver
-              </button>
-            </li>
-            <li>
-              {role? (
-                <button onClick={handleLogoutClick} className="hd-cta-btn hd-cta-btn-outline">
-                  Déconnexion
-                </button>
-              ) : (
-                <button onClick={handleLoginClick} className="hd-cta-btn hd-cta-btn-outline">
-                  Connexion
-                </button>
-              )}
-            </li>
           </ul>
-
-          <button
-            ref={btnRef}
-            className="hd-menu-btn"
-            onClick={toggleMenu}
-            aria-label={isMenuOpen? "Fermer le menu" : "Ouvrir le menu"}
-            aria-expanded={isMenuOpen}
-            aria-controls="mobile-menu"
-          >
-            <span className="hd-menu-btn-text">{isMenuOpen? "Fermer" : "Menu"}</span>
-            {isMenuOpen? <VscClose /> : <GiHamburgerMenu />}
-          </button>
         </div>
+
+        {/* ZONE 3: ACTIONS RIGHT - Desktop only */}
+        <div className="hd-actions">
+          <button onClick={handleBookingClick} className="hd-cta-btn">
+            Réserver
+          </button>
+          {role? (
+            <button onClick={handleLogoutClick} className="hd-cta-btn hd-cta-btn-outline">
+              Déconnexion
+            </button>
+          ) : (
+            <button onClick={handleLoginClick} className="hd-cta-btn hd-cta-btn-outline">
+              Connexion
+            </button>
+          )}
+        </div>
+
+        {/* MOBILE MENU BTN */}
+        <button
+          ref={btnRef}
+          className="hd-menu-btn"
+          onClick={toggleMenu}
+          aria-label={isMenuOpen? "Fermer le menu" : "Ouvrir le menu"}
+          aria-expanded={isMenuOpen}
+          aria-controls="mobile-menu"
+        >
+          <span className="hd-menu-btn-text">{isMenuOpen? "Fermer" : "Menu"}</span>
+          {isMenuOpen? <VscClose /> : <GiHamburgerMenu />}
+        </button>
       </nav>
 
+      {/* MOBILE MENU */}
       {isMenuOpen && (
         <ul id="mobile-menu" ref={menuRef} className="hd-mobile-menu">
           {renderLinks(toggleMenu)}
-
-          {/* ✅ Lien Admin - Mobile */}
           {role === 'admin' && (
             <li>
               <Link
@@ -406,7 +420,6 @@ const Header = ({ role, onLogout }) => {
               </Link>
             </li>
           )}
-
           <li className="hd-mobile-cta">
             <button onClick={handleBookingClick} className="hd-cta-btn" style={{ width: '100%' }}>
               Réserver
