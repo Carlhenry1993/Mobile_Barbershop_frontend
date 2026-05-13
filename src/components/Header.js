@@ -5,7 +5,7 @@ import { VscClose } from "react-icons/vsc";
 
 const useHeaderStyles = () => {
   useEffect(() => {
-    const styleId = "mr-renaudin-header-styles-v3";
+    const styleId = "mr-renaudin-header-styles-v4";
     if (document.getElementById(styleId)) return;
 
     const style = document.createElement("style");
@@ -75,9 +75,12 @@ const useHeaderStyles = () => {
   }
 
   @media (max-width: 768px) {
-  .hd-logo-img { height: 42px; }
-  .hd-tagline { display: none; }
-  .hd-nav { padding: 0.75rem 1rem; gap: 1rem; }
+ .hd-logo-img { height: 42px; }
+ .hd-tagline {
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+  }
+ .hd-nav { padding: 0.75rem 1rem; gap: 1rem; }
   }
 
   /* ========== NAV CENTER ========== */
@@ -87,7 +90,7 @@ const useHeaderStyles = () => {
   }
 
   @media (min-width: 1024px) {
-  .hd-nav-center { display: flex; }
+ .hd-nav-center { display: flex; }
   }
 
 .hd-links {
@@ -149,7 +152,7 @@ const useHeaderStyles = () => {
   }
 
   @media (min-width: 1024px) {
-  .hd-actions { display: flex; }
+ .hd-actions { display: flex; }
   }
 
 .hd-cta-btn {
@@ -210,7 +213,7 @@ const useHeaderStyles = () => {
   }
 
   @media (min-width: 1024px) {
-  .hd-menu-btn { display: none; }
+ .hd-menu-btn { display: none; }
   }
 
   /* ========== MOBILE MENU ========== */
@@ -244,7 +247,7 @@ const useHeaderStyles = () => {
   }
 
   @media (min-width: 1024px) {
-  .hd-mobile-menu { display: none; }
+ .hd-mobile-menu { display: none; }
   }
     `;
     document.head.appendChild(style);
@@ -277,9 +280,9 @@ const Header = ({ role, onLogout }) => {
       if (
         isMenuOpen &&
         menuRef.current &&
-      !menuRef.current.contains(e.target) &&
+     !menuRef.current.contains(e.target) &&
         btnRef.current &&
-      !btnRef.current.contains(e.target)
+     !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -338,7 +341,6 @@ const Header = ({ role, onLogout }) => {
   return (
     <header className="hd-root" role="banner">
       <nav className="hd-nav">
-        {/* ZONE 1: LOGO - TOUJOURS À GAUCHE */}
         <Link to="/" className="hd-logo-wrap" aria-label="Mr. Renaudin Barbershop - Accueil">
           {!logoError? (
             <img
@@ -362,7 +364,6 @@ const Header = ({ role, onLogout }) => {
           </div>
         </Link>
 
-        {/* ZONE 2: NAV CENTER - Desktop only */}
         <div className="hd-nav-center">
           <ul className="hd-links">
             {renderLinks()}
@@ -379,7 +380,6 @@ const Header = ({ role, onLogout }) => {
           </ul>
         </div>
 
-        {/* ZONE 3: ACTIONS RIGHT - Desktop only */}
         <div className="hd-actions">
           <button onClick={handleBookingClick} className="hd-cta-btn">
             Réserver
@@ -395,7 +395,6 @@ const Header = ({ role, onLogout }) => {
           )}
         </div>
 
-        {/* MOBILE MENU BTN - TOUJOURS À DROITE */}
         <button
           ref={btnRef}
           className="hd-menu-btn"
@@ -409,7 +408,6 @@ const Header = ({ role, onLogout }) => {
         </button>
       </nav>
 
-      {/* MOBILE MENU */}
       {isMenuOpen && (
         <ul id="mobile-menu" ref={menuRef} className="hd-mobile-menu">
           {renderLinks(toggleMenu)}
