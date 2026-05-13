@@ -183,22 +183,26 @@ const useLoginStyles = () => {
       .lp-switch { text-align: center; margin-top: 0.75rem; }
       .lp-switch p { color: #b8c8da; font-size: 0.82rem; margin-bottom: 6px; }
       .lp-input-eye {
-        position: relative; display: flex; align-items: center;
+        position: relative; display: flex; align-items: stretch;
       }
       .lp-input-pw {
-        flex: 1; padding-right: 2.8rem !important;
+        flex: 1; padding-right: 3rem !important;
       }
       .lp-eye-btn {
-        position: absolute; right: 0;
-        height: 100%; width: 2.6rem;
-        background: none; border: none;
-        cursor: pointer; font-size: 1rem;
+        position: absolute; right: 1px; top: 1px; bottom: 1px;
+        width: 2.6rem;
+        background: #0e1015;
+        border: none; border-left: 1px solid #2a3348;
+        cursor: pointer;
         display: flex; align-items: center; justify-content: center;
         color: #7888a0;
-        transition: color 0.2s;
+        transition: color 0.2s, background 0.2s;
+        z-index: 2;
         flex-shrink: 0;
+        padding: 0;
       }
-      .lp-eye-btn:hover { color: #d4a843; }
+      .lp-eye-btn:hover { color: #d4a843; background: #161b24; }
+      .lp-eye-btn svg { width: 18px; height: 18px; pointer-events: none; }
       .lp-switch-btn {
         background: none; border: none;
         color: #d4a843; font-weight: 600;
@@ -350,7 +354,18 @@ const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange
               onClick={() => setShowPassword(p => !p)}
               aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
             >
-              {showPassword ? "🙈" : "👁️"}
+              {showPassword ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              )}
             </button>
           </div>
           {!isLogin && <span className="lp-hint">6 caractères minimum</span>}
@@ -378,7 +393,18 @@ const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange
                   onClick={() => setShowConfirmPassword(p => !p)}
                   aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                 >
-                  {showConfirmPassword ? "🙈" : "👁️"}
+                  {showConfirmPassword ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                      <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>
