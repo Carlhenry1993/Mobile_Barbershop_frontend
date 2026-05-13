@@ -5,13 +5,13 @@ import { VscClose } from "react-icons/vsc";
 
 const useHeaderStyles = () => {
   useEffect(() => {
-    const styleId = "mr-renaudin-header-styles-v2";
+    const styleId = "mr-renaudin-header-styles-v3";
     if (document.getElementById(styleId)) return;
 
     const style = document.createElement("style");
     style.id = styleId;
     style.innerHTML = `
- .hd-root {
+.hd-root {
     --hd-black: #0e1015;
     --hd-charcoal: #161b24;
     --hd-card: #1e2535;
@@ -33,7 +33,7 @@ const useHeaderStyles = () => {
     -webkit-backdrop-filter: blur(12px);
   }
 
- .hd-nav {
+.hd-nav {
     max-width: 1400px;
     margin: 0 auto;
     display: grid;
@@ -44,27 +44,28 @@ const useHeaderStyles = () => {
   }
 
   /* ========== LOGO ZONE ========== */
- .hd-logo-wrap {
+.hd-logo-wrap {
     display: flex;
     align-items: center;
     text-decoration: none;
     gap: 0.75rem;
+    justify-self: start;
   }
 
- .hd-logo-img {
+.hd-logo-img {
     height: 48px;
     width: auto;
     max-width: 160px;
     object-fit: contain;
   }
 
- .hd-logo-text-wrap {
+.hd-logo-text-wrap {
     display: flex;
     flex-direction: column;
     line-height: 1.1;
   }
 
- .hd-tagline {
+.hd-tagline {
     font-size: 0.6rem;
     font-weight: 500;
     letter-spacing: 0.15em;
@@ -74,21 +75,22 @@ const useHeaderStyles = () => {
   }
 
   @media (max-width: 768px) {
-   .hd-logo-img { height: 42px; }
-   .hd-tagline { display: none; }
+  .hd-logo-img { height: 42px; }
+  .hd-tagline { display: none; }
+  .hd-nav { padding: 0.75rem 1rem; gap: 1rem; }
   }
 
   /* ========== NAV CENTER ========== */
- .hd-nav-center {
+.hd-nav-center {
     display: none;
     justify-content: center;
   }
 
   @media (min-width: 1024px) {
-   .hd-nav-center { display: flex; }
+  .hd-nav-center { display: flex; }
   }
 
- .hd-links {
+.hd-links {
     display: flex;
     list-style: none;
     gap: 0.25rem;
@@ -97,7 +99,7 @@ const useHeaderStyles = () => {
     padding: 0;
   }
 
- .hd-link {
+.hd-link {
     display: block;
     font-size: 0.82rem;
     font-weight: 500;
@@ -111,45 +113,46 @@ const useHeaderStyles = () => {
     white-space: nowrap;
   }
 
- .hd-link:hover,.hd-link:focus-visible {
+.hd-link:hover,.hd-link:focus-visible {
     color: var(--hd-gold);
     border-color: var(--hd-gold);
     outline: none;
   }
 
- .hd-link.active {
+.hd-link.active {
     color: var(--hd-black);
     background: var(--hd-gold);
     border-color: var(--hd-gold);
   }
 
- .hd-link.active:hover {
+.hd-link.active:hover {
     background: var(--hd-gold-lt);
   }
 
- .hd-link-admin {
+.hd-link-admin {
     background: rgba(212,168,67,0.15)!important;
     color: var(--hd-gold)!important;
     border: 1px solid var(--hd-gold)!important;
   }
 
- .hd-link-admin:hover {
+.hd-link-admin:hover {
     background: var(--hd-gold)!important;
     color: var(--hd-black)!important;
   }
 
   /* ========== ACTIONS RIGHT ========== */
- .hd-actions {
+.hd-actions {
     display: none;
     align-items: center;
     gap: 0.75rem;
+    justify-self: end;
   }
 
   @media (min-width: 1024px) {
-   .hd-actions { display: flex; }
+  .hd-actions { display: flex; }
   }
 
- .hd-cta-btn {
+.hd-cta-btn {
     font-size: 0.78rem;
     font-weight: 600;
     letter-spacing: 0.1em;
@@ -164,23 +167,23 @@ const useHeaderStyles = () => {
     white-space: nowrap;
   }
 
- .hd-cta-btn:hover {
+.hd-cta-btn:hover {
     background: var(--hd-gold-lt);
     transform: translateY(-1px);
   }
 
- .hd-cta-btn-outline {
+.hd-cta-btn-outline {
     background: transparent;
     color: var(--hd-gold);
   }
 
- .hd-cta-btn-outline:hover {
+.hd-cta-btn-outline:hover {
     background: var(--hd-gold);
     color: var(--hd-black);
   }
 
   /* ========== MOBILE MENU BTN ========== */
- .hd-menu-btn {
+.hd-menu-btn {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -191,14 +194,15 @@ const useHeaderStyles = () => {
     padding: 0.5rem 0.75rem;
     cursor: pointer;
     transition: all 0.2s;
+    justify-self: end;
   }
 
- .hd-menu-btn:hover {
+.hd-menu-btn:hover {
     border-color: var(--hd-gold);
     color: var(--hd-gold);
   }
 
- .hd-menu-btn-text {
+.hd-menu-btn-text {
     font-size: 0.75rem;
     letter-spacing: 0.15em;
     text-transform: uppercase;
@@ -206,11 +210,11 @@ const useHeaderStyles = () => {
   }
 
   @media (min-width: 1024px) {
-   .hd-menu-btn { display: none; }
+  .hd-menu-btn { display: none; }
   }
 
   /* ========== MOBILE MENU ========== */
- .hd-mobile-menu {
+.hd-mobile-menu {
     background: var(--hd-charcoal);
     border-top: 1px solid var(--hd-border);
     padding: 1rem 1.5rem 1.5rem;
@@ -225,12 +229,12 @@ const useHeaderStyles = () => {
     to { opacity: 1; transform: translateY(0); }
   }
 
- .hd-mobile-menu.hd-link {
+.hd-mobile-menu.hd-link {
     text-align: center;
     padding: 0.9rem 1rem;
   }
 
- .hd-mobile-cta {
+.hd-mobile-cta {
     margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--hd-border);
@@ -240,7 +244,7 @@ const useHeaderStyles = () => {
   }
 
   @media (min-width: 1024px) {
-   .hd-mobile-menu { display: none; }
+  .hd-mobile-menu { display: none; }
   }
     `;
     document.head.appendChild(style);
@@ -273,9 +277,9 @@ const Header = ({ role, onLogout }) => {
       if (
         isMenuOpen &&
         menuRef.current &&
-       !menuRef.current.contains(e.target) &&
+      !menuRef.current.contains(e.target) &&
         btnRef.current &&
-       !btnRef.current.contains(e.target)
+      !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -334,7 +338,7 @@ const Header = ({ role, onLogout }) => {
   return (
     <header className="hd-root" role="banner">
       <nav className="hd-nav">
-        {/* ZONE 1: LOGO */}
+        {/* ZONE 1: LOGO - TOUJOURS À GAUCHE */}
         <Link to="/" className="hd-logo-wrap" aria-label="Mr. Renaudin Barbershop - Accueil">
           {!logoError? (
             <img
@@ -391,7 +395,7 @@ const Header = ({ role, onLogout }) => {
           )}
         </div>
 
-        {/* MOBILE MENU BTN */}
+        {/* MOBILE MENU BTN - TOUJOURS À DROITE */}
         <button
           ref={btnRef}
           className="hd-menu-btn"
