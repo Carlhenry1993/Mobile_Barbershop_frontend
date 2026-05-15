@@ -74,7 +74,53 @@ const playNotificationSound = () => {
   }
 };
 
-/** Flash the document title to grab attention when tab is in background */
+/** Génère une couleur HSL déterministe depuis un nom — chaque client a sa propre couleur */
+const nameToColor = (name = "") => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return `hsl(${Math.abs(hash) % 360}, 65%, 55%)`;
+};
+
+/** Initiales depuis un nom complet */
+const getInitials = (name = "") =>
+  name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+
+/** Toast JSX avec avatar coloré + nom + extrait du message */
+const NotifToast = ({ senderName, message, isFromOtherClient }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "2px 0" }}>
+    <div style={{
+      width: "36px", height: "36px", borderRadius: "8px", flexShrink: 0,
+      background: nameToColor(senderName),
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: "0.75rem", fontWeight: "700", color: "#fff",
+      letterSpacing: "0.03em",
+    }}>
+      {getInitials(senderName)}
+    </div>
+    <div style={{ minWidth: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "2px" }}>
+        <span style={{ fontWeight: "700", fontSize: "0.82rem", color: "#f0ece2" }}>
+          {senderName}
+        </span>
+        {isFromOtherClient && (
+          <span style={{
+            fontSize: "0.6rem", fontWeight: "600", letterSpacing: "0.08em",
+            textTransform: "uppercase", background: "rgba(212,168,67,0.2)",
+            color: "#d4a843", padding: "1px 5px", borderRadius: "3px",
+          }}>
+            autre conv.
+          </span>
+        )}
+      </div>
+      <div style={{
+        fontSize: "0.78rem", color: "#8e97aa",
+        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "180px",
+      }}>
+        {message}
+      </div>
+    </div>
+  </div>
+);
 const useTabFlash = () => {
   const intervalRef = useRef(null);
   const originalTitle = useRef(document.title);
@@ -259,11 +305,10 @@ const ChatApp = ({ isAdmin }) => {
         setUnreadCount((prev) => prev + 1);
         playNotificationSound();
         startFlash(`💬 ${data.senderName}`);
-        toast.info(`Nouveau message de ${data.senderName}`, {
-          icon: "✂️",
-          toastId: `msg-${data.id}`,
-          autoClose: 5000,
-        });
+        toast.info(
+          <NotifToast senderName={data.senderName} message={data.message} isFromOtherClient={true} />,
+          { toastId: `msg-${data.id}`, autoClose: 5000 }
+        );
         return;
       }
 
@@ -278,14 +323,20 @@ const ChatApp = ({ isAdmin }) => {
           setUnreadCount((prev) => prev + 1);
           playNotificationSound();
           startFlash(`💬 ${data.senderName}`);
-          toast.info(`Nouveau message de ${data.senderName}`, {
-            icon: "✂️",
-            toastId: `msg-${data.id}`,
-            autoClose: 5000,
-          });
+          toast.info(
+            <NotifToast senderName={data.senderName} message={data.message} isFromOtherClient={false} />,
+            { toastId: `msg-${data.id}`, autoClose: 5000 }
+          );
         } else {
           // Chat is open — auto-mark as read immediately
           playNotificationSound();
+          // Admin reçoit aussi une notification même si le chat est ouvert
+          if (!isMine) {
+            toast.info(
+              <NotifToast senderName={data.senderName} message={data.message} isFromOtherClient={false} />,
+              { toastId: `msg-${data.id}`, autoClose: 5000 }
+            );
+          }
           socket.emit("message_read", {
             messageIds: [data.id],
             to: isAdmin ? currentSelected : "admin",
