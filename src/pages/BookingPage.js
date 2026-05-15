@@ -459,11 +459,53 @@ const BookingPage = () => {
     setError("");
   };
 
-  const handleSlotSelect = (slot) => {
-    setSelectedSlot(slot);
-    setError("");
-    setStep(4);
-  };
+ const SHOP_HOURS = {
+  0: { start: 11, end: 17 }, // Dimanche
+  1: { start: 11, end: 19 }, // Lundi
+  2: { start: 11, end: 19 }, // Mardi
+  3: { start: 11, end: 19 }, // Mercredi
+  4: { start: 11, end: 19 }, // Jeudi
+  5: { start: 11, end: 19 }, // Vendredi
+  6: { start: 12, end: 19 }, // Samedi
+};
+
+const isValidSlot = (slot) => {
+  const date = new Date(slot);
+
+  const day = date.getDay();
+  const hour = date.getHours();
+  const minutes = date.getMinutes();
+
+  const hours = SHOP_HOURS[day];
+
+  if (!hours) return false;
+
+  const decimalHour = hour + minutes / 60;
+
+  return (
+    decimalHour >= hours.start &&
+    decimalHour < hours.end
+  );
+};
+
+const handleSlotSelect = (slot) => {
+
+  // Vérifie si le slot existe réellement
+  if (!availableSlots.includes(slot)) {
+    setError("Créneau invalide.");
+    return;
+  }
+
+  // Vérifie l'horaire du salon
+  if (!isValidSlot(slot)) {
+    setError("Ce créneau est hors des horaires du salon.");
+    return;
+  }
+
+  setSelectedSlot(slot);
+  setError("");
+  setStep(4);
+};
 
   const handleConfirm = async () => {
     if (!isLoggedIn) {
@@ -705,7 +747,9 @@ const BookingPage = () => {
 
                     {!loadingSlots && availableSlots.length > 0 && (
                       <div className="bk-slots">
-                        {availableSlots.map((slot) => (
+                       {availableSlots
+                          .filter(isValidSlot)
+                          .map((slot) => (
                           <div
                             key={slot}
                             className={`bk-slot ${selectedSlot === slot ? "selected" : ""}`}
