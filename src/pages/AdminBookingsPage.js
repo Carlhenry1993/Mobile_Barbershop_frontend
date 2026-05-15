@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
-// ToastContainer retiré — géré globalement dans App.js
 import ChatApp from "../components/ChatApp";
 
 axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
@@ -125,7 +124,6 @@ const useAdminStyles = () => {
 .ab-empty { text-align: center; padding: 4rem 2rem; color: var(--ab-muted); }
 .ab-error { background: rgba(231,76,60,0.1); border: 1px solid rgba(231,76,60,0.3); color: #ff8a7a; padding: 1rem; font-size: 0.85rem; margin-bottom: 1.5rem; }
 .ad-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 99; }
-/* Client info panel */
 .ab-client-panel {
   background: var(--ab-charcoal); border: 1px solid var(--ab-border);
   padding: 1.5rem; margin-bottom: 1.5rem;
@@ -133,10 +131,8 @@ const useAdminStyles = () => {
 .ab-client-name { font-family: 'Playfair Display', serif; font-size: 1.2rem; color: var(--ab-cream); margin-bottom: 0.5rem; }
 .ab-client-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; font-size: 0.85rem; color: var(--ab-light); }
 .ab-client-meta span { display: flex; align-items: center; gap: 0.4rem; }
-/* Summary rows */
 .ab-summary-row { display: flex; justify-content: space-between; padding: 0.55rem 0; border-bottom: 1px solid var(--ab-border); font-size: 0.88rem; }
 .ab-summary-row:last-child { border-bottom: none; }
-/* Slots */
 .ab-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 0.5rem; margin-top: 0.6rem; }
 .ab-slot {
   padding: 0.6rem; text-align: center; background: var(--ab-black);
@@ -145,21 +141,100 @@ const useAdminStyles = () => {
 }
 .ab-slot:hover { border-color: var(--ab-gold); color: var(--ab-cream); }
 .ab-slot.selected { background: var(--ab-gold); color: var(--ab-black); border-color: var(--ab-gold); font-weight: 700; }
-/* Search bar */
 .ab-search-wrap { position: relative; }
 .ab-search-wrap input { padding-left: 2.2rem; }
 .ab-search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--ab-muted); font-size: 0.9rem; pointer-events: none; }
-@media (max-width: 968px) {
-  .ad-sidebar { transform: translateX(-100%); }
-  .ad-sidebar.open { transform: translateX(0); }
-  .ad-content { margin-left: 0; padding: 1rem; padding-top: 5rem; }
-  .ad-mobile-toggle { display: flex; align-items: center; justify-content: center; }
-  .ad-overlay.show { display: block; }
+
+/* <-- MOBILE : Cards au lieu du tableau */
+.ab-booking-card {
+  display: none;
+  background: var(--ab-card);
+  border: 1px solid var(--ab-border);
+  padding: 1rem;
+  margin-bottom: 1rem;
 }
+.ab-card-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--ab-border);
+  font-size: 0.85rem;
+}
+.ab-card-row:last-child { border-bottom: none; }
+.ab-card-label { color: var(--ab-muted); font-size: 0.75rem; text-transform: uppercase; }
+.ab-card-value { color: var(--ab-cream); font-weight: 500; text-align: right; }
+.ab-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--ab-border);
+}
+.ab-card-actions.ab-icon-btn { flex: 1; }
+
+/* <-- MOBILE : Filtres collapsibles */
+.ab-filters-toggle {
+  display: none;
+  width: 100%;
+  background: var(--ab-card);
+  border: 1px solid var(--ab-border);
+  color: var(--ab-gold);
+  padding: 0.85rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 968px) {
+ .ad-sidebar { transform: translateX(-100%); }
+ .ad-sidebar.open { transform: translateX(0); }
+ .ad-content { margin-left: 0; padding: 1rem; padding-top: 5rem; }
+ .ad-mobile-toggle { display: flex; align-items: center; justify-content: center; }
+ .ad-overlay.show { display: block; }
+ .ab-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 768px) {
-  .ab-table { font-size: 0.8rem; }
-  .ab-table th,.ab-table td { padding: 0.75rem 0.5rem; }
-  .ab-actions { flex-direction: column; }
+  /* <-- MOBILE : Cache le tableau, montre les cartes */
+ .ab-table { display: none; }
+ .ab-booking-card { display: block; }
+
+  /* <-- MOBILE : Filtres en accordéon */
+ .ab-filters {
+    display: none;
+    grid-template-columns: 1fr;
+  }
+ .ab-filters.show { display: grid; }
+ .ab-filters-toggle { display: block; }
+
+  /* <-- MOBILE : Stats en 1 colonne */
+ .ab-stats { grid-template-columns: 1fr; }
+
+  /* <-- MOBILE : Modal full screen */
+ .ab-modal {
+    padding: 1.5rem 1rem;
+    max-height: 100vh;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  /* <-- MOBILE : Boutons plus gros */
+ .ab-btn-gold,.ab-btn-outline,.ab-btn-danger {
+    padding: 1rem;
+    font-size: 0.85rem;
+  }
+
+  /* <-- MOBILE : Slots 3 colonnes */
+ .ab-slots { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 400px) {
+ .ad-content { padding: 0.75rem; padding-top: 4.5rem; }
+ .ad-display { font-size: 1.5rem; }
+ .ab-slots { grid-template-columns: repeat(2, 1fr); }
 }
     `;
     document.head.appendChild(style);
@@ -178,22 +253,22 @@ const getMinDate = () => { const d = new Date(); d.setDate(d.getDate() + 1); ret
 
 // ─── Reschedule Modal (admin) ─────────────────────────────────────────────────
 const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }) => {
-  const [date,     setDate]     = useState("");
-  const [slots,    setSlots]    = useState([]);
+  const [date, setDate] = useState("");
+  const [slots, setSlots] = useState([]);
   const [selected, setSelected] = useState("");
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
-  const [barberId, setBarberId] = useState(booking.barber_id?.toString() ?? "");
-  const [serviceId,setServiceId]= useState(booking.service_id?.toString() ?? "");
+  const [barberId, setBarberId] = useState(booking.barber_id?.toString()?? "");
+  const [serviceId,setServiceId]= useState(booking.service_id?.toString()?? "");
 
   useEffect(() => {
-    if (!date || !barberId || !serviceId) return;
+    if (!date ||!barberId ||!serviceId) return;
     setFetching(true);
     setSlots([]); setSelected("");
     axios.get("/api/booking/availability", { params: { date, barberId, serviceId } })
-      .then(r => setSlots(r.data || []))
-      .catch(() => toast.error("Impossible de charger les créneaux"))
-      .finally(() => setFetching(false));
+     .then(r => setSlots(r.data || []))
+     .catch(() => toast.error("Impossible de charger les créneaux"))
+     .finally(() => setFetching(false));
   }, [date, barberId, serviceId]);
 
   const handleSave = async () => {
@@ -202,10 +277,10 @@ const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }
     try {
       await axios.patch(`/api/booking/admin/${booking.id}`, {
         service_id: serviceId,
-        barber_id:  barberId,
+        barber_id: barberId,
         start_time: selected,
       });
-      toast.success("Rendez-vous mis à jour !");
+      toast.success("Rendez-vous mis à jour!");
       onSuccess();
       onClose();
     } catch (err) {
@@ -228,7 +303,6 @@ const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }
         <button className="ab-modal-close" onClick={onClose}>✕</button>
         <h3>Modifier le rendez-vous</h3>
 
-        {/* Client info */}
         <div className="ab-client-panel" style={{ marginBottom: "1.5rem" }}>
           <div className="ab-client-name">{booking.client_name}</div>
           <div className="ab-client-meta">
@@ -263,7 +337,7 @@ const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }
             <label className="ab-label">Créneau</label>
             <div className="ab-slots">
               {slots.map(s => (
-                <div key={s} className={`ab-slot ${selected === s ? "selected" : ""}`} onClick={() => setSelected(s)}>
+                <div key={s} className={`ab-slot ${selected === s? "selected" : ""}`} onClick={() => setSelected(s)}>
                   {fmtTime(s)}
                 </div>
               ))}
@@ -274,7 +348,7 @@ const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }
         <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
           <button className="ab-btn-outline" style={{ flex: 1 }} onClick={onClose}>Annuler</button>
           <button className="ab-btn-gold" style={{ flex: 2 }} onClick={handleSave} disabled={!selected || loading}>
-            {loading ? "Enregistrement…" : "Enregistrer →"}
+            {loading? "Enregistrement…" : "Enregistrer →"}
           </button>
         </div>
       </motion.div>
@@ -305,14 +379,14 @@ const ClientDetailModal = ({ booking, onClose }) => (
 
       <div style={{ background: "var(--ab-black)", border: "1px solid var(--ab-border)", padding: "1.25rem 1.5rem", marginBottom: "1.5rem" }}>
         {[
-          ["Service",       booking.service_name],
-          ["Barbier",       booking.barber_name],
-          ["Date",          fmtDate(booking.start_time)],
-          ["Heure",         fmtTime(booking.start_time)],
-          ["Durée",         `${booking.duration ?? "–"} min`],
-          ["Prix",          `${booking.price}$ CAD`],
-          ["Statut",        booking.status === "confirmed" ? "Confirmé" : booking.status === "cancelled" ? "Annulé" : "Terminé"],
-          ["Réservé le",    fmtDateTime(booking.created_at ?? booking.start_time)],
+          ["Service", booking.service_name],
+          ["Barbier", booking.barber_name],
+          ["Date", fmtDate(booking.start_time)],
+          ["Heure", fmtTime(booking.start_time)],
+          ["Durée", `${booking.duration?? "–"} min`],
+          ["Prix", `${booking.price}$ CAD`],
+          ["Statut", booking.status === "confirmed"? "Confirmé" : booking.status === "cancelled"? "Annulé" : "Terminé"],
+          ["Réservé le", fmtDateTime(booking.created_at?? booking.start_time)],
         ].map(([k, v]) => (
           <div key={k} className="ab-summary-row">
             <span style={{ color: "var(--ab-muted)", fontSize: "0.85rem" }}>{k}</span>
@@ -333,27 +407,73 @@ const ClientDetailModal = ({ booking, onClose }) => (
   </motion.div>
 );
 
+// ─── Booking Card pour mobile ─────────────────────────────────────────────────
+const BookingCard = ({ booking, onView, onReschedule, onComplete, onCancel }) => (
+  <div className="ab-booking-card">
+    <div className="ab-card-row">
+      <span className="ab-card-label">ID</span>
+      <span className="ab-card-value" style={{ color: "var(--ab-muted)" }}>#{booking.id}</span>
+    </div>
+    <div className="ab-card-row">
+      <span className="ab-card-label">Client</span>
+      <span className="ab-card-value">{booking.client_name}</span>
+    </div>
+    <div className="ab-card-row">
+      <span className="ab-card-label">Date</span>
+      <span className="ab-card-value">{fmtDateTime(booking.start_time)}</span>
+    </div>
+    <div className="ab-card-row">
+      <span className="ab-card-label">Service</span>
+      <span className="ab-card-value">{booking.service_name}</span>
+    </div>
+    <div className="ab-card-row">
+      <span className="ab-card-label">Barbier</span>
+      <span className="ab-card-value">{booking.barber_name}</span>
+    </div>
+    <div className="ab-card-row">
+      <span className="ab-card-label">Prix</span>
+      <span className="ab-card-value" style={{ color: "var(--ab-gold)", fontWeight: 600 }}>{booking.price}$</span>
+    </div>
+    <div className="ab-card-row">
+      <span className="ab-card-label">Statut</span>
+      <span className={`ab-status ${booking.status}`}>
+        {booking.status === "confirmed"? "Confirmé" : booking.status === "cancelled"? "Annulé" : "Terminé"}
+      </span>
+    </div>
+    <div className="ab-card-actions">
+      <button onClick={() => onView(booking)} className="ab-icon-btn" title="Voir détails">👁</button>
+      {booking.status === "confirmed" && (
+        <>
+          <button onClick={() => onReschedule(booking)} className="ab-icon-btn" title="Modifier">📅</button>
+          <button onClick={() => onComplete(booking.id)} className="ab-icon-btn success" title="Terminer">✓</button>
+          <button onClick={() => onCancel(booking.id)} className="ab-icon-btn danger" title="Annuler">✕</button>
+        </>
+      )}
+    </div>
+  </div>
+);
+
 // ─── AdminDashboard ───────────────────────────────────────────────────────────
 const AdminDashboard = () => {
   useAdminStyles();
   const navigate = useNavigate();
 
-  const [activeTab,      setActiveTab]      = useState("bookings");
+  const [activeTab, setActiveTab] = useState("bookings");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [bookings,       setBookings]       = useState([]);
-  const [services,       setServices]       = useState([]);
-  const [barbers,        setBarbers]        = useState([]);
-  const [loading,        setLoading]        = useState(false);
-  const [error,          setError]          = useState("");
-  const [search,         setSearch]         = useState("");
-  const [filterDate,     setFilterDate]     = useState(new Date().toISOString().split("T")[0]);
-  const [filterBarber,   setFilterBarber]   = useState("");
-  const [filterStatus,   setFilterStatus]   = useState("");
-  const [stats,          setStats]          = useState({ today: 0, week: 0, month: 0, revenue: 0, cancelled: 0 });
+  const [filtersOpen, setFiltersOpen] = useState(false); // <-- MOBILE : accordéon filtres
+  const [bookings, setBookings] = useState([]);
+  const [services, setServices] = useState([]);
+  const [barbers, setBarbers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split("T")[0]);
+  const [filterBarber, setFilterBarber] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [stats, setStats] = useState({ today: 0, week: 0, month: 0, revenue: 0, cancelled: 0 });
 
-  // Modals
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
-  const [detailTarget,     setDetailTarget]     = useState(null);
+  const [detailTarget, setDetailTarget] = useState(null);
 
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
@@ -377,28 +497,27 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const role  = localStorage.getItem("role");
-    if (!token || role !== "admin") { navigate("/login"); return; }
+    const role = localStorage.getItem("role");
+    if (!token || role!== "admin") { navigate("/login"); return; }
     axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     fetchInitialData();
   }, [navigate, fetchInitialData]);
 
   const calcStats = (data) => {
-    const today    = new Date().toISOString().split("T")[0];
-    const weekAgo  = new Date(Date.now() - 7  * 86400000).toISOString();
+    const today = new Date().toISOString().split("T")[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
     const monthAgo = new Date(Date.now() - 30 * 86400000).toISOString();
     setStats({
-      today:     data.filter(b => b.start_time.startsWith(today) && b.status === "confirmed").length,
-      week:      data.filter(b => b.start_time >= weekAgo  && b.status === "confirmed").length,
-      month:     data.filter(b => b.start_time >= monthAgo && b.status === "confirmed").length,
+      today: data.filter(b => b.start_time.startsWith(today) && b.status === "confirmed").length,
+      week: data.filter(b => b.start_time >= weekAgo && b.status === "confirmed").length,
+      month: data.filter(b => b.start_time >= monthAgo && b.status === "confirmed").length,
       cancelled: data.filter(b => b.start_time >= monthAgo && b.status === "cancelled").length,
-      revenue:   data.filter(b => b.start_time >= monthAgo && b.status === "completed").reduce((s, b) => s + parseFloat(b.price || 0), 0),
+      revenue: data.filter(b => b.start_time >= monthAgo && b.status === "completed").reduce((s, b) => s + parseFloat(b.price || 0), 0),
     });
   };
 
-  // ── Actions ────────────────────────────────────────────────────────────────
   const handleCancel = async (id) => {
-    if (!window.confirm("Annuler cette réservation ?")) return;
+    if (!window.confirm("Annuler cette réservation?")) return;
     try {
       await axios.patch(`/api/booking/admin/${id}/cancel`);
       toast.success("Réservation annulée");
@@ -407,7 +526,7 @@ const AdminDashboard = () => {
   };
 
   const handleComplete = async (id) => {
-    if (!window.confirm("Marquer comme terminé ?")) return;
+    if (!window.confirm("Marquer comme terminé?")) return;
     try {
       await axios.patch(`/api/booking/admin/${id}/complete`);
       toast.success("Réservation marquée comme terminée");
@@ -415,28 +534,25 @@ const AdminDashboard = () => {
     } catch { toast.error("Erreur"); }
   };
 
-  // ── Filtered bookings ──────────────────────────────────────────────────────
   const filtered = bookings.filter(b => {
-    const matchDate   = !filterDate   || b.start_time.startsWith(filterDate);
-    const matchBarber = !filterBarber || b.barber_id?.toString() === filterBarber;
-    const matchStatus = !filterStatus || b.status === filterStatus;
-    const matchSearch = !search || [b.client_name, b.service_name, b.barber_name, String(b.id)]
-      .some(f => f?.toLowerCase().includes(search.toLowerCase()));
+    const matchDate =!filterDate || b.start_time.startsWith(filterDate);
+    const matchBarber =!filterBarber || b.barber_id?.toString() === filterBarber;
+    const matchStatus =!filterStatus || b.status === filterStatus;
+    const matchSearch =!search || [b.client_name, b.service_name, b.barber_name, String(b.id)]
+     .some(f => f?.toLowerCase().includes(search.toLowerCase()));
     return matchDate && matchBarber && matchStatus && matchSearch;
   });
 
-  // ── Sidebar menu ───────────────────────────────────────────────────────────
   const menuItems = [
-    { id: "bookings",  label: "Réservations", icon: "📅" },
-    { id: "clients",   label: "Clients",      icon: "👥" },
-    { id: "barbers",   label: "Barbiers",     icon: "✂️" },
-    { id: "services",  label: "Services",     icon: "💈" },
-    { id: "stats",     label: "Statistiques", icon: "📊" },
-    { id: "chat",      label: "Chat Live",    icon: "💬" },
-    { id: "settings",  label: "Paramètres",   icon: "⚙️" },
+    { id: "bookings", label: "Réservations", icon: "📅" },
+    { id: "clients", label: "Clients", icon: "👥" },
+    { id: "barbers", label: "Barbiers", icon: "✂" },
+    { id: "services", label: "Services", icon: "💈" },
+    { id: "stats", label: "Statistiques", icon: "📊" },
+    { id: "chat", label: "Chat Live", icon: "💬" },
+    { id: "settings", label: "Paramètres", icon: "⚙" },
   ];
 
-  // ── Render content ─────────────────────────────────────────────────────────
   const renderContent = () => {
     switch (activeTab) {
 
@@ -448,14 +564,13 @@ const AdminDashboard = () => {
             <span className="ab-gold-rule" />
           </div>
 
-          {/* Stats */}
           <div className="ab-stats">
             {[
-              { label: "Aujourd'hui",   val: stats.today,              sub: "confirmés" },
-              { label: "Cette semaine", val: stats.week,               sub: "confirmés" },
-              { label: "Ce mois",       val: stats.month,              sub: "confirmés" },
-              { label: "Annulés/mois",  val: stats.cancelled,          sub: "ce mois" },
-              { label: "Revenus/mois",  val: `${stats.revenue.toFixed(0)}$`, sub: "terminés" },
+              { label: "Aujourd'hui", val: stats.today, sub: "confirmés" },
+              { label: "Cette semaine", val: stats.week, sub: "confirmés" },
+              { label: "Ce mois", val: stats.month, sub: "confirmés" },
+              { label: "Annulés/mois", val: stats.cancelled, sub: "ce mois" },
+              { label: "Revenus/mois", val: `${stats.revenue.toFixed(0)}$`, sub: "terminés" },
             ].map(({ label, val, sub }) => (
               <div key={label} className="ab-stat-card">
                 <div className="ab-stat-label">{label}</div>
@@ -465,9 +580,13 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          {/* Filters */}
-          <div className="ab-filters">
-            <div>
+          {/* <-- MOBILE : Bouton pour toggle filtres */}
+          <button className="ab-filters-toggle" onClick={() => setFiltersOpen(!filtersOpen)}>
+            {filtersOpen? "▲ Masquer filtres" : "▼ Afficher filtres"}
+          </button>
+
+          <div className={`ab-filters ${filtersOpen? 'show' : ''}`}>
+                        <div>
               <label className="ab-label">Recherche</label>
               <div className="ab-search-wrap">
                 <span className="ab-search-icon">🔍</span>
@@ -501,7 +620,7 @@ const AdminDashboard = () => {
             </div>
             <div style={{ display: "flex", alignItems: "flex-end" }}>
               <button
-                onClick={() => { setFilterDate(""); setFilterBarber(""); setFilterStatus(""); setSearch(""); }}
+                onClick={() => { setFilterDate(""); setFilterBarber(""); setFilterStatus(""); setSearch(""); setFiltersOpen(false); }}
                 className="ab-btn-outline" style={{ width: "100%" }}
               >
                 Réinitialiser
@@ -512,67 +631,77 @@ const AdminDashboard = () => {
           {error && <div className="ab-error">{error}</div>}
 
           <p style={{ fontSize: "0.8rem", color: "var(--ab-muted)", marginBottom: "1rem" }}>
-            {filtered.length} réservation{filtered.length !== 1 ? "s" : ""} affichée{filtered.length !== 1 ? "s" : ""}
+            {filtered.length} réservation{filtered.length !== 1? "s" : ""} affichée{filtered.length !== 1? "s" : ""}
           </p>
 
-          {loading ? (
+          {loading? (
             <p style={{ textAlign: "center", padding: "4rem", color: "var(--ab-muted)" }}>Chargement…</p>
-          ) : filtered.length === 0 ? (
+          ) : filtered.length === 0? (
             <div className="ab-empty">Aucune réservation trouvée</div>
           ) : (
-            <div style={{ overflowX: "auto" }}>
-              <table className="ab-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Date & Heure</th>
-                    <th>Client</th>
-                    <th>Service</th>
-                    <th>Barbier</th>
-                    <th>Prix</th>
-                    <th>Statut</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(b => (
-                    <tr key={b.id}>
-                      <td style={{ color: "var(--ab-muted)", fontSize: "0.8rem" }}>#{b.id}</td>
-                      <td style={{ whiteSpace: "nowrap" }}>{fmtDateTime(b.start_time)}</td>
-                      <td>
-                        <div style={{ fontWeight: 500, color: "var(--ab-cream)" }}>{b.client_name}</div>
-                        {b.client_email && <div style={{ fontSize: "0.75rem", color: "var(--ab-muted)" }}>{b.client_email}</div>}
-                      </td>
-                      <td>{b.service_name}</td>
-                      <td>{b.barber_name}</td>
-                      <td style={{ fontWeight: 600, color: "var(--ab-gold)" }}>{b.price}$</td>
-                      <td>
-                        <span className={`ab-status ${b.status}`}>
-                          {b.status === "confirmed" ? "Confirmé" : b.status === "cancelled" ? "Annulé" : "Terminé"}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="ab-actions">
-                          {/* View details */}
-                          <button onClick={() => setDetailTarget(b)} className="ab-icon-btn" title="Voir détails">👁</button>
-
-                          {b.status === "confirmed" && (
-                            <>
-                              {/* Reschedule */}
-                              <button onClick={() => setRescheduleTarget(b)} className="ab-icon-btn" title="Modifier / Reporter">📅</button>
-                              {/* Complete */}
-                              <button onClick={() => handleComplete(b.id)} className="ab-icon-btn success" title="Marquer terminé">✓</button>
-                              {/* Cancel */}
-                              <button onClick={() => handleCancel(b.id)} className="ab-icon-btn danger" title="Annuler">✕</button>
-                            </>
-                          )}
-                        </div>
-                      </td>
+            <>
+              {/* <-- DESKTOP : Tableau classique */}
+              <div style={{ overflowX: "auto" }}>
+                <table className="ab-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Date & Heure</th>
+                      <th>Client</th>
+                      <th>Service</th>
+                      <th>Barbier</th>
+                      <th>Prix</th>
+                      <th>Statut</th>
+                      <th>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {filtered.map(b => (
+                      <tr key={b.id}>
+                        <td style={{ color: "var(--ab-muted)", fontSize: "0.8rem" }}>#{b.id}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>{fmtDateTime(b.start_time)}</td>
+                        <td>
+                          <div style={{ fontWeight: 500, color: "var(--ab-cream)" }}>{b.client_name}</div>
+                          {b.client_email && <div style={{ fontSize: "0.75rem", color: "var(--ab-muted)" }}>{b.client_email}</div>}
+                        </td>
+                        <td>{b.service_name}</td>
+                        <td>{b.barber_name}</td>
+                        <td style={{ fontWeight: 600, color: "var(--ab-gold)" }}>{b.price}$</td>
+                        <td>
+                          <span className={`ab-status ${b.status}`}>
+                            {b.status === "confirmed"? "Confirmé" : b.status === "cancelled"? "Annulé" : "Terminé"}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="ab-actions">
+                            <button onClick={() => setDetailTarget(b)} className="ab-icon-btn" title="Voir détails">👁</button>
+                            {b.status === "confirmed" && (
+                              <>
+                                <button onClick={() => setRescheduleTarget(b)} className="ab-icon-btn" title="Modifier / Reporter">📅</button>
+                                <button onClick={() => handleComplete(b.id)} className="ab-icon-btn success" title="Marquer terminé">✓</button>
+                                <button onClick={() => handleCancel(b.id)} className="ab-icon-btn danger" title="Annuler">✕</button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* <-- MOBILE : Cards à la place du tableau */}
+              {filtered.map(b => (
+                <BookingCard
+                  key={b.id}
+                  booking={b}
+                  onView={setDetailTarget}
+                  onReschedule={setRescheduleTarget}
+                  onComplete={handleComplete}
+                  onCancel={handleCancel}
+                />
+              ))}
+            </>
           )}
         </>
       );
@@ -605,9 +734,9 @@ const AdminDashboard = () => {
   return (
     <div className="ad-root">
       <button className="ad-mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>☰</button>
-      <div className={`ad-overlay ${mobileMenuOpen ? "show" : ""}`} onClick={() => setMobileMenuOpen(false)} />
+      <div className={`ad-overlay ${mobileMenuOpen? "show" : ""}`} onClick={() => setMobileMenuOpen(false)} />
 
-      <aside className={`ad-sidebar ${mobileMenuOpen ? "open" : ""}`}>
+      <aside className={`ad-sidebar ${mobileMenuOpen? "open" : ""}`}>
         <div className="ad-logo">
           <div className="ad-logo-title">Mr. Renaudin</div>
           <div className="ad-logo-sub">Admin Panel</div>
@@ -616,7 +745,7 @@ const AdminDashboard = () => {
           {menuItems.map(item => (
             <div
               key={item.id}
-              className={`ad-nav-item ${activeTab === item.id ? "active" : ""}`}
+              className={`ad-nav-item ${activeTab === item.id? "active" : ""}`}
               onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); }}
             >
               <span className="ad-nav-icon">{item.icon}</span>
