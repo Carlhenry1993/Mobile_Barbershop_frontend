@@ -12,12 +12,13 @@ import "react-toastify/dist/ReactToastify.css";
 import "animate.css";
 
 // Pages
-import HomePage         from "./pages/HomePage";
-import BookingPage      from "./pages/BookingPage";
-import ContactPage      from "./pages/ContactPage";
-import ServicesPage     from "./pages/ServicesPage";
-import AboutPage        from "./pages/AboutPage";
-import AnnoncePage      from "./pages/AnnoncePage";
+import HomePage          from "./pages/HomePage";
+import BookingPage       from "./pages/BookingPage";
+import MyBookingsPage    from "./pages/MyBookingsPage";   // ← NEW
+import ContactPage       from "./pages/ContactPage";
+import ServicesPage      from "./pages/ServicesPage";
+import AboutPage         from "./pages/AboutPage";
+import AnnoncePage       from "./pages/AnnoncePage";
 import AdminBookingsPage from "./pages/AdminBookingsPage";
 
 // Components
@@ -35,11 +36,10 @@ const ScrollToTop = () => {
   return null;
 };
 
-// ─── Décoder le token sans lib externe ───────────────────────────────────────
+// ─── Token helpers ─────────────────────────────────────────────────────────────
 const decodeToken = (token) => {
   try {
-    const payload = token.split(".")[1];
-    return JSON.parse(atob(payload));
+    return JSON.parse(atob(token.split(".")[1]));
   } catch {
     return null;
   }
@@ -78,31 +78,27 @@ const App = () => {
     localStorage.removeItem("selectedClientId");
   }, []);
 
-  // ── Décoder le token et hydrater le state ──────────────────────────────────
+  // ── Decode token → hydrate state ───────────────────────────────────────────
   useEffect(() => {
     if (!token) {
       setRole(null);
       setClientId(null);
       return;
     }
-
     const decoded = decodeToken(token);
-
     if (!decoded || isTokenExpired(decoded)) {
       console.warn("Token invalide ou expiré — déconnexion");
       handleLogout();
       return;
     }
-
     setRole(decoded.role);
     localStorage.setItem("role", decoded.role);
-
     if (decoded.role === "client") {
       setClientId(decoded.id?.toString() ?? null);
     }
   }, [token, handleLogout]);
 
-  // ── Vérification périodique du token (toutes les minutes) ─────────────────
+  // ── Periodic token check (every minute) ───────────────────────────────────
   useEffect(() => {
     if (!token) return;
     const interval = setInterval(() => {
@@ -121,7 +117,6 @@ const App = () => {
     setToken(userToken);
     localStorage.setItem("token", userToken);
     localStorage.setItem("role", userRole);
-
     if (userRole === "client" && userId) {
       setClientId(userId.toString());
     }
@@ -131,7 +126,7 @@ const App = () => {
     <Router>
       <ScrollToTop />
 
-      {/* Toast global — une seule instance pour toute l'app */}
+      {/* ── Global Toast — single instance for the entire app ── */}
       <ToastContainer
         position="bottom-right"
         autoClose={5000}
@@ -147,7 +142,7 @@ const App = () => {
 
       <Header role={role} onLogout={handleLogout} />
 
-      {/* Chat — monté une seule fois selon le rôle */}
+      {/* Chat — mounted once, keyed by identity */}
       {role === "client" && clientId && (
         <ChatApp key={clientId} clientId={clientId} isAdmin={false} />
       )}
@@ -156,7 +151,7 @@ const App = () => {
       )}
 
       <Routes>
-        {/* ── Publiques ── */}
+        {/* ── Public ── */}
         <Route path="/"          element={<HomePage />} />
         <Route path="/services"  element={<ServicesPage />} />
         <Route path="/contact"   element={<ContactPage />} />
@@ -164,7 +159,7 @@ const App = () => {
         <Route path="/annonces"  element={<AnnoncePage readOnly={!role || role === "client"} />} />
         <Route path="/login"     element={<Login onLogin={handleLogin} />} />
 
-        {/* ── Client + Admin ── */}
+        {/* ── Client: booking flow ── */}
         <Route
           path="/reserver"
           element={
@@ -174,7 +169,17 @@ const App = () => {
           }
         />
 
-        {/* ── Admin seulement ── */}
+        {/* ── Client: my bookings ── */}
+        <Route
+          path="/compte"
+          element={
+            <ProtectedRoute token={token} role={role} allowedRoles={["client", "admin"]}>
+              <MyBookingsPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ── Admin: dashboard ── */}
         <Route
           path="/admin/bookings"
           element={
