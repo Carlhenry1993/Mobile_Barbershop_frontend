@@ -3,8 +3,8 @@ import { useForm } from "react-hook-form";
 import { motion, useInView, useReducedMotion, AnimatePresence } from "framer-motion";
 // ❌ SUPPRIMÉ: import Header from "../components/Header";
 // ❌ SUPPRIMÉ: import Footer from "../components/Footer";
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// ToastContainer retiré — géré globalement dans App.js
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
@@ -613,20 +613,7 @@ const ContactPage = () => {
         </section>
 
       </div>
-
-      <ToastContainer
-        position="top-right"
-        autoClose={5000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="dark"
-      />
-    </div>
+</div>
   );
 };
 
