@@ -5,8 +5,8 @@ import React, {
   useCallback,
 } from "react";
 import io from "socket.io-client";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+// ToastContainer retiré — géré globalement dans App.js
 import "./ChatApp.css";
 
 // ─── Error Boundary ────────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ const getUserFromToken = () => {
   }
 };
 
-/** Play a short notification beep via Web Audio API — no external file needed */
+/** Beep de notification via Web Audio API */
 const playNotificationSound = () => {
   try {
     const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -70,11 +70,11 @@ const playNotificationSound = () => {
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.4);
   } catch (_) {
-    // AudioContext blocked — silently ignore
+    // AudioContext bloqué — ignorer silencieusement
   }
 };
 
-/** Génère une couleur HSL déterministe depuis un nom — chaque client a sa propre couleur */
+/** Couleur HSL déterministe depuis un nom */
 const nameToColor = (name = "") => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -85,7 +85,7 @@ const nameToColor = (name = "") => {
 const getInitials = (name = "") =>
   name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
 
-/** Toast JSX avec avatar coloré + nom + extrait du message */
+/** Toast avec avatar coloré + nom + extrait du message */
 const NotifToast = ({ senderName, message, isFromOtherClient }) => (
   <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "2px 0" }}>
     <div style={{
@@ -121,9 +121,11 @@ const NotifToast = ({ senderName, message, isFromOtherClient }) => (
     </div>
   </div>
 );
+
+/** Flash du titre de l'onglet quand la fenêtre est en arrière-plan */
 const useTabFlash = () => {
-  const intervalRef = useRef(null);
-  const originalTitle = useRef(document.title);
+  const intervalRef    = useRef(null);
+  const originalTitle  = useRef(document.title);
 
   const startFlash = useCallback((label = "💬 Nouveau message!") => {
     if (document.hasFocus()) return;
@@ -148,48 +150,44 @@ const useTabFlash = () => {
     };
   }, [stopFlash]);
 
-  return { startFlash, stopFlash };
+  return { startFlash };
 };
 
 // ─── ChatApp ──────────────────────────────────────────────────────────────────
 const ChatApp = ({ isAdmin }) => {
   const currentUser = useRef(getUserFromToken());
-  const clientId = currentUser.current?.id?.toString();
+  const clientId    = currentUser.current?.id?.toString();
 
-  const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [clients, setClients] = useState([]);
-  const [selectedClientId, setSelectedClientId] = useState(() =>
-    localStorage.getItem("selectedClientId") || null
+  const [message,          setMessage]          = useState("");
+  const [messages,         setMessages]         = useState([]);
+  const [clients,          setClients]          = useState([]);
+  const [selectedClientId, setSelectedClientId] = useState(
+    () => localStorage.getItem("selectedClientId") || null
   );
-  const [isConnected, setIsConnected] = useState(false);
-  const [adminOnline, setAdminOnline] = useState(false);
-  const [chatState, setChatState] = useState(
+  const [isConnected,    setIsConnected]    = useState(false);
+  const [adminOnline,    setAdminOnline]    = useState(false);
+  const [chatState,      setChatState]      = useState(
     () => localStorage.getItem("chatState") || "closed"
   );
-  const [unreadCount, setUnreadCount] = useState(
+  const [unreadCount,    setUnreadCount]    = useState(
     () => Number(localStorage.getItem("unreadCount")) || 0
   );
-  /**
-   * typingUsers: { [senderId]: boolean }
-   * Only stores "is the OTHER party typing for ME right now?"
-   */
-  const [typingUsers, setTypingUsers] = useState({});
-  const [connectionError, setConnectionError] = useState(false);
+  const [typingUsers,    setTypingUsers]    = useState({});
+  const [connectionError,setConnectionError]= useState(false);
 
-  const socketRef = useRef(null);
-  const messagesEndRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
+  const socketRef           = useRef(null);
+  const messagesEndRef      = useRef(null);
+  const typingTimeoutRef    = useRef(null);
   const selectedClientIdRef = useRef(selectedClientId);
-  const chatStateRef = useRef(chatState);
-  const { startFlash } = useTabFlash();
+  const chatStateRef        = useRef(chatState);
+  const { startFlash }      = useTabFlash();
 
-  // Keep refs in sync
+  // ── Sync refs ─────────────────────────────────────────────────────────────
   useEffect(() => { selectedClientIdRef.current = selectedClientId; }, [selectedClientId]);
-  useEffect(() => { chatStateRef.current = chatState; }, [chatState]);
+  useEffect(() => { chatStateRef.current = chatState; },             [chatState]);
 
-  // Persist state
-  useEffect(() => { localStorage.setItem("chatState", chatState); }, [chatState]);
+  // ── Persister état ────────────────────────────────────────────────────────
+  useEffect(() => { localStorage.setItem("chatState",   chatState);           }, [chatState]);
   useEffect(() => { localStorage.setItem("unreadCount", String(unreadCount)); }, [unreadCount]);
   useEffect(() => {
     selectedClientId
@@ -197,7 +195,7 @@ const ChatApp = ({ isAdmin }) => {
       : localStorage.removeItem("selectedClientId");
   }, [selectedClientId]);
 
-  // ── Scroll ────────────────────────────────────────────────────────────────
+  // ── Scroll bas ────────────────────────────────────────────────────────────
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
@@ -206,18 +204,17 @@ const ChatApp = ({ isAdmin }) => {
     if (chatState === "open") scrollToBottom();
   }, [messages, chatState, scrollToBottom]);
 
-  // ── Fetch history ─────────────────────────────────────────────────────────
+  // ── Charger historique ────────────────────────────────────────────────────
   const fetchMessages = useCallback(async (targetClientId = null) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
       const query = isAdmin && targetClientId ? `?clientId=${targetClientId}` : "";
-      const res = await fetch(`${SOCKET_SERVER_URL}/api/messages${query}`, {
+      const res   = await fetch(`${SOCKET_SERVER_URL}/api/messages${query}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Unable to load messages");
-      const data = await res.json();
-      setMessages(data);
+      setMessages(await res.json());
     } catch (err) {
       console.error("Load messages error:", err);
       toast.error("Erreur chargement historique");
@@ -225,27 +222,26 @@ const ChatApp = ({ isAdmin }) => {
   }, [isAdmin]);
 
   useEffect(() => {
-    if (!isAdmin && clientId) fetchMessages();
+    if (!isAdmin && clientId)          fetchMessages();
     else if (isAdmin && selectedClientId) fetchMessages(selectedClientId);
     else if (isAdmin && !selectedClientId) setMessages([]);
   }, [isAdmin, clientId, selectedClientId, fetchMessages]);
 
-  // ── Mark visible messages as read ─────────────────────────────────────────
+  // ── Marquer messages comme lus ────────────────────────────────────────────
   const markVisibleAsRead = useCallback((msgs) => {
     if (!socketRef.current) return;
     const unreadIds = msgs
       .filter((m) => {
         if (m.is_read) return false;
-        if (isAdmin) return m.senderId === selectedClientIdRef.current;
-        return m.senderId === "admin";
+        return isAdmin
+          ? m.senderId === selectedClientIdRef.current
+          : m.senderId === "admin";
       })
       .map((m) => m.id);
 
     if (!unreadIds.length) return;
-
     const to = isAdmin ? selectedClientIdRef.current : "admin";
     socketRef.current.emit("message_read", { messageIds: unreadIds, to });
-    // Optimistically mark them in local state
     setMessages((prev) =>
       prev.map((m) => (unreadIds.includes(m.id) ? { ...m, is_read: true } : m))
     );
@@ -256,7 +252,6 @@ const ChatApp = ({ isAdmin }) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    // Clean up any existing socket
     if (socketRef.current) {
       socketRef.current.removeAllListeners();
       socketRef.current.disconnect();
@@ -273,70 +268,63 @@ const ChatApp = ({ isAdmin }) => {
 
     socketRef.current = socket;
 
-    socket.on("connect", () => {
-      setIsConnected(true);
-      setConnectionError(false);
-    });
+    socket.on("connect",       () => { setIsConnected(true);  setConnectionError(false); });
+    socket.on("disconnect",    () =>   setIsConnected(false));
+    socket.on("connect_error", (err) => { console.error("Socket error:", err.message); setConnectionError(true); });
 
-    socket.on("disconnect", () => setIsConnected(false));
-
-    socket.on("connect_error", (err) => {
-      console.error("Socket connection error:", err.message);
-      setConnectionError(true);
-    });
-
-    // ── Incoming message ───────────────────────────────────────────────────
+    // ── Nouveau message ────────────────────────────────────────────────────
     socket.on("new_message", (data) => {
-      const currentSelected = selectedClientIdRef.current;
+      const currentSelected  = selectedClientIdRef.current;
       const currentChatState = chatStateRef.current;
 
-      // Is this message relevant to the currently viewed conversation?
       const isRelevantConversation = isAdmin
         ? data.senderId === currentSelected || data.recipientId === currentSelected
         : data.senderId === "admin" || data.recipientId === clientId;
 
-      // Messages we sent ourselves — add to state, no notification
       const isMine = isAdmin
         ? data.senderId === "admin"
         : data.senderId === clientId;
 
+      // ── Message d'une autre conversation (admin) ───────────────────────
       if (!isRelevantConversation && !isMine) {
-        // Admin: message from a different client → just bump badge + toast
         setUnreadCount((prev) => prev + 1);
         playNotificationSound();
         startFlash(`💬 ${data.senderName}`);
         toast.info(
-          <NotifToast senderName={data.senderName} message={data.message} isFromOtherClient={true} />,
-          { toastId: `msg-${data.id}`, autoClose: 5000 }
+          <NotifToast
+            senderName={data.senderName}
+            message={data.message}
+            isFromOtherClient={true}
+          />,
+          { toastId: `notif-other-${data.id}-${Date.now()}` }
         );
         return;
       }
 
+      // ── Ajouter le message à la conversation courante ──────────────────
       setMessages((prev) => {
         if (prev.some((m) => m.id === data.id)) return prev;
         return [...prev, data];
       });
 
-      // Only notify if the chat isn't open and focused, and it's not our own message
+      // ── Notifier si le message vient de l'autre partie ─────────────────
       if (!isMine) {
+        playNotificationSound();
+        startFlash(`💬 ${data.senderName}`);
+        toast.info(
+          <NotifToast
+            senderName={data.senderName}
+            message={data.message}
+            isFromOtherClient={false}
+          />,
+          { toastId: `notif-${data.id}-${Date.now()}` }
+        );
+
         if (currentChatState !== "open") {
+          // Chat fermé ou minimisé → incrémenter le badge
           setUnreadCount((prev) => prev + 1);
-          playNotificationSound();
-          startFlash(`💬 ${data.senderName}`);
-          toast.info(
-            <NotifToast senderName={data.senderName} message={data.message} isFromOtherClient={false} />,
-            { toastId: `msg-${data.id}`, autoClose: 5000 }
-          );
         } else {
-          // Chat is open — auto-mark as read immediately
-          playNotificationSound();
-          // Admin reçoit aussi une notification même si le chat est ouvert
-          if (!isMine) {
-            toast.info(
-              <NotifToast senderName={data.senderName} message={data.message} isFromOtherClient={false} />,
-              { toastId: `msg-${data.id}`, autoClose: 5000 }
-            );
-          }
+          // Chat ouvert → marquer comme lu immédiatement
           socket.emit("message_read", {
             messageIds: [data.id],
             to: isAdmin ? currentSelected : "admin",
@@ -348,7 +336,7 @@ const ChatApp = ({ isAdmin }) => {
       }
     });
 
-    // ── Client list (admin) ────────────────────────────────────────────────
+    // ── Liste clients (admin) ──────────────────────────────────────────────
     socket.on("update_client_list", (list) => {
       setClients(list || []);
       if (isAdmin && !selectedClientIdRef.current && list?.length > 0) {
@@ -356,14 +344,12 @@ const ChatApp = ({ isAdmin }) => {
       }
     });
 
-    // ── Admin status (client) ─────────────────────────────────────────────
+    // ── Statut admin (client) ──────────────────────────────────────────────
     socket.on("admin_status", (data) => {
       setAdminOnline(data?.online || false);
     });
 
-    // ── Typing indicator ───────────────────────────────────────────────────
-    // Server sends { from: senderId, isTyping: bool }
-    // We only show the indicator if `from` is the person we're chatting with
+    // ── Indicateur de frappe ───────────────────────────────────────────────
     socket.on("typing", ({ from, isTyping }) => {
       const relevant = isAdmin
         ? from === selectedClientIdRef.current
@@ -372,7 +358,7 @@ const ChatApp = ({ isAdmin }) => {
       setTypingUsers((prev) => ({ ...prev, [from]: isTyping }));
     });
 
-    // ── Read receipts ──────────────────────────────────────────────────────
+    // ── Accusés de lecture ─────────────────────────────────────────────────
     socket.on("messages_read", ({ messageIds }) => {
       setMessages((prev) =>
         prev.map((msg) =>
@@ -392,34 +378,26 @@ const ChatApp = ({ isAdmin }) => {
       clearTimeout(typingTimeoutRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Mount only — connectSocket is stable
+  }, []);
 
-  // ── Chat state actions ─────────────────────────────────────────────────────
+  // ── Actions état du chat ──────────────────────────────────────────────────
   const openChat = useCallback(() => {
     setChatState("open");
     setUnreadCount(0);
-    // Mark all currently visible unread messages as read
-    setMessages((prev) => {
-      markVisibleAsRead(prev);
-      return prev;
-    });
+    setMessages((prev) => { markVisibleAsRead(prev); return prev; });
   }, [markVisibleAsRead]);
 
   const minimizeChat = useCallback(() => setChatState("minimized"), []);
-  const closeChat = useCallback(() => setChatState("closed"), []);
+  const closeChat    = useCallback(() => setChatState("closed"),    []);
 
-  // When admin switches client, mark new conversation as read
   useEffect(() => {
     if (isAdmin && chatState === "open") {
-      setMessages((prev) => {
-        markVisibleAsRead(prev);
-        return prev;
-      });
+      setMessages((prev) => { markVisibleAsRead(prev); return prev; });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClientId]);
 
-  // ── Send message ───────────────────────────────────────────────────────────
+  // ── Envoyer message ───────────────────────────────────────────────────────
   const handleSendMessage = useCallback(() => {
     const text = message.trim();
     if (!text) return;
@@ -436,35 +414,28 @@ const ChatApp = ({ isAdmin }) => {
       socketRef.current.emit(
         "send_message_to_client",
         { clientId: selectedClientId, message: text },
-        (response) => {
-          if (!response?.success) toast.error("Erreur d'envoi");
-        }
+        (res) => { if (!res?.success) toast.error("Erreur d'envoi"); }
       );
     } else {
       socketRef.current.emit(
         "send_message_to_admin",
         { message: text },
-        (response) => {
-          if (!response?.success) toast.error("Erreur d'envoi");
-        }
+        (res) => { if (!res?.success) toast.error("Erreur d'envoi"); }
       );
     }
 
-    // Stop typing indicator immediately on send
     const to = isAdmin ? selectedClientId : "admin";
     if (to) socketRef.current.emit("typing", { to, isTyping: false });
     clearTimeout(typingTimeoutRef.current);
-
     setMessage("");
   }, [message, isAdmin, selectedClientId, isConnected]);
 
-  // ── Typing handler ─────────────────────────────────────────────────────────
+  // ── Frappe ────────────────────────────────────────────────────────────────
   const handleTyping = useCallback((value) => {
     setMessage(value);
     if (!socketRef.current) return;
     const to = isAdmin ? selectedClientId : "admin";
     if (!to) return;
-
     socketRef.current.emit("typing", { to, isTyping: true });
     clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
@@ -472,10 +443,9 @@ const ChatApp = ({ isAdmin }) => {
     }, 1500);
   }, [isAdmin, selectedClientId]);
 
-  // ── Derived state ──────────────────────────────────────────────────────────
-  const isTypingOther = Object.values(typingUsers).some(Boolean);
-
-  const selectedClientName = isAdmin
+  // ── État dérivé ───────────────────────────────────────────────────────────
+  const isTypingOther       = Object.values(typingUsers).some(Boolean);
+  const selectedClientName  = isAdmin
     ? clients.find((c) => c.id === selectedClientId)?.name || "Client"
     : null;
 
@@ -489,7 +459,7 @@ const ChatApp = ({ isAdmin }) => {
       <div className="chat-app">
         <div className="chat-bubble-container">
 
-          {/* ── Main chat panel ────────────────────────────────────────── */}
+          {/* ── Panneau principal ──────────────────────────────────────── */}
           <div
             className={`chat-container ${chatState}`}
             style={{ display: chatState !== "closed" ? "flex" : "none" }}
@@ -511,9 +481,7 @@ const ChatApp = ({ isAdmin }) => {
                     />
                     {connectionError
                       ? "Reconnexion…"
-                      : isConnected
-                      ? "En ligne"
-                      : "Hors ligne"}
+                      : isConnected ? "En ligne" : "Hors ligne"}
                     {!isAdmin && (
                       <span className="admin-status">
                         {" · "}Admin:{" "}
@@ -525,7 +493,7 @@ const ChatApp = ({ isAdmin }) => {
               </div>
               <div className="chat-header-actions">
                 <button className="chat-action-btn" onClick={minimizeChat} aria-label="Minimiser">–</button>
-                <button className="chat-action-btn" onClick={closeChat} aria-label="Fermer">✕</button>
+                <button className="chat-action-btn" onClick={closeChat}    aria-label="Fermer">✕</button>
               </div>
             </div>
 
@@ -538,7 +506,7 @@ const ChatApp = ({ isAdmin }) => {
               </div>
             ) : (
               <>
-                {/* Admin client selector */}
+                {/* Sélecteur client (admin) */}
                 {isAdmin && (
                   <div className="client-select-wrap">
                     <select
@@ -570,11 +538,8 @@ const ChatApp = ({ isAdmin }) => {
                   )}
 
                   {messages.map((m, idx) => {
-                    const isMine = isAdmin
-                      ? m.senderId === "admin"
-                      : m.senderId === clientId;
-                    const isLast = idx === messages.length - 1;
-                    // Show timestamp if first message OR if gap > 5 min from previous
+                    const isMine  = isAdmin ? m.senderId === "admin" : m.senderId === clientId;
+                    const isLast  = idx === messages.length - 1;
                     const prevMsg = messages[idx - 1];
                     const showTime = !prevMsg
                       || (new Date(m.timestamp) - new Date(prevMsg.timestamp)) > 5 * 60 * 1000;
@@ -606,7 +571,6 @@ const ChatApp = ({ isAdmin }) => {
                                 })}
                               </span>
                             )}
-                            {/* Read receipt — only on our last outgoing message */}
                             {isMine && isLast && (
                               <span
                                 className={`msg-read-receipt ${m.is_read ? "read" : "sent"}`}
@@ -621,7 +585,6 @@ const ChatApp = ({ isAdmin }) => {
                     );
                   })}
 
-                  {/* Typing indicator */}
                   {isTypingOther && (
                     <div className="message-bubble msg-in typing-indicator" aria-label="En train d'écrire">
                       <span /><span /><span />
@@ -631,7 +594,7 @@ const ChatApp = ({ isAdmin }) => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Input area */}
+                {/* Zone de saisie */}
                 <div className="input-box">
                   <input
                     className="chat-input"
@@ -665,7 +628,7 @@ const ChatApp = ({ isAdmin }) => {
             )}
           </div>
 
-          {/* ── Floating bubble ───────────────────────────────────────── */}
+          {/* ── Bouton bulle flottante ──────────────────────────────────── */}
           <div className="chat-bubble-wrapper">
             {chatState !== "open" && (
               <div className="chat-bubble-label">Chatter avec nous!</div>
@@ -683,8 +646,6 @@ const ChatApp = ({ isAdmin }) => {
             </button>
           </div>
         </div>
-
-        <ToastContainer position="bottom-right" autoClose={4000} />
       </div>
     </ErrorBoundary>
   );
