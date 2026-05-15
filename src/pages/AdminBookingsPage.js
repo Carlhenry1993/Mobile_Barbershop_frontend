@@ -45,11 +45,25 @@ const useAdminStyles = () => {
 .ad-nav-item.active { background: rgba(212,168,67,0.12); color: var(--ab-gold); border-color: rgba(212,168,67,0.3); }
 .ad-nav-icon { font-size: 1.1rem; width: 20px; }
 .ad-content { flex: 1; margin-left: 260px; padding: 2rem; min-height: 100vh; }
+
+/* HAMBURGER FIX : descendu sous le header */
 .ad-mobile-toggle {
-  display: none; position: fixed; top: 1rem; left: 1rem; z-index: 101;
-  background: var(--ab-gold); color: var(--ab-black); border: none;
-  width: 48px; height: 48px; border-radius: 12px; font-size: 1.5rem; cursor: pointer;
+  display: none;
+  position: fixed;
+  top: 5.5rem;
+  left: 1rem;
+  z-index: 90;
+  background: var(--ab-gold);
+  color: var(--ab-black);
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  font-size: 1.5rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
+
 .ad-header { margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--ab-border); }
 .ad-eyebrow { font-size: 0.68rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ab-gold); margin-bottom: 0.5rem; }
 .ad-display { font-family: 'Playfair Display', serif; font-weight: 900; font-size: clamp(1.8rem, 4vw, 2.5rem); color: var(--ab-cream); line-height: 1.1; }
@@ -145,7 +159,6 @@ const useAdminStyles = () => {
 .ab-search-wrap input { padding-left: 2.2rem; }
 .ab-search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--ab-muted); font-size: 0.9rem; pointer-events: none; }
 
-/* <-- MOBILE : Cards au lieu du tableau */
 .ab-booking-card {
   display: none;
   background: var(--ab-card);
@@ -173,7 +186,6 @@ const useAdminStyles = () => {
 }
 .ab-card-actions.ab-icon-btn { flex: 1; }
 
-/* <-- MOBILE : Filtres collapsibles */
 .ab-filters-toggle {
   display: none;
   width: 100%;
@@ -189,52 +201,42 @@ const useAdminStyles = () => {
 }
 
 @media (max-width: 968px) {
- .ad-sidebar { transform: translateX(-100%); }
- .ad-sidebar.open { transform: translateX(0); }
- .ad-content { margin-left: 0; padding: 1rem; padding-top: 5rem; }
- .ad-mobile-toggle { display: flex; align-items: center; justify-content: center; }
- .ad-overlay.show { display: block; }
- .ab-stats { grid-template-columns: repeat(2, 1fr); }
+.ad-sidebar { transform: translateX(-100%); }
+.ad-sidebar.open { transform: translateX(0); }
+.ad-content { margin-left: 0; padding: 1rem; padding-top: 6rem; }
+.ad-mobile-toggle { display: flex; align-items: center; justify-content: center; }
+.ad-overlay.show { display: block; }
+.ab-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-  /* <-- MOBILE : Cache le tableau, montre les cartes */
- .ab-table { display: none; }
- .ab-booking-card { display: block; }
-
-  /* <-- MOBILE : Filtres en accordéon */
- .ab-filters {
+.ab-table { display: none; }
+.ab-booking-card { display: block; }
+.ab-filters {
     display: none;
     grid-template-columns: 1fr;
   }
- .ab-filters.show { display: grid; }
- .ab-filters-toggle { display: block; }
-
-  /* <-- MOBILE : Stats en 1 colonne */
- .ab-stats { grid-template-columns: 1fr; }
-
-  /* <-- MOBILE : Modal full screen */
- .ab-modal {
+.ab-filters.show { display: grid; }
+.ab-filters-toggle { display: block; }
+.ab-stats { grid-template-columns: 1fr; }
+.ab-modal {
     padding: 1.5rem 1rem;
     max-height: 100vh;
     height: 100%;
     border-radius: 0;
   }
-
-  /* <-- MOBILE : Boutons plus gros */
- .ab-btn-gold,.ab-btn-outline,.ab-btn-danger {
+.ab-btn-gold,.ab-btn-outline,.ab-btn-danger {
     padding: 1rem;
     font-size: 0.85rem;
   }
-
-  /* <-- MOBILE : Slots 3 colonnes */
- .ab-slots { grid-template-columns: repeat(3, 1fr); }
+.ab-slots { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 400px) {
- .ad-content { padding: 0.75rem; padding-top: 4.5rem; }
- .ad-display { font-size: 1.5rem; }
- .ab-slots { grid-template-columns: repeat(2, 1fr); }
+.ad-content { padding: 0.75rem; padding-top: 5.5rem; }
+.ad-display { font-size: 1.5rem; }
+.ab-slots { grid-template-columns: repeat(2, 1fr); }
+.ad-mobile-toggle { width: 44px; height: 44px; }
 }
     `;
     document.head.appendChild(style);
@@ -242,7 +244,6 @@ const useAdminStyles = () => {
   }, []);
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmtDateTime = (d) =>
   new Date(d).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 const fmtDate = (d) =>
@@ -251,7 +252,6 @@ const fmtTime = (d) =>
   new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 const getMinDate = () => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split("T")[0]; };
 
-// ─── Reschedule Modal (admin) ─────────────────────────────────────────────────
 const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }) => {
   const [date, setDate] = useState("");
   const [slots, setSlots] = useState([]);
@@ -266,9 +266,9 @@ const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }
     setFetching(true);
     setSlots([]); setSelected("");
     axios.get("/api/booking/availability", { params: { date, barberId, serviceId } })
-     .then(r => setSlots(r.data || []))
-     .catch(() => toast.error("Impossible de charger les créneaux"))
-     .finally(() => setFetching(false));
+    .then(r => setSlots(r.data || []))
+    .catch(() => toast.error("Impossible de charger les créneaux"))
+    .finally(() => setFetching(false));
   }, [date, barberId, serviceId]);
 
   const handleSave = async () => {
@@ -356,7 +356,6 @@ const AdminRescheduleModal = ({ booking, services, barbers, onClose, onSuccess }
   );
 };
 
-// ─── Client Detail Modal ──────────────────────────────────────────────────────
 const ClientDetailModal = ({ booking, onClose }) => (
   <motion.div className="ab-modal-overlay"
     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -407,7 +406,6 @@ const ClientDetailModal = ({ booking, onClose }) => (
   </motion.div>
 );
 
-// ─── Booking Card pour mobile ─────────────────────────────────────────────────
 const BookingCard = ({ booking, onView, onReschedule, onComplete, onCancel }) => (
   <div className="ab-booking-card">
     <div className="ab-card-row">
@@ -453,6 +451,8 @@ const BookingCard = ({ booking, onView, onReschedule, onComplete, onCancel }) =>
   </div>
 );
 
+//... reste du code helpers, modals, BookingCard déjà donné plus haut...
+
 // ─── AdminDashboard ───────────────────────────────────────────────────────────
 const AdminDashboard = () => {
   useAdminStyles();
@@ -460,7 +460,7 @@ const AdminDashboard = () => {
 
   const [activeTab, setActiveTab] = useState("bookings");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false); // <-- MOBILE : accordéon filtres
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [bookings, setBookings] = useState([]);
   const [services, setServices] = useState([]);
   const [barbers, setBarbers] = useState([]);
@@ -539,7 +539,7 @@ const AdminDashboard = () => {
     const matchBarber =!filterBarber || b.barber_id?.toString() === filterBarber;
     const matchStatus =!filterStatus || b.status === filterStatus;
     const matchSearch =!search || [b.client_name, b.service_name, b.barber_name, String(b.id)]
-     .some(f => f?.toLowerCase().includes(search.toLowerCase()));
+    .some(f => f?.toLowerCase().includes(search.toLowerCase()));
     return matchDate && matchBarber && matchStatus && matchSearch;
   });
 
@@ -555,7 +555,6 @@ const AdminDashboard = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-
       case "bookings": return (
         <>
           <div className="ad-header">
@@ -580,13 +579,12 @@ const AdminDashboard = () => {
             ))}
           </div>
 
-          {/* <-- MOBILE : Bouton pour toggle filtres */}
           <button className="ab-filters-toggle" onClick={() => setFiltersOpen(!filtersOpen)}>
             {filtersOpen? "▲ Masquer filtres" : "▼ Afficher filtres"}
           </button>
 
           <div className={`ab-filters ${filtersOpen? 'show' : ''}`}>
-                        <div>
+            <div>
               <label className="ab-label">Recherche</label>
               <div className="ab-search-wrap">
                 <span className="ab-search-icon">🔍</span>
@@ -631,7 +629,7 @@ const AdminDashboard = () => {
           {error && <div className="ab-error">{error}</div>}
 
           <p style={{ fontSize: "0.8rem", color: "var(--ab-muted)", marginBottom: "1rem" }}>
-            {filtered.length} réservation{filtered.length !== 1? "s" : ""} affichée{filtered.length !== 1? "s" : ""}
+            {filtered.length} réservation{filtered.length!== 1? "s" : ""} affichée{filtered.length!== 1? "s" : ""}
           </p>
 
           {loading? (
@@ -640,7 +638,6 @@ const AdminDashboard = () => {
             <div className="ab-empty">Aucune réservation trouvée</div>
           ) : (
             <>
-              {/* <-- DESKTOP : Tableau classique */}
               <div style={{ overflowX: "auto" }}>
                 <table className="ab-table">
                   <thead>
@@ -690,7 +687,6 @@ const AdminDashboard = () => {
                 </table>
               </div>
 
-              {/* <-- MOBILE : Cards à la place du tableau */}
               {filtered.map(b => (
                 <BookingCard
                   key={b.id}
@@ -757,7 +753,6 @@ const AdminDashboard = () => {
 
       <main className="ad-content">{renderContent()}</main>
 
-      {/* Modals */}
       <AnimatePresence>
         {rescheduleTarget && (
           <AdminRescheduleModal
