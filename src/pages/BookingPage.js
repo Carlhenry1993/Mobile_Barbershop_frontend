@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+// ToastContainer retiré — géré globalement dans App.js
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
 
@@ -256,19 +256,14 @@ const BookingPage = () => {
 
   const fetchAvailability = useCallback(async () => {
     if (!selectedService || !selectedBarber || !selectedDate) return;
-    
     setLoading(true);
     setError("");
     try {
       const res = await axios.get("/api/booking/availability", {
-        params: {
-          date: selectedDate,
-          barberId: selectedBarber.id,
-          serviceId: selectedService.id,
-        },
+        params: { date: selectedDate, barberId: selectedBarber.id, serviceId: selectedService.id },
       });
       setAvailableSlots(res.data || []);
-    } catch (err) {
+    } catch {
       setError("Impossible de charger les créneaux");
       setAvailableSlots([]);
     } finally {
@@ -287,15 +282,13 @@ const BookingPage = () => {
     fetchServices();
   }, []);
 
-  useEffect(() => {
-    fetchAvailability();
-  }, [fetchAvailability]);
+  useEffect(() => { fetchAvailability(); }, [fetchAvailability]);
 
   const fetchServices = async () => {
     try {
       const res = await axios.get("/api/booking/services");
       setServices(res.data || []);
-    } catch (err) {
+    } catch {
       setError("Impossible de charger les services");
       setServices([]);
     }
@@ -307,7 +300,7 @@ const BookingPage = () => {
     try {
       const res = await axios.get("/api/booking/barbers");
       setBarbers(res.data || []);
-    } catch (err) {
+    } catch {
       setError("Impossible de charger les barbiers");
       setBarbers([]);
     } finally {
@@ -333,28 +326,17 @@ const BookingPage = () => {
     setStep(3);
   };
 
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-    setSelectedSlot(null);
-  };
-
-  const handleSlotSelect = (slot) => {
-    setSelectedSlot(slot);
-    setStep(4);
-  };
+  const handleDateChange  = (e) => { setSelectedDate(e.target.value); setSelectedSlot(null); };
+  const handleSlotSelect  = (slot) => { setSelectedSlot(slot); setStep(4); };
 
   const handleConfirmBooking = async () => {
-    if (!isLoggedIn) {
-      sessionStorage.setItem('redirectAfterLogin', '/reserver');
-      navigate('/login');
-      return;
-    }
+    if (!isLoggedIn) { sessionStorage.setItem('redirectAfterLogin', '/reserver'); navigate('/login'); return; }
     setLoading(true);
     setError("");
     try {
       await axios.post("/api/booking/create", {
         serviceId: selectedService.id,
-        barberId: selectedBarber.id,
+        barberId:  selectedBarber.id,
         startTime: selectedSlot,
       });
       setSuccess(true);
@@ -373,21 +355,8 @@ const BookingPage = () => {
     }
   };
 
-  const formatDate = (dateStr) => {
-    return new Date(dateStr).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-  };
-
-  const formatTime = (dateStr) => {
-    return new Date(dateStr).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
+  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const getMinDate = () => new Date().toISOString().split("T")[0];
 
   if (!isLoggedIn) {
@@ -399,23 +368,15 @@ const BookingPage = () => {
               <div className="bk-login-wall">
                 <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>
                 <h2>Compte requis pour réserver</h2>
-                <p>
-                  La réservation en ligne est réservée aux membres Mr. Renaudin.<br />
-                  Créez votre compte gratuit en 30 secondes pour accéder aux créneaux.
-                </p>
+                <p>La réservation en ligne est réservée aux membres Mr. Renaudin.<br />Créez votre compte gratuit en 30 secondes.</p>
                 <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => navigate("/login")} className="bk-btn-gold">
-                    Créer mon compte
-                  </button>
-                  <button onClick={() => navigate("/login")} className="bk-btn-outline">
-                    J'ai déjà un compte
-                  </button>
+                  <button onClick={() => navigate("/login")} className="bk-btn-gold">Créer mon compte</button>
+                  <button onClick={() => navigate("/login")} className="bk-btn-outline">J'ai déjà un compte</button>
                 </div>
               </div>
             </div>
           </section>
         </div>
-        <ToastContainer theme="dark" position="top-center" />
       </div>
     );
   }
@@ -428,9 +389,7 @@ const BookingPage = () => {
             <div style={{ maxWidth: "600px", margin: "0 auto" }}>
               <div className="bk-success">
                 <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✓</div>
-                <h2 className="bk-display" style={{ fontSize: "2rem", marginBottom: "1rem" }}>
-                  Réservation confirmée!
-                </h2>
+                <h2 className="bk-display" style={{ fontSize: "2rem", marginBottom: "1rem" }}>Réservation confirmée!</h2>
                 <p style={{ color: "var(--bk-light)", lineHeight: "1.7", marginBottom: "2rem" }}>
                   <strong>{selectedService?.name}</strong> avec <strong>{selectedBarber?.name}</strong><br />
                   {formatDate(selectedSlot)} à {formatTime(selectedSlot)}<br />
@@ -440,18 +399,13 @@ const BookingPage = () => {
                   Un email de confirmation vous a été envoyé. Annulation gratuite jusqu'à 24h avant.
                 </p>
                 <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => navigate("/compte")} className="bk-btn-gold">
-                    Mes réservations
-                  </button>
-                  <button onClick={() => navigate("/")} className="bk-btn-outline">
-                    Retour accueil
-                  </button>
+                  <button onClick={() => navigate("/compte")} className="bk-btn-gold">Mes réservations</button>
+                  <button onClick={() => navigate("/")} className="bk-btn-outline">Retour accueil</button>
                 </div>
               </div>
             </div>
           </section>
         </div>
-        <ToastContainer theme="dark" position="top-center" />
       </div>
     );
   }
@@ -464,64 +418,39 @@ const BookingPage = () => {
             <div style={{ textAlign: "center", marginBottom: "3rem" }}>
               <p className="bk-eyebrow">Réservation en ligne</p>
               <span className="bk-gold-rule" />
-              <h1 className="bk-display" style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}>
-                Prenez rendez-vous
-              </h1>
+              <h1 className="bk-display" style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}>Prenez rendez-vous</h1>
             </div>
 
             <div className="bk-steps">
-              <div className={`bk-step ${step >= 1 ? "active" : ""} ${step > 1 ? "done" : ""}`}>
-                <div className="bk-step-num">{step > 1 ? "✓" : "1"}</div>
-                <span>Service</span>
-              </div>
-              <div className={`bk-step ${step >= 2 ? "active" : ""} ${step > 2 ? "done" : ""}`}>
-                <div className="bk-step-num">{step > 2 ? "✓" : "2"}</div>
-                <span>Barbier</span>
-              </div>
-              <div className={`bk-step ${step >= 3 ? "active" : ""} ${step > 3 ? "done" : ""}`}>
-                <div className="bk-step-num">{step > 3 ? "✓" : "3"}</div>
-                <span>Date & Heure</span>
-              </div>
-              <div className={`bk-step ${step >= 4 ? "active" : ""}`}>
-                <div className="bk-step-num">4</div>
-                <span>Confirmation</span>
-              </div>
+              {[
+                { n: 1, label: "Service" },
+                { n: 2, label: "Barbier" },
+                { n: 3, label: "Date & Heure" },
+                { n: 4, label: "Confirmation" },
+              ].map(({ n, label }) => (
+                <div key={n} className={`bk-step ${step >= n ? "active" : ""} ${step > n ? "done" : ""}`}>
+                  <div className="bk-step-num">{step > n ? "✓" : n}</div>
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
 
             {error && <div className="bk-error">{error}</div>}
 
             <AnimatePresence mode="wait">
               {step === 1 && (
-                <motion.div
-                  key="step1"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Choisissez votre service
-                  </h2>
+                <motion.div key="step1" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Choisissez votre service</h2>
                   <div style={{ display: "grid", gap: "1rem" }}>
                     {services.map((service) => (
                       <div key={service.id} className="bk-card" onClick={() => handleServiceSelect(service)}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
                           <div>
-                            <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
-                              {service.name}
-                            </h3>
-                            <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>
-                              {service.duration} min
-                            </p>
-                            {service.description && (
-                              <p style={{ color: "var(--bk-light)", fontSize: "0.85rem", lineHeight: "1.6" }}>
-                                {service.description}
-                              </p>
-                            )}
+                            <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>{service.name}</h3>
+                            <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>{service.duration} min</p>
+                            {service.description && <p style={{ color: "var(--bk-light)", fontSize: "0.85rem", lineHeight: "1.6" }}>{service.description}</p>}
                           </div>
-                          <div style={{ color: "var(--bk-gold)", fontSize: "1.2rem", fontWeight: 700 }}>
-                            {service.price}$
-                          </div>
+                          <div style={{ color: "var(--bk-gold)", fontSize: "1.2rem", fontWeight: 700 }}>{service.price}$</div>
                         </div>
                       </div>
                     ))}
@@ -530,123 +459,50 @@ const BookingPage = () => {
               )}
 
               {step === 2 && (
-                <motion.div
-                  key="step2"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Choisissez votre barbier
-                  </h2>
-                  
+                <motion.div key="step2" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Choisissez votre barbier</h2>
                   {loadingBarbers && <p style={{ color: "var(--bk-muted)", textAlign: "center" }}>Chargement des barbiers...</p>}
-                  
-                  {!loadingBarbers && barbers.length === 0 && (
-                    <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>
-                      Aucun barbier disponible pour le moment.
-                    </p>
-                  )}
-                  
+                  {!loadingBarbers && barbers.length === 0 && <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>Aucun barbier disponible.</p>}
                   {!loadingBarbers && barbers.length > 0 && (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
                       {barbers.map((barber) => (
                         <div key={barber.id} className="bk-card" onClick={() => handleBarberSelect(barber)}>
-                          {barber.avatar_url && (
-                            <img
-                              src={barber.avatar_url}
-                              alt={barber.name}
-                              style={{ width: "100%", aspectRatio: "1", objectFit: "cover", marginBottom: "1rem" }}
-                              onError={(e) => { e.target.style.display = 'none'; }}
-                            />
-                          )}
-                          <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>
-                            {barber.name}
-                          </h3>
-                          {barber.specialties && (
-                            <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem" }}>
-                              {typeof barber.specialties === 'string' 
-                                ? barber.specialties 
-                                : Array.isArray(barber.specialties) 
-                                  ? barber.specialties.join(" • ") 
-                                  : ""}
-                            </p>
-                          )}
+                          {barber.avatar_url && <img src={barber.avatar_url} alt={barber.name} style={{ width: "100%", aspectRatio: "1", objectFit: "cover", marginBottom: "1rem" }} onError={(e) => { e.target.style.display = 'none'; }} />}
+                          <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>{barber.name}</h3>
+                          {barber.specialties && <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem" }}>{typeof barber.specialties === 'string' ? barber.specialties : Array.isArray(barber.specialties) ? barber.specialties.join(" • ") : ""}</p>}
                         </div>
                       ))}
                     </div>
                   )}
-                  
-                  <button onClick={() => setStep(1)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>
-                    ← Retour
-                  </button>
+                  <button onClick={() => setStep(1)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>← Retour</button>
                 </motion.div>
               )}
 
               {step === 3 && (
-                <motion.div
-                  key="step3"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Choisissez une date et heure
-                  </h2>
+                <motion.div key="step3" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Choisissez une date et heure</h2>
                   <div style={{ marginBottom: "2rem" }}>
-                    <label style={{ color: "var(--bk-light)", fontSize: "0.9rem", display: "block", marginBottom: "0.5rem" }}>
-                      Date
-                    </label>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={handleDateChange}
-                      min={getMinDate()}
-                      className="bk-input"
-                    />
+                    <label style={{ color: "var(--bk-light)", fontSize: "0.9rem", display: "block", marginBottom: "0.5rem" }}>Date</label>
+                    <input type="date" value={selectedDate} onChange={handleDateChange} min={getMinDate()} className="bk-input" />
                   </div>
-
                   {loading && <p style={{ color: "var(--bk-muted)" }}>Chargement des créneaux...</p>}
-
-                  {selectedDate && availableSlots.length === 0 && !loading && (
-                    <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>
-                      Aucun créneau disponible ce jour-là
-                    </p>
-                  )}
-
+                  {selectedDate && availableSlots.length === 0 && !loading && <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>Aucun créneau disponible ce jour-là</p>}
                   {availableSlots.length > 0 && (
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "0.75rem" }}>
                       {availableSlots.map((slot) => (
-                        <div
-                          key={slot}
-                          className={`bk-slot ${selectedSlot === slot ? "selected" : ""}`}
-                          onClick={() => handleSlotSelect(slot)}
-                        >
+                        <div key={slot} className={`bk-slot ${selectedSlot === slot ? "selected" : ""}`} onClick={() => handleSlotSelect(slot)}>
                           {formatTime(slot)}
                         </div>
                       ))}
                     </div>
                   )}
-
-                  <button onClick={() => setStep(2)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>
-                    ← Retour
-                  </button>
+                  <button onClick={() => setStep(2)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>← Retour</button>
                 </motion.div>
               )}
 
               {step === 4 && (
-                <motion.div
-                  key="step4"
-                  initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>
-                    Confirmer votre réservation
-                  </h2>
+                <motion.div key="step4" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Confirmer votre réservation</h2>
                   <div style={{ background: "var(--bk-card)", border: "1px solid var(--bk-border)", padding: "2rem", marginBottom: "2rem" }}>
                     <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
                       <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Service</p>
@@ -664,11 +520,8 @@ const BookingPage = () => {
                       </p>
                     </div>
                   </div>
-
                   <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                    <button onClick={() => setStep(3)} className="bk-btn-outline">
-                      ← Modifier
-                    </button>
+                    <button onClick={() => setStep(3)} className="bk-btn-outline">← Modifier</button>
                     <button onClick={handleConfirmBooking} className="bk-btn-gold" disabled={loading}>
                       {loading ? "Confirmation..." : "Confirmer la réservation"}
                     </button>
@@ -679,7 +532,6 @@ const BookingPage = () => {
           </div>
         </section>
       </div>
-      <ToastContainer theme="dark" position="top-center" />
     </div>
   );
 };
