@@ -143,6 +143,23 @@ const useHeaderStyles = () => {
     color: var(--hd-black)!important;
   }
 
+  /* ── Mes réservations badge ── */
+.hd-link-account {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+.hd-link-account::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--hd-gold);
+    flex-shrink: 0;
+  }
+
   /* ========== ACTIONS RIGHT ========== */
 .hd-actions {
     display: none;
@@ -246,6 +263,13 @@ const useHeaderStyles = () => {
     gap: 0.5rem;
   }
 
+  /* ── Séparateur mobile ── */
+.hd-mobile-divider {
+    height: 1px;
+    background: var(--hd-border);
+    margin: 0.5rem 0;
+  }
+
   @media (min-width: 1024px) {
  .hd-mobile-menu { display: none; }
   }
@@ -280,9 +304,9 @@ const Header = ({ role, onLogout }) => {
       if (
         isMenuOpen &&
         menuRef.current &&
-     !menuRef.current.contains(e.target) &&
+        !menuRef.current.contains(e.target) &&
         btnRef.current &&
-     !btnRef.current.contains(e.target)
+        !btnRef.current.contains(e.target)
       ) {
         setIsMenuOpen(false);
       }
@@ -300,38 +324,27 @@ const Header = ({ role, onLogout }) => {
 
   const navLinks = useMemo(
     () => [
-      { path: "/", label: "Accueil" },
+      { path: "/",         label: "Accueil" },
       { path: "/services", label: "Nos Services" },
       { path: "/a-propos", label: "À Propos" },
       { path: "/annonces", label: "Annonces" },
-      { path: "/contact", label: "Contact" },
+      { path: "/contact",  label: "Contact" },
     ],
     []
   );
 
-  const handleBookingClick = () => {
-    navigate('/reserver');
-    setIsMenuOpen(false);
-  };
-
-  const handleLoginClick = () => {
-    navigate('/login');
-    setIsMenuOpen(false);
-  };
-
-  const handleLogoutClick = () => {
-    onLogout();
-    setIsMenuOpen(false);
-  };
+  const handleBookingClick = () => { navigate("/reserver"); setIsMenuOpen(false); };
+  const handleLoginClick   = () => { navigate("/login");    setIsMenuOpen(false); };
+  const handleLogoutClick  = () => { onLogout();            setIsMenuOpen(false); };
 
   const renderLinks = (onClick) =>
     navLinks.map((link) => (
       <li key={link.path}>
         <Link
           to={link.path}
-          className={`hd-link ${location.pathname === link.path? "active" : ""}`}
+          className={`hd-link ${location.pathname === link.path ? "active" : ""}`}
           onClick={onClick}
-          aria-current={location.pathname === link.path? "page" : undefined}
+          aria-current={location.pathname === link.path ? "page" : undefined}
         >
           {link.label}
         </Link>
@@ -341,8 +354,10 @@ const Header = ({ role, onLogout }) => {
   return (
     <header className="hd-root" role="banner">
       <nav className="hd-nav">
+
+        {/* ── Logo ── */}
         <Link to="/" className="hd-logo-wrap" aria-label="Mr. Renaudin Barbershop - Accueil">
-          {!logoError? (
+          {!logoError ? (
             <img
               src="/Photos/Logo5.png"
               alt="Logo Mr. Renaudin Barbershop"
@@ -350,12 +365,7 @@ const Header = ({ role, onLogout }) => {
               onError={() => setLogoError(true)}
             />
           ) : (
-            <div style={{
-              fontFamily: "'Playfair Display', serif",
-              fontSize: "1.1rem",
-              fontWeight: 900,
-              color: "var(--hd-gold)"
-            }}>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.1rem", fontWeight: 900, color: "var(--hd-gold)" }}>
               MR. RENAUDIN
             </div>
           )}
@@ -364,14 +374,30 @@ const Header = ({ role, onLogout }) => {
           </div>
         </Link>
 
+        {/* ── Desktop nav center ── */}
         <div className="hd-nav-center">
           <ul className="hd-links">
             {renderLinks()}
-            {role === 'admin' && (
+
+            {/* Mes réservations — client connecté */}
+            {role === "client" && (
+              <li>
+                <Link
+                  to="/compte"
+                  className={`hd-link hd-link-account ${location.pathname === "/compte" ? "active" : ""}`}
+                  aria-current={location.pathname === "/compte" ? "page" : undefined}
+                >
+                  Mes Réservations
+                </Link>
+              </li>
+            )}
+
+            {/* Admin */}
+            {role === "admin" && (
               <li>
                 <Link
                   to="/admin/bookings"
-                  className={`hd-link hd-link-admin ${location.pathname.startsWith('/admin')? "active" : ""}`}
+                  className={`hd-link hd-link-admin ${location.pathname.startsWith("/admin") ? "active" : ""}`}
                 >
                   🔧 Admin
                 </Link>
@@ -380,11 +406,12 @@ const Header = ({ role, onLogout }) => {
           </ul>
         </div>
 
+        {/* ── Desktop actions ── */}
         <div className="hd-actions">
           <button onClick={handleBookingClick} className="hd-cta-btn">
             Réserver
           </button>
-          {role? (
+          {role ? (
             <button onClick={handleLogoutClick} className="hd-cta-btn hd-cta-btn-outline">
               Déconnexion
             </button>
@@ -395,23 +422,40 @@ const Header = ({ role, onLogout }) => {
           )}
         </div>
 
+        {/* ── Mobile menu button ── */}
         <button
           ref={btnRef}
           className="hd-menu-btn"
           onClick={toggleMenu}
-          aria-label={isMenuOpen? "Fermer le menu" : "Ouvrir le menu"}
+          aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
           aria-expanded={isMenuOpen}
           aria-controls="mobile-menu"
         >
-          <span className="hd-menu-btn-text">{isMenuOpen? "Fermer" : "Menu"}</span>
-          {isMenuOpen? <VscClose /> : <GiHamburgerMenu />}
+          <span className="hd-menu-btn-text">{isMenuOpen ? "Fermer" : "Menu"}</span>
+          {isMenuOpen ? <VscClose /> : <GiHamburgerMenu />}
         </button>
       </nav>
 
+      {/* ── Mobile menu ── */}
       {isMenuOpen && (
         <ul id="mobile-menu" ref={menuRef} className="hd-mobile-menu">
           {renderLinks(toggleMenu)}
-          {role === 'admin' && (
+
+          {/* Mes réservations — client connecté (mobile) */}
+          {role === "client" && (
+            <li>
+              <Link
+                to="/compte"
+                className={`hd-link hd-link-account ${location.pathname === "/compte" ? "active" : ""}`}
+                onClick={toggleMenu}
+              >
+                📋 Mes Réservations
+              </Link>
+            </li>
+          )}
+
+          {/* Admin (mobile) */}
+          {role === "admin" && (
             <li>
               <Link
                 to="/admin/bookings"
@@ -422,18 +466,21 @@ const Header = ({ role, onLogout }) => {
               </Link>
             </li>
           )}
+
+          {/* Séparateur */}
+          <li><div className="hd-mobile-divider" /></li>
+
+          {/* CTA */}
           <li className="hd-mobile-cta">
-            <button onClick={handleBookingClick} className="hd-cta-btn" style={{ width: '100%' }}>
+            <button onClick={handleBookingClick} className="hd-cta-btn" style={{ width: "100%" }}>
               Réserver
             </button>
-          </li>
-          <li>
-            {role? (
-              <button onClick={handleLogoutClick} className="hd-cta-btn hd-cta-btn-outline" style={{ width: '100%' }}>
+            {role ? (
+              <button onClick={handleLogoutClick} className="hd-cta-btn hd-cta-btn-outline" style={{ width: "100%" }}>
                 Déconnexion
               </button>
             ) : (
-              <button onClick={handleLoginClick} className="hd-cta-btn hd-cta-btn-outline" style={{ width: '100%' }}>
+              <button onClick={handleLoginClick} className="hd-cta-btn hd-cta-btn-outline" style={{ width: "100%" }}>
                 Connexion
               </button>
             )}
