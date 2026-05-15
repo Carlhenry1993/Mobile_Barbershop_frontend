@@ -262,6 +262,7 @@ const ChatApp = ({ isAdmin }) => {
         toast.info(`Nouveau message de ${data.senderName}`, {
           icon: "✂️",
           toastId: `msg-${data.id}`,
+          autoClose: 5000,
         });
         return;
       }
@@ -280,6 +281,7 @@ const ChatApp = ({ isAdmin }) => {
           toast.info(`Nouveau message de ${data.senderName}`, {
             icon: "✂️",
             toastId: `msg-${data.id}`,
+            autoClose: 5000,
           });
         } else {
           // Chat is open — auto-mark as read immediately
