@@ -3,221 +3,295 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "react-toastify";
-// ToastContainer retiré — géré globalement dans App.js
+// ToastContainer géré globalement dans App.js
 
+// ─── Config ───────────────────────────────────────────────────────────────────
+axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const useBookingStyles = () => {
   useEffect(() => {
-    const styleId = "mr-renaudin-booking-styles";
-    if (document.getElementById(styleId)) return;
+    const id = "mrr-booking-styles";
+    if (document.getElementById(id)) return;
+    const s = document.createElement("style");
+    s.id = id;
+    s.innerHTML = `
+      .bk-root {
+        --bk-black:    #0a0b0e;
+        --bk-surface:  #12141a;
+        --bk-card:     #181c24;
+        --bk-border:   rgba(212,168,67,0.12);
+        --bk-gold:     #d4a843;
+        --bk-gold-lt:  #f0c96a;
+        --bk-gold-dim: rgba(212,168,67,0.08);
+        --bk-cream:    #ede8de;
+        --bk-fog:      #8e97aa;
+        --bk-mist:     #b8c0d0;
+        --bk-success:  #27ae60;
+        --bk-danger:   #e74c3c;
 
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.innerHTML = `
-  .bk-root {
-        --bk-black: #0e1015;
-        --bk-charcoal: #161b24;
-        --bk-card: #1e2535;
-        --bk-border: #2a3348;
-        --bk-gold: #d4a843;
-        --bk-gold-lt: #f0c96a;
-        --bk-gold-dim: rgba(212,168,67,0.13);
-        --bk-steel: #8ba8c8;
-        --bk-cream: #eef2f7;
-        --bk-light: #b8c8da;
-        --bk-muted: #7888a0;
-        --bk-danger: #e74c3c;
-        --bk-success: #27ae60;
         background: var(--bk-black);
         color: var(--bk-cream);
         font-family: 'DM Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
         min-height: 100svh;
       }
-  .bk-inner { position: relative; z-index: 1; }
-  .bk-section-pad { padding: 6rem 1.5rem; }
-      @media (max-width: 768px) {
-  .bk-section-pad { padding: 4rem 1.25rem; }
+
+      /* ── Layout ── */
+      .bk-wrap { max-width: 780px; margin: 0 auto; padding: 0 1.5rem; }
+      .bk-sect { padding: 5rem 1.5rem 4rem; }
+      @media (max-width: 640px) { .bk-sect { padding: 3.5rem 1.25rem 3rem; } }
+
+      /* ── Page header ── */
+      .bk-eyebrow {
+        font-size: 0.68rem; letter-spacing: 0.25em;
+        text-transform: uppercase; color: var(--bk-gold); margin-bottom: 0.75rem;
       }
-  .bk-eyebrow {
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.68rem;
-        letter-spacing: 0.25em;
-        text-transform: uppercase;
-        color: var(--bk-gold);
-        margin-bottom: 1rem;
-      }
-  .bk-display {
-        font-family: 'Playfair Display', Georgia, serif;
-        font-weight: 900;
-        line-height: 1.05;
-        color: var(--bk-cream);
-      }
-  .bk-gold-rule {
-        display: block;
-        width: 60px;
-        height: 2px;
-        background: var(--bk-gold);
-        margin: 0 auto 1.5rem;
-      }
-  .bk-btn-gold, .bk-btn-outline {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-        font-family: 'DM Sans', sans-serif;
-        font-weight: 500;
-        font-size: 0.85rem;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        padding: 1rem 2rem;
-        border: none;
-        cursor: pointer;
-        transition: background 0.3s, transform 0.2s, border-color 0.3s, color 0.3s;
-        text-decoration: none;
-        will-change: transform;
-      }
-  .bk-btn-gold {
-        background: var(--bk-gold);
-        color: var(--bk-black);
-      }
-  .bk-btn-gold:hover, .bk-btn-gold:focus-visible { 
-        background: var(--bk-gold-lt); 
-        transform: translateY(-2px);
-        outline: 2px solid var(--bk-gold-lt);
-        outline-offset: 2px;
-      }
-  .bk-btn-gold:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-      }
-  .bk-btn-outline {
-        background: transparent;
-        color: var(--bk-cream);
-        border: 1px solid rgba(184,200,218,0.3);
-      }
-  .bk-btn-outline:hover, .bk-btn-outline:focus-visible { 
-        border-color: var(--bk-gold); 
-        color: var(--bk-gold); 
-        transform: translateY(-2px);
-        outline: 2px solid var(--bk-gold);
-        outline-offset: 2px;
-      }
-  .bk-card {
-        background: var(--bk-card);
-        border: 1px solid var(--bk-border);
-        padding: 2rem;
-        transition: border-color 0.3s, transform 0.3s;
-        cursor: pointer;
-        will-change: transform;
-      }
-  .bk-card:hover { 
-        border-color: var(--bk-gold); 
-        transform: translateY(-4px);
-      }
-  .bk-card.selected {
-        border-color: var(--bk-gold);
-        background: rgba(212,168,67,0.08);
-      }
-  .bk-steps {
-        display: flex;
-        justify-content: center;
-        gap: 1rem;
-        margin-bottom: 3rem;
-        flex-wrap: wrap;
-      }
-  .bk-step {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.8rem;
-        color: var(--bk-muted);
-        letter-spacing: 0.05em;
-      }
-  .bk-step.active { color: var(--bk-gold); }
-  .bk-step.done { color: var(--bk-success); }
-  .bk-step-num {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 1px solid currentColor;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 0.75rem;
-      }
-  .bk-step.active .bk-step-num {
-        background: var(--bk-gold);
-        color: var(--bk-black);
-        border-color: var(--bk-gold);
-      }
-  .bk-slot {
-        background: var(--bk-card);
-        border: 1px solid var(--bk-border);
-        padding: 0.75rem 1rem;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-align: center;
-        font-size: 0.9rem;
-      }
-  .bk-slot:hover { border-color: var(--bk-gold); }
-  .bk-slot.selected {
-        background: var(--bk-gold);
-        color: var(--bk-black);
-        border-color: var(--bk-gold);
-        font-weight: 600;
-      }
-  .bk-input {
-        width: 100%;
-        background: var(--bk-black);
-        border: 1px solid var(--bk-border);
-        color: var(--bk-cream);
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.95rem;
-        padding: 1rem 1.25rem;
-        transition: border-color 0.3s;
-      }
-  .bk-input:focus {
-        outline: none;
-        border-color: var(--bk-gold);
-      }
-  .bk-error {
-        background: rgba(231,76,60,0.1);
-        border: 1px solid rgba(231,76,60,0.3);
-        color: #ff8a7a;
-        padding: 1rem;
-        font-size: 0.85rem;
-        margin-bottom: 1.5rem;
-      }
-  .bk-success {
-        background: rgba(39,174,96,0.1);
-        border: 1px solid rgba(39,174,96,0.3);
-        color: #7dd87d;
-        padding: 2rem;
-        text-align: center;
-      }
-  .bk-login-wall {
-        background: rgba(212,168,67,0.1);
-        border: 2px solid var(--bk-gold);
-        padding: 3rem 2rem;
-        text-align: center;
-        max-width: 600px;
-        margin: 0 auto;
-      }
-  .bk-login-wall h2 {
+      .bk-display {
         font-family: 'Playfair Display', serif;
-        font-size: 1.75rem;
-        color: var(--bk-gold);
-        margin-bottom: 1rem;
+        font-weight: 900; line-height: 1.05;
+        font-size: clamp(2rem, 5vw, 3rem); color: var(--bk-cream);
       }
-  .bk-login-wall p {
-        color: var(--bk-light);
-        line-height: 1.7;
-        margin-bottom: 2rem;
+      .bk-rule {
+        display: block; width: 50px; height: 2px;
+        background: var(--bk-gold); margin: 1.25rem 0 3rem;
       }
+
+      /* ── Step indicator ── */
+      .bk-steps {
+        display: flex; align-items: center;
+        gap: 0; margin-bottom: 3rem;
+        overflow-x: auto; padding-bottom: 0.25rem;
+      }
+      .bk-step-item {
+        display: flex; align-items: center; flex-shrink: 0;
+      }
+      .bk-step-dot {
+        display: flex; align-items: center; gap: 0.6rem;
+        font-size: 0.75rem; font-weight: 600;
+        letter-spacing: 0.06em; text-transform: uppercase;
+        color: var(--bk-fog); white-space: nowrap;
+      }
+      .bk-step-num {
+        width: 30px; height: 30px; border-radius: 50%;
+        border: 1px solid currentColor;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.75rem; font-weight: 700;
+        flex-shrink: 0; transition: all 0.25s;
+      }
+      .bk-step-dot.active  { color: var(--bk-gold); }
+      .bk-step-dot.active .bk-step-num {
+        background: var(--bk-gold); color: var(--bk-black); border-color: var(--bk-gold);
+      }
+      .bk-step-dot.done { color: var(--bk-success); }
+      .bk-step-dot.done .bk-step-num {
+        background: rgba(39,174,96,0.15); border-color: var(--bk-success);
+      }
+      .bk-step-line {
+        flex: 1; height: 1px; min-width: 24px; max-width: 48px;
+        background: var(--bk-border); margin: 0 0.5rem;
+      }
+      .bk-step-line.done { background: var(--bk-success); opacity: 0.4; }
+
+      /* ── Section title ── */
+      .bk-section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.35rem; color: var(--bk-cream);
+        margin-bottom: 1.5rem; font-weight: 700;
+      }
+
+      /* ── Service card ── */
+      .bk-service-card {
+        background: var(--bk-card); border: 1px solid var(--bk-border);
+        padding: 1.5rem; cursor: pointer;
+        transition: border-color 0.22s, transform 0.22s, background 0.22s;
+        will-change: transform;
+        display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+      }
+      .bk-service-card:hover { border-color: rgba(212,168,67,0.4); transform: translateX(4px); }
+      .bk-service-card.selected {
+        border-color: var(--bk-gold); background: var(--bk-gold-dim);
+      }
+      .bk-service-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.05rem; font-weight: 700; color: var(--bk-cream);
+        margin-bottom: 0.3rem;
+      }
+      .bk-service-meta {
+        font-size: 0.82rem; color: var(--bk-fog);
+        display: flex; gap: 1rem; flex-wrap: wrap;
+      }
+      .bk-service-price {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem; font-weight: 700;
+        color: var(--bk-gold); flex-shrink: 0;
+      }
+
+      /* ── Barber card ── */
+      .bk-barbers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+      .bk-barber-card {
+        background: var(--bk-card); border: 1px solid var(--bk-border);
+        padding: 1.5rem; cursor: pointer; text-align: center;
+        transition: border-color 0.22s, transform 0.22s, background 0.22s;
+        will-change: transform;
+      }
+      .bk-barber-card:hover { border-color: rgba(212,168,67,0.4); transform: translateY(-3px); }
+      .bk-barber-card.selected { border-color: var(--bk-gold); background: var(--bk-gold-dim); }
+      .bk-barber-avatar {
+        width: 72px; height: 72px; border-radius: 50%;
+        object-fit: cover; margin: 0 auto 1rem;
+        border: 2px solid var(--bk-border); display: block;
+      }
+      .bk-barber-initials {
+        width: 72px; height: 72px; border-radius: 50%;
+        background: var(--bk-gold-dim); border: 2px solid var(--bk-border);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 1rem;
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem; font-weight: 700; color: var(--bk-gold);
+      }
+      .bk-barber-name {
+        font-weight: 600; font-size: 0.95rem; color: var(--bk-cream);
+        margin-bottom: 0.3rem;
+      }
+      .bk-barber-spec { font-size: 0.75rem; color: var(--bk-fog); line-height: 1.5; }
+
+      /* ── Date + slots ── */
+      .bk-date-input {
+        width: 100%; padding: 0.9rem 1rem;
+        background: var(--bk-black); border: 1px solid rgba(184,192,208,0.15);
+        color: var(--bk-cream); font-size: 0.95rem; font-family: 'DM Sans', sans-serif;
+        transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+        margin-bottom: 1.75rem;
+      }
+      .bk-date-input:focus {
+        border-color: var(--bk-gold);
+        box-shadow: 0 0 0 3px rgba(212,168,67,0.1);
+      }
+      .bk-slots {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+        gap: 0.6rem;
+      }
+      .bk-slot {
+        padding: 0.7rem; text-align: center;
+        background: var(--bk-black); border: 1px solid rgba(184,192,208,0.12);
+        color: var(--bk-mist); font-size: 0.88rem;
+        cursor: pointer; transition: all 0.18s;
+      }
+      .bk-slot:hover { border-color: var(--bk-gold); color: var(--bk-cream); }
+      .bk-slot.selected {
+        background: var(--bk-gold); color: var(--bk-black);
+        border-color: var(--bk-gold); font-weight: 700;
+      }
+      .bk-no-slots {
+        text-align: center; padding: 2.5rem;
+        color: var(--bk-fog); font-size: 0.88rem;
+        border: 1px dashed rgba(184,192,208,0.1);
+      }
+
+      /* ── Confirmation summary ── */
+      .bk-summary {
+        background: var(--bk-card); border: 1px solid var(--bk-border);
+        margin-bottom: 2rem; overflow: hidden;
+      }
+      .bk-summary-header {
+        background: var(--bk-gold-dim); border-bottom: 1px solid var(--bk-border);
+        padding: 1rem 1.5rem;
+        font-size: 0.72rem; letter-spacing: 0.15em;
+        text-transform: uppercase; color: var(--bk-gold); font-weight: 600;
+      }
+      .bk-summary-body { padding: 0 1.5rem; }
+      .bk-summary-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.9rem 0; border-bottom: 1px solid var(--bk-border);
+        gap: 1rem;
+      }
+      .bk-summary-row:last-child { border-bottom: none; }
+      .bk-summary-key { font-size: 0.82rem; color: var(--bk-fog); flex-shrink: 0; }
+      .bk-summary-val { font-size: 0.9rem; color: var(--bk-cream); font-weight: 500; text-align: right; }
+      .bk-summary-val.gold { color: var(--bk-gold); font-family: 'Playfair Display', serif; font-size: 1.1rem; }
+
+      /* ── Buttons ── */
+      .bk-btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 2rem; }
+      .bk-btn {
+        display: inline-flex; align-items: center; gap: 0.5rem;
+        padding: 0.9rem 1.75rem;
+        font-size: 0.78rem; font-weight: 600;
+        letter-spacing: 0.1em; text-transform: uppercase;
+        border: none; cursor: pointer;
+        transition: background 0.2s, transform 0.15s, opacity 0.2s;
+        will-change: transform; text-decoration: none;
+      }
+      .bk-btn:hover:not(:disabled) { transform: translateY(-2px); }
+      .bk-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+      .bk-btn-gold  { background: var(--bk-gold); color: var(--bk-black); }
+      .bk-btn-gold:hover:not(:disabled) { background: var(--bk-gold-lt); }
+      .bk-btn-ghost {
+        background: transparent; color: var(--bk-mist);
+        border: 1px solid rgba(184,192,208,0.2);
+      }
+      .bk-btn-ghost:hover:not(:disabled) { border-color: var(--bk-gold); color: var(--bk-gold); }
+
+      /* ── Error / info ── */
+      .bk-error {
+        background: rgba(231,76,60,0.08); border: 1px solid rgba(231,76,60,0.25);
+        color: #ff8a7a; padding: 0.9rem 1.25rem;
+        font-size: 0.85rem; margin-bottom: 1.5rem; line-height: 1.6;
+      }
+      .bk-info {
+        background: var(--bk-gold-dim); border-left: 2px solid var(--bk-gold);
+        padding: 0.9rem 1.25rem; font-size: 0.82rem;
+        color: var(--bk-mist); line-height: 1.65; margin-bottom: 1.5rem;
+      }
+
+      /* ── Login wall ── */
+      .bk-wall {
+        background: var(--bk-gold-dim); border: 1.5px solid var(--bk-gold);
+        padding: 3rem 2rem; text-align: center;
+        max-width: 560px; margin: 0 auto;
+      }
+      .bk-wall-icon { font-size: 2.5rem; margin-bottom: 1.25rem; }
+      .bk-wall h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.6rem; color: var(--bk-gold);
+        margin-bottom: 1rem; font-weight: 900;
+      }
+      .bk-wall p { color: var(--bk-mist); line-height: 1.75; margin-bottom: 2rem; font-size: 0.92rem; }
+      .bk-wall-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+      /* ── Success screen ── */
+      .bk-success-box {
+        background: rgba(39,174,96,0.07); border: 1px solid rgba(39,174,96,0.25);
+        padding: 2.5rem; text-align: center; max-width: 560px; margin: 0 auto;
+      }
+      .bk-success-icon { font-size: 3rem; margin-bottom: 1.25rem; }
+      .bk-success-box h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.75rem; color: var(--bk-cream); margin-bottom: 1.25rem;
+      }
+      .bk-success-box p { color: var(--bk-mist); line-height: 1.8; margin-bottom: 0.5rem; font-size: 0.9rem; }
+      .bk-success-box .note { font-size: 0.78rem; color: var(--bk-fog); margin-top: 1rem; margin-bottom: 2rem; }
+
+      /* ── Loading ── */
+      .bk-loading {
+        text-align: center; padding: 2rem 0;
+        color: var(--bk-fog); font-size: 0.88rem;
+        display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+      }
+      .bk-spinner {
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 2px solid rgba(212,168,67,0.2);
+        border-top-color: var(--bk-gold);
+        animation: bkSpin 0.7s linear infinite;
+      }
+      @keyframes bkSpin { to { transform: rotate(360deg); } }
+
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: 0.01ms !important;
@@ -225,72 +299,99 @@ const useBookingStyles = () => {
         }
       }
     `;
-    document.head.appendChild(style);
-    return () => {
-      const el = document.getElementById(styleId);
-      if (el) el.remove();
-    };
+    document.head.appendChild(s);
+    return () => { document.getElementById(id)?.remove(); };
   }, []);
 };
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const fmtDate = (d) =>
+  new Date(d).toLocaleDateString("fr-FR", {
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
+  });
+const fmtTime = (d) =>
+  new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const getMinDate = () => new Date().toISOString().split("T")[0];
+
+const getInitials = (name = "") =>
+  name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+
+// ─── Step indicator ───────────────────────────────────────────────────────────
+const STEPS = ["Service", "Barbier", "Date & Heure", "Confirmation"];
+
+const StepBar = ({ current }) => (
+  <div className="bk-steps">
+    {STEPS.map((label, i) => {
+      const n = i + 1;
+      const state = n < current ? "done" : n === current ? "active" : "";
+      return (
+        <React.Fragment key={n}>
+          <div className="bk-step-item">
+            <div className={`bk-step-dot ${state}`}>
+              <div className="bk-step-num">
+                {n < current ? "✓" : n}
+              </div>
+              <span>{label}</span>
+            </div>
+          </div>
+          {i < STEPS.length - 1 && (
+            <div className={`bk-step-line ${n < current ? "done" : ""}`} />
+          )}
+        </React.Fragment>
+      );
+    })}
+  </div>
+);
+
+// ─── BookingPage ──────────────────────────────────────────────────────────────
 const BookingPage = () => {
   useBookingStyles();
-  const navigate = useNavigate();
+  const navigate          = useNavigate();
   const shouldReduceMotion = useReducedMotion();
 
-  const [step, setStep] = useState(1);
-  const [services, setServices] = useState([]);
-  const [barbers, setBarbers] = useState([]);
-  const [selectedService, setSelectedService] = useState(null);
-  const [selectedBarber, setSelectedBarber] = useState(null);
-  const [selectedDate, setSelectedDate] = useState("");
-  const [availableSlots, setAvailableSlots] = useState([]);
-  const [selectedSlot, setSelectedSlot] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingBarbers, setLoadingBarbers] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
+  // ── Auth ──────────────────────────────────────────────────────────────────
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
+  // ── Step state ────────────────────────────────────────────────────────────
+  const [step,            setStep]            = useState(1);
+  const [services,        setServices]        = useState([]);
+  const [barbers,         setBarbers]         = useState([]);
+  const [availableSlots,  setAvailableSlots]  = useState([]);
+  const [selectedService, setSelectedService] = useState(null);
+  const [selectedBarber,  setSelectedBarber]  = useState(null);
+  const [selectedDate,    setSelectedDate]    = useState("");
+  const [selectedSlot,    setSelectedSlot]    = useState(null);
 
-  const fetchAvailability = useCallback(async () => {
-    if (!selectedService || !selectedBarber || !selectedDate) return;
-    setLoading(true);
-    setError("");
-    try {
-      const res = await axios.get("/api/booking/availability", {
-        params: { date: selectedDate, barberId: selectedBarber.id, serviceId: selectedService.id },
-      });
-      setAvailableSlots(res.data || []);
-    } catch {
-      setError("Impossible de charger les créneaux");
-      setAvailableSlots([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedService, selectedBarber, selectedDate]);
+  // ── UI state ──────────────────────────────────────────────────────────────
+  const [loadingServices, setLoadingServices] = useState(true);
+  const [loadingBarbers,  setLoadingBarbers]  = useState(false);
+  const [loadingSlots,    setLoadingSlots]    = useState(false);
+  const [loadingConfirm,  setLoadingConfirm]  = useState(false);
+  const [error,           setError]           = useState("");
+  const [success,         setSuccess]         = useState(false);
 
+  // ── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
-      sessionStorage.setItem('redirectAfterLogin', '/reserver');
+      sessionStorage.setItem("redirectAfterLogin", "/reserver");
     }
     fetchServices();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => { fetchAvailability(); }, [fetchAvailability]);
-
+  // ── Fetch helpers ─────────────────────────────────────────────────────────
   const fetchServices = async () => {
+    setLoadingServices(true);
     try {
       const res = await axios.get("/api/booking/services");
       setServices(res.data || []);
     } catch {
-      setError("Impossible de charger les services");
-      setServices([]);
+      setError("Impossible de charger les services. Veuillez rafraîchir la page.");
+    } finally {
+      setLoadingServices(false);
     }
   };
 
@@ -301,19 +402,43 @@ const BookingPage = () => {
       const res = await axios.get("/api/booking/barbers");
       setBarbers(res.data || []);
     } catch {
-      setError("Impossible de charger les barbiers");
-      setBarbers([]);
+      setError("Impossible de charger les barbiers.");
     } finally {
       setLoadingBarbers(false);
     }
   };
 
+  const fetchSlots = useCallback(async () => {
+    if (!selectedService || !selectedBarber || !selectedDate) return;
+    setLoadingSlots(true);
+    setError("");
+    setAvailableSlots([]);
+    try {
+      const res = await axios.get("/api/booking/availability", {
+        params: {
+          date:      selectedDate,
+          barberId:  selectedBarber.id,
+          serviceId: selectedService.id,
+        },
+      });
+      setAvailableSlots(res.data || []);
+    } catch {
+      setError("Impossible de charger les créneaux disponibles.");
+    } finally {
+      setLoadingSlots(false);
+    }
+  }, [selectedService, selectedBarber, selectedDate]);
+
+  useEffect(() => { fetchSlots(); }, [fetchSlots]);
+
+  // ── Step handlers ─────────────────────────────────────────────────────────
   const handleServiceSelect = (service) => {
     setSelectedService(service);
     setSelectedBarber(null);
     setSelectedDate("");
     setSelectedSlot(null);
     setAvailableSlots([]);
+    setError("");
     fetchBarbers();
     setStep(2);
   };
@@ -323,15 +448,30 @@ const BookingPage = () => {
     setSelectedDate("");
     setSelectedSlot(null);
     setAvailableSlots([]);
+    setError("");
     setStep(3);
   };
 
-  const handleDateChange  = (e) => { setSelectedDate(e.target.value); setSelectedSlot(null); };
-  const handleSlotSelect  = (slot) => { setSelectedSlot(slot); setStep(4); };
+  const handleDateChange = (e) => {
+    setSelectedDate(e.target.value);
+    setSelectedSlot(null);
+    setAvailableSlots([]);
+    setError("");
+  };
 
-  const handleConfirmBooking = async () => {
-    if (!isLoggedIn) { sessionStorage.setItem('redirectAfterLogin', '/reserver'); navigate('/login'); return; }
-    setLoading(true);
+  const handleSlotSelect = (slot) => {
+    setSelectedSlot(slot);
+    setError("");
+    setStep(4);
+  };
+
+  const handleConfirm = async () => {
+    if (!isLoggedIn) {
+      sessionStorage.setItem("redirectAfterLogin", "/reserver");
+      navigate("/login");
+      return;
+    }
+    setLoadingConfirm(true);
     setError("");
     try {
       await axios.post("/api/booking/create", {
@@ -340,198 +480,301 @@ const BookingPage = () => {
         startTime: selectedSlot,
       });
       setSuccess(true);
-      toast.success("Réservation confirmée!");
+      toast.success("Réservation confirmée !");
     } catch (err) {
       if (err.response?.status === 409) {
-        setError("Ce créneau vient d'être réservé. Choisissez-en un autre.");
-        fetchAvailability();
+        setError("Ce créneau vient d'être pris. Veuillez choisir une autre heure.");
+        fetchSlots();
         setStep(3);
       } else {
-        setError(err.response?.data?.error || "Erreur lors de la réservation");
+        setError(err.response?.data?.error || "Erreur lors de la réservation. Réessayez.");
       }
       toast.error("Erreur de réservation");
     } finally {
-      setLoading(false);
+      setLoadingConfirm(false);
     }
   };
 
-  const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-  const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
-  const getMinDate = () => new Date().toISOString().split("T")[0];
+  // ── Animation variants ────────────────────────────────────────────────────
+  const pageVariants = {
+    initial: shouldReduceMotion ? {} : { opacity: 0, x: 24 },
+    animate: { opacity: 1, x: 0 },
+    exit:    shouldReduceMotion ? {} : { opacity: 0, x: -24 },
+  };
+  const pageTransition = { duration: 0.28, ease: [0.16, 1, 0.3, 1] };
 
+  // ── Login wall ────────────────────────────────────────────────────────────
   if (!isLoggedIn) {
     return (
       <div className="bk-root">
-        <div className="bk-inner">
-          <section className="bk-section-pad" style={{ minHeight: "80vh", display: "flex", alignItems: "center" }}>
-            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-              <div className="bk-login-wall">
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>
-                <h2>Compte requis pour réserver</h2>
-                <p>La réservation en ligne est réservée aux membres Mr. Renaudin.<br />Créez votre compte gratuit en 30 secondes.</p>
-                <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => navigate("/login")} className="bk-btn-gold">Créer mon compte</button>
-                  <button onClick={() => navigate("/login")} className="bk-btn-outline">J'ai déjà un compte</button>
-                </div>
+        <section className="bk-sect" style={{ display: "flex", alignItems: "center", minHeight: "80vh" }}>
+          <div className="bk-wrap" style={{ width: "100%" }}>
+            <div className="bk-wall">
+              <div className="bk-wall-icon">🔒</div>
+              <h2>Compte requis pour réserver</h2>
+              <p>
+                La réservation en ligne est réservée aux membres Mr. Renaudin.<br />
+                Créez votre compte gratuit en 30 secondes pour accéder aux créneaux.
+              </p>
+              <div className="bk-wall-btns">
+                <button className="bk-btn bk-btn-gold" onClick={() => navigate("/login")}>
+                  Créer mon compte
+                </button>
+                <button className="bk-btn bk-btn-ghost" onClick={() => navigate("/login")}>
+                  J'ai déjà un compte
+                </button>
               </div>
             </div>
-          </section>
-        </div>
-      </div>
-    );
-  }
-
-  if (success) {
-    return (
-      <div className="bk-root">
-        <div className="bk-inner">
-          <section className="bk-section-pad" style={{ minHeight: "80vh", display: "flex", alignItems: "center" }}>
-            <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-              <div className="bk-success">
-                <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>✓</div>
-                <h2 className="bk-display" style={{ fontSize: "2rem", marginBottom: "1rem" }}>Réservation confirmée!</h2>
-                <p style={{ color: "var(--bk-light)", lineHeight: "1.7", marginBottom: "2rem" }}>
-                  <strong>{selectedService?.name}</strong> avec <strong>{selectedBarber?.name}</strong><br />
-                  {formatDate(selectedSlot)} à {formatTime(selectedSlot)}<br />
-                  {ADDRESS}
-                </p>
-                <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "2rem" }}>
-                  Un email de confirmation vous a été envoyé. Annulation gratuite jusqu'à 24h avant.
-                </p>
-                <div style={{ display: "flex", gap: "1rem", justifyContent: "center", flexWrap: "wrap" }}>
-                  <button onClick={() => navigate("/compte")} className="bk-btn-gold">Mes réservations</button>
-                  <button onClick={() => navigate("/")} className="bk-btn-outline">Retour accueil</button>
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="bk-root">
-      <div className="bk-inner">
-        <section className="bk-section-pad">
-          <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-              <p className="bk-eyebrow">Réservation en ligne</p>
-              <span className="bk-gold-rule" />
-              <h1 className="bk-display" style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}>Prenez rendez-vous</h1>
-            </div>
-
-            <div className="bk-steps">
-              {[
-                { n: 1, label: "Service" },
-                { n: 2, label: "Barbier" },
-                { n: 3, label: "Date & Heure" },
-                { n: 4, label: "Confirmation" },
-              ].map(({ n, label }) => (
-                <div key={n} className={`bk-step ${step >= n ? "active" : ""} ${step > n ? "done" : ""}`}>
-                  <div className="bk-step-num">{step > n ? "✓" : n}</div>
-                  <span>{label}</span>
-                </div>
-              ))}
-            </div>
-
-            {error && <div className="bk-error">{error}</div>}
-
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <motion.div key="step1" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Choisissez votre service</h2>
-                  <div style={{ display: "grid", gap: "1rem" }}>
-                    {services.map((service) => (
-                      <div key={service.id} className="bk-card" onClick={() => handleServiceSelect(service)}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
-                          <div>
-                            <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>{service.name}</h3>
-                            <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem", marginBottom: "0.5rem" }}>{service.duration} min</p>
-                            {service.description && <p style={{ color: "var(--bk-light)", fontSize: "0.85rem", lineHeight: "1.6" }}>{service.description}</p>}
-                          </div>
-                          <div style={{ color: "var(--bk-gold)", fontSize: "1.2rem", fontWeight: 700 }}>{service.price}$</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {step === 2 && (
-                <motion.div key="step2" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Choisissez votre barbier</h2>
-                  {loadingBarbers && <p style={{ color: "var(--bk-muted)", textAlign: "center" }}>Chargement des barbiers...</p>}
-                  {!loadingBarbers && barbers.length === 0 && <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>Aucun barbier disponible.</p>}
-                  {!loadingBarbers && barbers.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem" }}>
-                      {barbers.map((barber) => (
-                        <div key={barber.id} className="bk-card" onClick={() => handleBarberSelect(barber)}>
-                          {barber.avatar_url && <img src={barber.avatar_url} alt={barber.name} style={{ width: "100%", aspectRatio: "1", objectFit: "cover", marginBottom: "1rem" }} onError={(e) => { e.target.style.display = 'none'; }} />}
-                          <h3 style={{ color: "var(--bk-cream)", fontSize: "1.1rem", marginBottom: "0.5rem", fontWeight: 600 }}>{barber.name}</h3>
-                          {barber.specialties && <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem" }}>{typeof barber.specialties === 'string' ? barber.specialties : Array.isArray(barber.specialties) ? barber.specialties.join(" • ") : ""}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button onClick={() => setStep(1)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>← Retour</button>
-                </motion.div>
-              )}
-
-              {step === 3 && (
-                <motion.div key="step3" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Choisissez une date et heure</h2>
-                  <div style={{ marginBottom: "2rem" }}>
-                    <label style={{ color: "var(--bk-light)", fontSize: "0.9rem", display: "block", marginBottom: "0.5rem" }}>Date</label>
-                    <input type="date" value={selectedDate} onChange={handleDateChange} min={getMinDate()} className="bk-input" />
-                  </div>
-                  {loading && <p style={{ color: "var(--bk-muted)" }}>Chargement des créneaux...</p>}
-                  {selectedDate && availableSlots.length === 0 && !loading && <p style={{ color: "var(--bk-muted)", textAlign: "center", padding: "2rem" }}>Aucun créneau disponible ce jour-là</p>}
-                  {availableSlots.length > 0 && (
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))", gap: "0.75rem" }}>
-                      {availableSlots.map((slot) => (
-                        <div key={slot} className={`bk-slot ${selectedSlot === slot ? "selected" : ""}`} onClick={() => handleSlotSelect(slot)}>
-                          {formatTime(slot)}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button onClick={() => setStep(2)} className="bk-btn-outline" style={{ marginTop: "2rem" }}>← Retour</button>
-                </motion.div>
-              )}
-
-              {step === 4 && (
-                <motion.div key="step4" initial={shouldReduceMotion ? {} : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={shouldReduceMotion ? {} : { opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
-                  <h2 style={{ color: "var(--bk-cream)", fontSize: "1.3rem", marginBottom: "1.5rem", fontFamily: "'Playfair Display', serif" }}>Confirmer votre réservation</h2>
-                  <div style={{ background: "var(--bk-card)", border: "1px solid var(--bk-border)", padding: "2rem", marginBottom: "2rem" }}>
-                    <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Service</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedService?.name}</p>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.85rem" }}>{selectedService?.duration} min • {selectedService?.price}$</p>
-                    </div>
-                    <div style={{ marginBottom: "1rem", paddingBottom: "1rem", borderBottom: "1px solid var(--bk-border)" }}>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Barbier</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>{selectedBarber?.name}</p>
-                    </div>
-                    <div>
-                      <p style={{ color: "var(--bk-muted)", fontSize: "0.8rem", marginBottom: "0.25rem" }}>Date & Heure</p>
-                      <p style={{ color: "var(--bk-cream)", fontSize: "1.1rem", fontWeight: 600 }}>
-                        {selectedSlot && formatDate(selectedSlot)} à {selectedSlot && formatTime(selectedSlot)}
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-                    <button onClick={() => setStep(3)} className="bk-btn-outline">← Modifier</button>
-                    <button onClick={handleConfirmBooking} className="bk-btn-gold" disabled={loading}>
-                      {loading ? "Confirmation..." : "Confirmer la réservation"}
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </section>
       </div>
+    );
+  }
+
+  // ── Success screen ────────────────────────────────────────────────────────
+  if (success) {
+    return (
+      <div className="bk-root">
+        <section className="bk-sect" style={{ display: "flex", alignItems: "center", minHeight: "80vh" }}>
+          <div className="bk-wrap" style={{ width: "100%" }}>
+            <motion.div
+              initial={shouldReduceMotion ? {} : { opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="bk-success-box">
+                <div className="bk-success-icon">✓</div>
+                <h2>Réservation confirmée !</h2>
+                <p>
+                  <strong>{selectedService?.name}</strong> avec <strong>{selectedBarber?.name}</strong>
+                </p>
+                <p>{fmtDate(selectedSlot)} à {fmtTime(selectedSlot)}</p>
+                <p>{ADDRESS}</p>
+                <p className="note">
+                  Un email de confirmation a été envoyé. Annulation gratuite jusqu'à 24h avant.
+                </p>
+                <div className="bk-btn-row" style={{ justifyContent: "center" }}>
+                  <button className="bk-btn bk-btn-gold" onClick={() => navigate("/compte")}>
+                    Voir mes rendez-vous
+                  </button>
+                  <button className="bk-btn bk-btn-ghost" onClick={() => navigate("/")}>
+                    Retour accueil
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // ── Main booking flow ─────────────────────────────────────────────────────
+  return (
+    <div className="bk-root">
+      <section className="bk-sect">
+        <div className="bk-wrap">
+
+          {/* Page header */}
+          <motion.div
+            initial={shouldReduceMotion ? {} : { opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <p className="bk-eyebrow">Réservation en ligne</p>
+            <h1 className="bk-display">Prenez rendez-vous</h1>
+            <span className="bk-rule" />
+          </motion.div>
+
+          {/* Step bar */}
+          <StepBar current={step} />
+
+          {/* Error banner */}
+          {error && <div className="bk-error">{error}</div>}
+
+          {/* ── Steps ── */}
+          <AnimatePresence mode="wait">
+
+            {/* STEP 1 — Service */}
+            {step === 1 && (
+              <motion.div key="step1" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}>
+                <h2 className="bk-section-title">Choisissez votre service</h2>
+                {loadingServices ? (
+                  <div className="bk-loading"><div className="bk-spinner" /> Chargement des services…</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                    {services.map((svc) => (
+                      <div
+                        key={svc.id}
+                        className={`bk-service-card ${selectedService?.id === svc.id ? "selected" : ""}`}
+                        onClick={() => handleServiceSelect(svc)}
+                      >
+                        <div>
+                          <div className="bk-service-name">{svc.name}</div>
+                          <div className="bk-service-meta">
+                            <span>⏱ {svc.duration} min</span>
+                            {svc.description && <span>{svc.description}</span>}
+                          </div>
+                        </div>
+                        <div className="bk-service-price">{svc.price}$</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* STEP 2 — Barbier */}
+            {step === 2 && (
+              <motion.div key="step2" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}>
+                <h2 className="bk-section-title">Choisissez votre barbier</h2>
+                {loadingBarbers ? (
+                  <div className="bk-loading"><div className="bk-spinner" /> Chargement des barbiers…</div>
+                ) : barbers.length === 0 ? (
+                  <p style={{ color: "var(--bk-fog)", padding: "2rem 0" }}>Aucun barbier disponible pour le moment.</p>
+                ) : (
+                  <div className="bk-barbers-grid">
+                    {barbers.map((barber) => (
+                      <div
+                        key={barber.id}
+                        className={`bk-barber-card ${selectedBarber?.id === barber.id ? "selected" : ""}`}
+                        onClick={() => handleBarberSelect(barber)}
+                      >
+                        {barber.avatar_url ? (
+                          <img
+                            src={barber.avatar_url}
+                            alt={barber.name}
+                            className="bk-barber-avatar"
+                            onError={(e) => { e.target.style.display = "none"; }}
+                          />
+                        ) : (
+                          <div className="bk-barber-initials">{getInitials(barber.name)}</div>
+                        )}
+                        <div className="bk-barber-name">{barber.name}</div>
+                        {barber.specialties && (
+                          <div className="bk-barber-spec">
+                            {typeof barber.specialties === "string"
+                              ? barber.specialties
+                              : Array.isArray(barber.specialties)
+                              ? barber.specialties.join(" · ")
+                              : ""}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="bk-btn-row">
+                  <button className="bk-btn bk-btn-ghost" onClick={() => setStep(1)}>← Retour</button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 3 — Date & Heure */}
+            {step === 3 && (
+              <motion.div key="step3" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}>
+                <h2 className="bk-section-title">Choisissez une date et heure</h2>
+
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--bk-fog)", marginBottom: "0.6rem" }}>
+                  Date
+                </label>
+                <input
+                  type="date"
+                  className="bk-date-input"
+                  value={selectedDate}
+                  min={getMinDate()}
+                  onChange={handleDateChange}
+                />
+
+                {selectedDate && (
+                  <>
+                    <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "var(--bk-fog)", marginBottom: "0.75rem" }}>
+                      Créneaux disponibles
+                    </label>
+
+                    {loadingSlots && (
+                      <div className="bk-loading"><div className="bk-spinner" /> Chargement des créneaux…</div>
+                    )}
+
+                    {!loadingSlots && availableSlots.length === 0 && (
+                      <div className="bk-no-slots">
+                        Aucun créneau disponible ce jour-là.<br />
+                        <span style={{ fontSize: "0.78rem" }}>Essayez une autre date.</span>
+                      </div>
+                    )}
+
+                    {!loadingSlots && availableSlots.length > 0 && (
+                      <div className="bk-slots">
+                        {availableSlots.map((slot) => (
+                          <div
+                            key={slot}
+                            className={`bk-slot ${selectedSlot === slot ? "selected" : ""}`}
+                            onClick={() => handleSlotSelect(slot)}
+                          >
+                            {fmtTime(slot)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div className="bk-btn-row">
+                  <button className="bk-btn bk-btn-ghost" onClick={() => setStep(2)}>← Retour</button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* STEP 4 — Confirmation */}
+            {step === 4 && (
+              <motion.div key="step4" variants={pageVariants} initial="initial" animate="animate" exit="exit" transition={pageTransition}>
+                <h2 className="bk-section-title">Confirmez votre rendez-vous</h2>
+
+                <div className="bk-info">
+                  Vérifiez les détails ci-dessous avant de confirmer. Un email de confirmation vous sera envoyé.
+                </div>
+
+                <div className="bk-summary">
+                  <div className="bk-summary-header">Récapitulatif</div>
+                  <div className="bk-summary-body">
+                    {[
+                      ["Service",   selectedService?.name],
+                      ["Durée",     `${selectedService?.duration} min`],
+                      ["Barbier",   selectedBarber?.name],
+                      ["Date",      fmtDate(selectedSlot)],
+                      ["Heure",     fmtTime(selectedSlot)],
+                      ["Adresse",   ADDRESS],
+                    ].map(([k, v]) => (
+                      <div key={k} className="bk-summary-row">
+                        <span className="bk-summary-key">{k}</span>
+                        <span className="bk-summary-val">{v}</span>
+                      </div>
+                    ))}
+                    <div className="bk-summary-row">
+                      <span className="bk-summary-key">Total</span>
+                      <span className="bk-summary-val gold">{selectedService?.price}$ CAD</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bk-btn-row">
+                  <button className="bk-btn bk-btn-ghost" onClick={() => setStep(3)}>← Modifier</button>
+                  <button
+                    className="bk-btn bk-btn-gold"
+                    onClick={handleConfirm}
+                    disabled={loadingConfirm}
+                  >
+                    {loadingConfirm
+                      ? <><div className="bk-spinner" style={{ width: 14, height: 14 }} /> Confirmation…</>
+                      : "Confirmer la réservation →"}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+      </section>
     </div>
   );
 };
