@@ -2,8 +2,8 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+// ToastContainer retiré — géré globalement dans App.js
 import ChatApp from "../components/ChatApp";
 
 const useAdminStyles = () => {
@@ -467,7 +467,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const role = localStorage.getItem("role");
-    if (!token || role!== "admin") {
+    if (!token || role !== "admin") {
       navigate("/login");
       return;
     }
@@ -480,29 +480,20 @@ const AdminDashboard = () => {
     const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
     const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-    const todayBookings = bookingsData.filter(b =>
-      b.start_time.startsWith(today) && b.status === 'confirmed'
-    ).length;
-
-    const weekBookings = bookingsData.filter(b =>
-      b.start_time >= weekAgo && b.status === 'confirmed'
-    ).length;
-
-    const monthBookings = bookingsData.filter(b =>
-      b.start_time >= monthAgo && b.status === 'confirmed'
-    ).length;
-
-    const revenue = bookingsData
-   .filter(b => b.start_time >= monthAgo && b.status === 'completed')
-   .reduce((sum, b) => sum + parseFloat(b.price || 0), 0);
-
-    setStats({ today: todayBookings, week: weekBookings, month: monthBookings, revenue });
+    setStats({
+      today: bookingsData.filter(b => b.start_time.startsWith(today) && b.status === 'confirmed').length,
+      week:  bookingsData.filter(b => b.start_time >= weekAgo  && b.status === 'confirmed').length,
+      month: bookingsData.filter(b => b.start_time >= monthAgo && b.status === 'confirmed').length,
+      revenue: bookingsData
+        .filter(b => b.start_time >= monthAgo && b.status === 'completed')
+        .reduce((sum, b) => sum + parseFloat(b.price || 0), 0),
+    });
   };
 
   const filteredBookings = bookings.filter(b => {
-    const matchDate =!filterDate || b.start_time.startsWith(filterDate);
-    const matchBarber =!filterBarber || b.barber_id.toString() === filterBarber;
-    const matchStatus =!filterStatus || b.status === filterStatus;
+    const matchDate   = !filterDate   || b.start_time.startsWith(filterDate);
+    const matchBarber = !filterBarber || b.barber_id.toString() === filterBarber;
+    const matchStatus = !filterStatus || b.status === filterStatus;
     return matchDate && matchBarber && matchStatus;
   });
 
@@ -512,7 +503,7 @@ const AdminDashboard = () => {
       await axios.patch(`/api/booking/admin/${id}/cancel`);
       toast.success("Réservation annulée");
       fetchInitialData();
-    } catch (err) {
+    } catch {
       toast.error("Erreur lors de l'annulation");
     }
   };
@@ -522,15 +513,12 @@ const AdminDashboard = () => {
       await axios.patch(`/api/booking/admin/${id}/complete`);
       toast.success("Réservation marquée comme terminée");
       fetchInitialData();
-    } catch (err) {
+    } catch {
       toast.error("Erreur");
     }
   };
 
-  const handleEditBooking = (booking) => {
-    setEditingBooking(booking);
-    setShowModal(true);
-  };
+  const handleEditBooking   = (booking) => { setEditingBooking(booking); setShowModal(true); };
 
   const handleSaveBooking = async (e) => {
     e.preventDefault();
@@ -540,30 +528,25 @@ const AdminDashboard = () => {
       setShowModal(false);
       setEditingBooking(null);
       fetchInitialData();
-    } catch (err) {
+    } catch {
       toast.error("Erreur de mise à jour");
     }
   };
 
-  const formatDateTime = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
+  const formatDateTime = (dateStr) =>
+    new Date(dateStr).toLocaleString("fr-FR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
     });
-  };
 
   const menuItems = [
     { id: "bookings", label: "Réservations", icon: "📅" },
-    { id: "clients", label: "Clients", icon: "👥" },
-    { id: "barbers", label: "Barbiers", icon: "✂️" },
-    { id: "services", label: "Services", icon: "💈" },
-    { id: "stats", label: "Statistiques", icon: "📊" },
-    { id: "chat", label: "Chat Live", icon: "💬" },
-    { id: "settings", label: "Paramètres", icon: "⚙️" },
+    { id: "clients",  label: "Clients",       icon: "👥" },
+    { id: "barbers",  label: "Barbiers",       icon: "✂️" },
+    { id: "services", label: "Services",       icon: "💈" },
+    { id: "stats",    label: "Statistiques",   icon: "📊" },
+    { id: "chat",     label: "Chat Live",      icon: "💬" },
+    { id: "settings", label: "Paramètres",     icon: "⚙️" },
   ];
 
   const renderContent = () => {
@@ -578,54 +561,27 @@ const AdminDashboard = () => {
             </div>
 
             <div className="ab-stats">
-              <div className="ab-stat-card">
-                <div className="ab-stat-label">Aujourd'hui</div>
-                <div className="ab-stat-value">{stats.today}</div>
-              </div>
-              <div className="ab-stat-card">
-                <div className="ab-stat-label">Cette semaine</div>
-                <div className="ab-stat-value">{stats.week}</div>
-              </div>
-              <div className="ab-stat-card">
-                <div className="ab-stat-label">Ce mois</div>
-                <div className="ab-stat-value">{stats.month}</div>
-              </div>
-              <div className="ab-stat-card">
-                <div className="ab-stat-label">Revenus (mois)</div>
-                <div className="ab-stat-value">{stats.revenue.toFixed(0)}$</div>
-              </div>
+              <div className="ab-stat-card"><div className="ab-stat-label">Aujourd'hui</div><div className="ab-stat-value">{stats.today}</div></div>
+              <div className="ab-stat-card"><div className="ab-stat-label">Cette semaine</div><div className="ab-stat-value">{stats.week}</div></div>
+              <div className="ab-stat-card"><div className="ab-stat-label">Ce mois</div><div className="ab-stat-value">{stats.month}</div></div>
+              <div className="ab-stat-card"><div className="ab-stat-label">Revenus (mois)</div><div className="ab-stat-value">{stats.revenue.toFixed(0)}$</div></div>
             </div>
 
             <div className="ab-filters">
               <div>
                 <label className="ab-label">Date</label>
-                <input
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                  className="ab-input"
-                />
+                <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="ab-input" />
               </div>
               <div>
                 <label className="ab-label">Barbier</label>
-                <select
-                  value={filterBarber}
-                  onChange={(e) => setFilterBarber(e.target.value)}
-                  className="ab-select"
-                >
+                <select value={filterBarber} onChange={(e) => setFilterBarber(e.target.value)} className="ab-select">
                   <option value="">Tous</option>
-                  {barbers.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
+                  {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="ab-label">Statut</label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="ab-select"
-                >
+                <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="ab-select">
                   <option value="">Tous</option>
                   <option value="confirmed">Confirmé</option>
                   <option value="cancelled">Annulé</option>
@@ -633,15 +589,7 @@ const AdminDashboard = () => {
                 </select>
               </div>
               <div style={{ display: "flex", alignItems: "flex-end" }}>
-                <button
-                  onClick={() => {
-                    setFilterDate("");
-                    setFilterBarber("");
-                    setFilterStatus("");
-                  }}
-                  className="ab-btn-outline"
-                  style={{ width: "100%" }}
-                >
+                <button onClick={() => { setFilterDate(""); setFilterBarber(""); setFilterStatus(""); }} className="ab-btn-outline" style={{ width: "100%" }}>
                   Réinitialiser
                 </button>
               </div>
@@ -649,26 +597,17 @@ const AdminDashboard = () => {
 
             {error && <div className="ab-error">{error}</div>}
 
-            {loading? (
-              <p style={{ textAlign: "center", padding: "4rem", color: "var(--ab-muted)" }}>
-                Chargement...
-              </p>
-            ) : filteredBookings.length === 0? (
-              <div className="ab-empty">
-                Aucune réservation trouvée
-              </div>
+            {loading ? (
+              <p style={{ textAlign: "center", padding: "4rem", color: "var(--ab-muted)" }}>Chargement...</p>
+            ) : filteredBookings.length === 0 ? (
+              <div className="ab-empty">Aucune réservation trouvée</div>
             ) : (
               <div style={{ overflowX: "auto" }}>
                 <table className="ab-table">
                   <thead>
                     <tr>
-                      <th>Date & Heure</th>
-                      <th>Client</th>
-                      <th>Service</th>
-                      <th>Barbier</th>
-                      <th>Prix</th>
-                      <th>Statut</th>
-                      <th>Actions</th>
+                      <th>Date & Heure</th><th>Client</th><th>Service</th>
+                      <th>Barbier</th><th>Prix</th><th>Statut</th><th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -681,35 +620,16 @@ const AdminDashboard = () => {
                         <td>{b.price}$</td>
                         <td>
                           <span className={`ab-status ${b.status}`}>
-                            {b.status === 'confirmed'? 'Confirmé' :
-                             b.status === 'cancelled'? 'Annulé' : 'Terminé'}
+                            {b.status === 'confirmed' ? 'Confirmé' : b.status === 'cancelled' ? 'Annulé' : 'Terminé'}
                           </span>
                         </td>
                         <td>
                           <div className="ab-actions">
                             {b.status === 'confirmed' && (
                               <>
-                                <button
-                                  onClick={() => handleCompleteBooking(b.id)}
-                                  className="ab-icon-btn"
-                                  title="Marquer terminé"
-                                >
-                                  ✓
-                                </button>
-                                <button
-                                  onClick={() => handleEditBooking(b)}
-                                  className="ab-icon-btn"
-                                  title="Modifier"
-                                >
-                                  ✎
-                                </button>
-                                <button
-                                  onClick={() => handleCancelBooking(b.id)}
-                                  className="ab-icon-btn danger"
-                                  title="Annuler"
-                                >
-                                  ✕
-                                </button>
+                                <button onClick={() => handleCompleteBooking(b.id)} className="ab-icon-btn" title="Marquer terminé">✓</button>
+                                <button onClick={() => handleEditBooking(b)} className="ab-icon-btn" title="Modifier">✎</button>
+                                <button onClick={() => handleCancelBooking(b.id)} className="ab-icon-btn danger" title="Annuler">✕</button>
                               </>
                             )}
                           </div>
@@ -736,75 +656,15 @@ const AdminDashboard = () => {
         );
 
       case "clients":
-        return (
-          <>
-            <div className="ad-header">
-              <p className="ad-eyebrow">Gestion</p>
-              <h1 className="ad-display">Clients</h1>
-              <span className="ab-gold-rule" />
-            </div>
-            <p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>
-              Module Clients en développement...
-            </p>
-          </>
-        );
-
+        return (<><div className="ad-header"><p className="ad-eyebrow">Gestion</p><h1 className="ad-display">Clients</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Clients en développement...</p></>);
       case "barbers":
-        return (
-          <>
-            <div className="ad-header">
-              <p className="ad-eyebrow">Équipe</p>
-              <h1 className="ad-display">Barbiers</h1>
-              <span className="ab-gold-rule" />
-            </div>
-            <p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>
-              Module Barbiers en développement...
-            </p>
-          </>
-        );
-
+        return (<><div className="ad-header"><p className="ad-eyebrow">Équipe</p><h1 className="ad-display">Barbiers</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Barbiers en développement...</p></>);
       case "services":
-        return (
-          <>
-            <div className="ad-header">
-              <p className="ad-eyebrow">Catalogue</p>
-              <h1 className="ad-display">Services</h1>
-              <span className="ab-gold-rule" />
-            </div>
-            <p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>
-              Module Services en développement...
-            </p>
-          </>
-        );
-
+        return (<><div className="ad-header"><p className="ad-eyebrow">Catalogue</p><h1 className="ad-display">Services</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Services en développement...</p></>);
       case "stats":
-        return (
-          <>
-            <div className="ad-header">
-              <p className="ad-eyebrow">Analytics</p>
-              <h1 className="ad-display">Statistiques</h1>
-              <span className="ab-gold-rule" />
-            </div>
-            <p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>
-              Module Statistiques en développement...
-            </p>
-          </>
-        );
-
+        return (<><div className="ad-header"><p className="ad-eyebrow">Analytics</p><h1 className="ad-display">Statistiques</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Statistiques en développement...</p></>);
       case "settings":
-        return (
-          <>
-            <div className="ad-header">
-              <p className="ad-eyebrow">Configuration</p>
-              <h1 className="ad-display">Paramètres</h1>
-              <span className="ab-gold-rule" />
-            </div>
-            <p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>
-              Module Paramètres en développement...
-            </p>
-          </>
-        );
-
+        return (<><div className="ad-header"><p className="ad-eyebrow">Configuration</p><h1 className="ad-display">Paramètres</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Paramètres en développement...</p></>);
       default:
         return null;
     }
@@ -812,19 +672,11 @@ const AdminDashboard = () => {
 
   return (
     <div className="ad-root">
-      <button
-        className="ad-mobile-toggle"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-      >
-        ☰
-      </button>
+      <button className="ad-mobile-toggle" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>☰</button>
 
-      <div
-        className={`ad-overlay ${mobileMenuOpen? 'show' : ''}`}
-        onClick={() => setMobileMenuOpen(false)}
-      />
+      <div className={`ad-overlay ${mobileMenuOpen ? 'show' : ''}`} onClick={() => setMobileMenuOpen(false)} />
 
-      <aside className={`ad-sidebar ${mobileMenuOpen? 'open' : ''}`}>
+      <aside className={`ad-sidebar ${mobileMenuOpen ? 'open' : ''}`}>
         <div className="ad-logo">
           <div className="ad-logo-title">Mr. Renaudin</div>
           <div className="ad-logo-sub">Admin Panel</div>
@@ -833,11 +685,8 @@ const AdminDashboard = () => {
           {menuItems.map((item) => (
             <div
               key={item.id}
-              className={`ad-nav-item ${activeTab === item.id? "active" : ""}`}
-              onClick={() => {
-                setActiveTab(item.id);
-                setMobileMenuOpen(false);
-              }}
+              className={`ad-nav-item ${activeTab === item.id ? "active" : ""}`}
+              onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); }}
             >
               <span className="ad-nav-icon">{item.icon}</span>
               <span>{item.label}</span>
@@ -854,68 +703,41 @@ const AdminDashboard = () => {
         {showModal && editingBooking && (
           <motion.div
             className="ab-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setShowModal(false)}
           >
             <motion.div
               className="ab-modal"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e) => e.stopPropagation()}
             >
               <h3>Modifier la réservation</h3>
               <form onSubmit={handleSaveBooking}>
                 <div className="ab-form-group">
                   <label className="ab-label">Service</label>
-                  <select
-                    value={editingBooking.service_id}
-                    onChange={(e) => setEditingBooking({...editingBooking, service_id: e.target.value})}
-                    className="ab-select"
-                  >
-                    {services.map(s => (
-                      <option key={s.id} value={s.id}>{s.name}</option>
-                    ))}
+                  <select value={editingBooking.service_id} onChange={(e) => setEditingBooking({...editingBooking, service_id: e.target.value})} className="ab-select">
+                    {services.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </div>
                 <div className="ab-form-group">
                   <label className="ab-label">Barbier</label>
-                  <select
-                    value={editingBooking.barber_id}
-                    onChange={(e) => setEditingBooking({...editingBooking, barber_id: e.target.value})}
-                    className="ab-select"
-                  >
-                    {barbers.map(b => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
-                    ))}
+                  <select value={editingBooking.barber_id} onChange={(e) => setEditingBooking({...editingBooking, barber_id: e.target.value})} className="ab-select">
+                    {barbers.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div className="ab-form-group">
                   <label className="ab-label">Date & Heure</label>
-                  <input
-                    type="datetime-local"
-                    value={editingBooking.start_time.slice(0, 16)}
-                    onChange={(e) => setEditingBooking({...editingBooking, start_time: e.target.value})}
-                    className="ab-input"
-                  />
+                  <input type="datetime-local" value={editingBooking.start_time.slice(0, 16)} onChange={(e) => setEditingBooking({...editingBooking, start_time: e.target.value})} className="ab-input" />
                 </div>
                 <div style={{ display: "flex", gap: "1rem", marginTop: "2rem" }}>
-                  <button type="button" onClick={() => setShowModal(false)} className="ab-btn-outline" style={{ flex: 1 }}>
-                    Annuler
-                  </button>
-                  <button type="submit" className="ab-btn-gold" style={{ flex: 1 }}>
-                    Enregistrer
-                  </button>
+                  <button type="button" onClick={() => setShowModal(false)} className="ab-btn-outline" style={{ flex: 1 }}>Annuler</button>
+                  <button type="submit" className="ab-btn-gold" style={{ flex: 1 }}>Enregistrer</button>
                 </div>
               </form>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <ToastContainer theme="dark" position="top-center" />
     </div>
   );
 };
