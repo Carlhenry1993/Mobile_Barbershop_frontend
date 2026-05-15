@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
+// ToastContainer retiré — géré globalement dans App.js
 
 function Register({ onSwitchToLogin }) {
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -132,7 +132,6 @@ function Register({ onSwitchToLogin }) {
           </p>
         )}
       </form>
-      <ToastContainer theme="dark" position="top-center" />
     </div>
   );
 }
