@@ -7,24 +7,26 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "animate.css";
 
-// Import pages
-import HomePage from "./pages/HomePage";
-import BookingPage from "./pages/BookingPage";
-import ContactPage from "./pages/ContactPage";
-import ServicesPage from "./pages/ServicesPage";
-import AboutPage from "./pages/AboutPage";
-import AnnoncePage from "./pages/AnnoncePage";
-import AdminBookingsPage from "./pages/AdminBookingsPage"; // ✅ Ajout
+// Pages
+import HomePage         from "./pages/HomePage";
+import BookingPage      from "./pages/BookingPage";
+import ContactPage      from "./pages/ContactPage";
+import ServicesPage     from "./pages/ServicesPage";
+import AboutPage        from "./pages/AboutPage";
+import AnnoncePage      from "./pages/AnnoncePage";
+import AdminBookingsPage from "./pages/AdminBookingsPage";
 
-// Import components
-import Login from "./components/Login";
+// Components
+import Login   from "./components/Login";
 import ChatApp from "./components/ChatApp";
-import Header from "./components/Header";
-import Footer from "./components/Footer";
+import Header  from "./components/Header";
+import Footer  from "./components/Footer";
 
-// ScrollToTop component
+// ─── ScrollToTop ──────────────────────────────────────────────────────────────
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -33,72 +35,87 @@ const ScrollToTop = () => {
   return null;
 };
 
-// Charger les fonts du thème Mr. Renaudin
-const FontLoader = () => {
-  useEffect(() => {
-    const link = document.createElement("link");
-    link.href = "https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap";
-    link.rel = "stylesheet";
-    document.head.appendChild(link);
-  }, []);
-  return null;
+// ─── Décoder le token sans lib externe ───────────────────────────────────────
+const decodeToken = (token) => {
+  try {
+    const payload = token.split(".")[1];
+    return JSON.parse(atob(payload));
+  } catch {
+    return null;
+  }
 };
 
-// Composant pour protéger les routes privées
+const isTokenExpired = (decoded) =>
+  decoded?.exp ? decoded.exp * 1000 < Date.now() : false;
+
+// ─── ProtectedRoute ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children, token, role, allowedRoles }) => {
   if (!token) {
-    sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
+    sessionStorage.setItem("redirectAfterLogin", window.location.pathname);
     return <Navigate to="/login" replace />;
   }
-
-  if (allowedRoles &&!allowedRoles.includes(role)) {
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }
-
   return children;
 };
 
+// ─── App ──────────────────────────────────────────────────────────────────────
 const App = () => {
-  const [role, setRole] = useState(null);
+  const [role,     setRole]     = useState(null);
   const [clientId, setClientId] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("token"));
+  const [token,    setToken]    = useState(() => localStorage.getItem("token"));
 
+  // ── Logout ─────────────────────────────────────────────────────────────────
   const handleLogout = useCallback(() => {
     setRole(null);
     setToken(null);
     setClientId(null);
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("chatState");
+    localStorage.removeItem("unreadCount");
+    localStorage.removeItem("selectedClientId");
   }, []);
 
+  // ── Décoder le token et hydrater le state ──────────────────────────────────
   useEffect(() => {
-    if (token) {
-      try {
-        const [, payload] = token.split(".");
-        const decodedToken = JSON.parse(atob(payload));
-
-        if (decodedToken.exp && decodedToken.exp * 1000 < Date.now()) {
-          console.warn("Token expiré");
-          handleLogout();
-          return;
-        }
-
-        setRole(decodedToken.role);
-        localStorage.setItem("role", decodedToken.role);
-
-        if (decodedToken.role === "client") {
-          setClientId(decodedToken.id.toString());
-        }
-      } catch (error) {
-        console.error("Erreur lors du décodage du token :", error);
-        handleLogout();
-      }
-    } else {
+    if (!token) {
       setRole(null);
       setClientId(null);
+      return;
+    }
+
+    const decoded = decodeToken(token);
+
+    if (!decoded || isTokenExpired(decoded)) {
+      console.warn("Token invalide ou expiré — déconnexion");
+      handleLogout();
+      return;
+    }
+
+    setRole(decoded.role);
+    localStorage.setItem("role", decoded.role);
+
+    if (decoded.role === "client") {
+      setClientId(decoded.id?.toString() ?? null);
     }
   }, [token, handleLogout]);
 
+  // ── Vérification périodique du token (toutes les minutes) ─────────────────
+  useEffect(() => {
+    if (!token) return;
+    const interval = setInterval(() => {
+      const decoded = decodeToken(token);
+      if (!decoded || isTokenExpired(decoded)) {
+        console.warn("Token expiré — déconnexion automatique");
+        handleLogout();
+      }
+    }, 60 * 1000);
+    return () => clearInterval(interval);
+  }, [token, handleLogout]);
+
+  // ── Login ──────────────────────────────────────────────────────────────────
   const handleLogin = useCallback((userRole, userId = null, userToken) => {
     setRole(userRole);
     setToken(userToken);
@@ -112,26 +129,42 @@ const App = () => {
 
   return (
     <Router>
-      <FontLoader />
       <ScrollToTop />
+
+      {/* Toast global — une seule instance pour toute l'app */}
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop
+        closeOnClick
+        pauseOnHover={false}
+        pauseOnFocusLoss={false}
+        draggable={false}
+        theme="dark"
+        style={{ zIndex: 99999 }}
+      />
 
       <Header role={role} onLogout={handleLogout} />
 
+      {/* Chat — monté une seule fois selon le rôle */}
       {role === "client" && clientId && (
         <ChatApp key={clientId} clientId={clientId} isAdmin={false} />
       )}
-      {role === "admin" && <ChatApp key="admin" clientId={null} isAdmin={true} />}
+      {role === "admin" && (
+        <ChatApp key="admin" clientId={null} isAdmin={true} />
+      )}
 
       <Routes>
-        {/* Routes Publiques */}
-        <Route path="/" element={<HomePage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/contact" element={<ContactPage />} />
-        <Route path="/a-propos" element={<AboutPage />} />
-        <Route path="/annonces" element={<AnnoncePage readOnly={!role || role === "client"} />} />
-        <Route path="/login" element={<Login onLogin={handleLogin} />} />
+        {/* ── Publiques ── */}
+        <Route path="/"          element={<HomePage />} />
+        <Route path="/services"  element={<ServicesPage />} />
+        <Route path="/contact"   element={<ContactPage />} />
+        <Route path="/a-propos"  element={<AboutPage />} />
+        <Route path="/annonces"  element={<AnnoncePage readOnly={!role || role === "client"} />} />
+        <Route path="/login"     element={<Login onLogin={handleLogin} />} />
 
-        {/* Routes Privées */}
+        {/* ── Client + Admin ── */}
         <Route
           path="/reserver"
           element={
@@ -141,7 +174,7 @@ const App = () => {
           }
         />
 
-        {/* ✅ Route Admin */}
+        {/* ── Admin seulement ── */}
         <Route
           path="/admin/bookings"
           element={
@@ -151,8 +184,8 @@ const App = () => {
           }
         />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" />} />
+        {/* ── Fallback ── */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
 
       <Footer />
