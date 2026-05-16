@@ -1,12 +1,19 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
+import {
+  FaFacebook,
+  FaInstagram,
+  FaYoutube,
+  FaWhatsapp,
+} from "react-icons/fa";
 import { FaXTwitter } from "react-icons/fa6";
 
-const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
+const ADDRESS =
+  "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
 const EMAIL = "mrrenaudinbarber@gmail.com";
-const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
+const MAP_QUERY =
+  "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
 
 const SERVICES = [
   "Boule à Zéro",
@@ -65,7 +72,14 @@ const useFooterStyles = () => {
 
       .ft-topbar {
         height: 2px;
-        background: linear-gradient(90deg, transparent, var(--ft-gold), var(--ft-gold-lt), var(--ft-gold), transparent);
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--ft-gold),
+          var(--ft-gold-lt),
+          var(--ft-gold),
+          transparent
+        );
       }
 
       .ft-cta {
@@ -117,7 +131,8 @@ const useFooterStyles = () => {
         will-change: transform;
       }
 
-      .ft-cta-btn:hover, .ft-cta-btn:focus-visible {
+      .ft-cta-btn:hover,
+      .ft-cta-btn:focus-visible {
         background: var(--ft-gold-lt);
         transform: translateY(-2px);
         outline: 2px solid var(--ft-gold-lt);
@@ -135,12 +150,21 @@ const useFooterStyles = () => {
       }
 
       @media (max-width: 900px) {
-        .ft-grid { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
+        .ft-grid {
+          grid-template-columns: 1fr 1fr;
+          gap: 2.5rem;
+        }
       }
 
       @media (max-width: 540px) {
-        .ft-grid { grid-template-columns: 1fr; gap: 2rem; }
-        .ft-cta { padding: 3rem 1.25rem; }
+        .ft-grid {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+
+        .ft-cta {
+          padding: 3rem 1.25rem;
+        }
       }
 
       .ft-col-title {
@@ -170,7 +194,9 @@ const useFooterStyles = () => {
         margin-bottom: 0.25rem;
       }
 
-      .ft-brand-name span { color: var(--ft-gold); }
+      .ft-brand-name span {
+        color: var(--ft-gold);
+      }
 
       .ft-brand-tagline {
         font-size: 0.78rem;
@@ -196,7 +222,8 @@ const useFooterStyles = () => {
         transition: color 0.2s;
       }
 
-      .ft-link:hover, .ft-link:focus-visible { 
+      .ft-link:hover,
+      .ft-link:focus-visible {
         color: var(--ft-gold);
         outline: none;
       }
@@ -222,8 +249,9 @@ const useFooterStyles = () => {
         transition: border-color 0.2s, color 0.2s;
       }
 
-      .ft-map-btn:hover, .ft-map-btn:focus-visible { 
-        border-color: var(--ft-gold); 
+      .ft-map-btn:hover,
+      .ft-map-btn:focus-visible {
+        border-color: var(--ft-gold);
         color: var(--ft-gold-lt);
         outline: none;
       }
@@ -250,7 +278,8 @@ const useFooterStyles = () => {
         transition: color 0.2s;
       }
 
-      a.ft-contact-text:hover, a.ft-contact-text:focus-visible { 
+      a.ft-contact-text:hover,
+      a.ft-contact-text:focus-visible {
         color: var(--ft-gold);
         outline: none;
       }
@@ -272,7 +301,9 @@ const useFooterStyles = () => {
         transition: color 0.2s;
       }
 
-      .ft-services-list li:last-child { border-bottom: none; }
+      .ft-services-list li:last-child {
+        border-bottom: none;
+      }
 
       .ft-services-list li::before {
         content: '✦';
@@ -297,11 +328,15 @@ const useFooterStyles = () => {
         color: var(--ft-muted);
         text-decoration: none;
         font-size: 1rem;
-        transition: border-color 0.25s, color 0.25s, transform 0.2s;
+        transition:
+          border-color 0.25s,
+          color 0.25s,
+          transform 0.2s;
         will-change: transform;
       }
 
-      .ft-social-link:hover, .ft-social-link:focus-visible {
+      .ft-social-link:hover,
+      .ft-social-link:focus-visible {
         border-color: var(--ft-gold);
         color: var(--ft-gold);
         transform: translateY(-3px);
@@ -325,7 +360,9 @@ const useFooterStyles = () => {
         letter-spacing: 0.04em;
       }
 
-      .ft-bottom-copy span { color: var(--ft-gold); }
+      .ft-bottom-copy span {
+        color: var(--ft-gold);
+      }
 
       .ft-bottom-right {
         font-size: 0.75rem;
@@ -357,12 +394,14 @@ const useFooterStyles = () => {
           flex-direction: column;
           text-align: center;
         }
+
         .ft-ornament::before,
         .ft-ornament::after {
           width: 20px;
         }
       }
     `;
+
     document.head.appendChild(style);
 
     return () => {
@@ -374,6 +413,7 @@ const useFooterStyles = () => {
 
 const Footer = () => {
   useFooterStyles();
+
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
 
@@ -384,13 +424,20 @@ const Footer = () => {
       <div className="ft-inner">
         {/* ── CTA Strip ── */}
         <div className="ft-cta">
-          <p className="ft-cta-eyebrow">Prêt pour votre transformation ?</p>
+          <p className="ft-cta-eyebrow">
+            Prêt pour votre transformation ?
+          </p>
+
           <h2 className="ft-cta-title">
-            Votre meilleur look<br />commence ici.
+            Votre meilleur look
+            <br />
+            commence ici.
           </h2>
+
           <p className="ft-cta-sub">
             Shawinigan · Barbershop Premium · Sur rendez-vous
           </p>
+
           <button
             className="ft-cta-btn"
             onClick={() => navigate("/reserver")}
@@ -405,13 +452,19 @@ const Footer = () => {
           {/* Brand */}
           <div>
             <p className="ft-brand-name">
-              Mr. Renaudin<br />
+              Mr. Renaudin
+              <br />
               <span>Barbershop</span>
             </p>
-            <p className="ft-brand-tagline">Shawinigan, Québec</p>
+
+            <p className="ft-brand-tagline">
+              Shawinigan, Québec
+            </p>
+
             <p className="ft-brand-desc">
-              Un barbershop premium au cœur de Shawinigan. Précision, style et 
-              expérience artisanale pour l'homme moderne qui refuse le compromis.
+              Un barbershop premium au cœur de Shawinigan.
+              Précision, style et expérience artisanale pour
+              l'homme moderne qui refuse le compromis.
             </p>
 
             <div className="ft-social">
@@ -424,6 +477,7 @@ const Footer = () => {
               >
                 <FaFacebook />
               </a>
+
               <a
                 href="https://www.instagram.com"
                 target="_blank"
@@ -433,6 +487,17 @@ const Footer = () => {
               >
                 <FaInstagram />
               </a>
+
+              <a
+                href="https://wa.me/15147788318"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Contactez-nous sur WhatsApp"
+                className="ft-social-link"
+              >
+                <FaWhatsapp />
+              </a>
+
               <a
                 href="https://www.twitter.com"
                 target="_blank"
@@ -442,6 +507,7 @@ const Footer = () => {
               >
                 <FaXTwitter />
               </a>
+
               <a
                 href="https://www.youtube.com"
                 target="_blank"
@@ -457,6 +523,7 @@ const Footer = () => {
           {/* Services */}
           <div>
             <h3 className="ft-col-title">Nos Services</h3>
+
             <ul className="ft-services-list">
               {SERVICES.map((s) => (
                 <li key={s}>{s}</li>
@@ -467,9 +534,13 @@ const Footer = () => {
           {/* Visit */}
           <div>
             <h3 className="ft-col-title">Nous Trouver</h3>
+
             <p className="ft-address">{ADDRESS}</p>
+
             <a
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(MAP_QUERY)}`}
+              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                MAP_QUERY
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="ft-map-btn"
@@ -484,32 +555,79 @@ const Footer = () => {
             <h3 className="ft-col-title">Contact</h3>
 
             <div className="ft-contact-row">
-              <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <a href={`tel:${PHONE}`} className="ft-contact-text" aria-label={`Téléphone ${PHONE}`}>
+              <span
+                className="ft-contact-icon"
+                aria-hidden="true"
+              >
+                ✦
+              </span>
+
+              <a
+                href={`tel:${PHONE}`}
+                className="ft-contact-text"
+                aria-label={`Téléphone ${PHONE}`}
+              >
                 {PHONE}
               </a>
             </div>
 
             <div className="ft-contact-row">
-              <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <a href={`mailto:${EMAIL}`} className="ft-contact-text" aria-label={`Email ${EMAIL}`}>
+              <span
+                className="ft-contact-icon"
+                aria-hidden="true"
+              >
+                ✦
+              </span>
+
+              <a
+                href={`mailto:${EMAIL}`}
+                className="ft-contact-text"
+                aria-label={`Email ${EMAIL}`}
+              >
                 {EMAIL}
               </a>
             </div>
 
-            <div className="ft-contact-row" style={{ marginTop: "1rem" }}>
-              <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <span className="ft-contact-text">Lun – Ven : 11h00 – 19h00</span>
+            <div
+              className="ft-contact-row"
+              style={{ marginTop: "1rem" }}
+            >
+              <span
+                className="ft-contact-icon"
+                aria-hidden="true"
+              >
+                ✦
+              </span>
+
+              <span className="ft-contact-text">
+                Lun – Ven : 11h00 – 19h00
+              </span>
             </div>
 
             <div className="ft-contact-row">
-              <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <span className="ft-contact-text">Samedi : 12h00 – 19h00</span>
+              <span
+                className="ft-contact-icon"
+                aria-hidden="true"
+              >
+                ✦
+              </span>
+
+              <span className="ft-contact-text">
+                Samedi : 12h00 – 19h00
+              </span>
             </div>
 
             <div className="ft-contact-row">
-              <span className="ft-contact-icon" aria-hidden="true">✦</span>
-              <span className="ft-contact-text">Dimanche : 11h00 – 17h00</span>
+              <span
+                className="ft-contact-icon"
+                aria-hidden="true"
+              >
+                ✦
+              </span>
+
+              <span className="ft-contact-text">
+                Dimanche : 11h00 – 17h00
+              </span>
             </div>
           </div>
         </div>
@@ -517,9 +635,20 @@ const Footer = () => {
         {/* ── Bottom bar ── */}
         <div className="ft-bottom">
           <p className="ft-bottom-copy">
-            © {currentYear} <span>Mr. Renaudin Barbershop</span> — Shawinigan, QC
+            © {currentYear}
+            {" "}
+            <span>Mr. Renaudin Barbershop</span>
+            {" "}
+            — Shawinigan, QC
           </p>
-          <div className="ft-ornament" aria-hidden="true">✦</div>
+
+          <div
+            className="ft-ornament"
+            aria-hidden="true"
+          >
+            ✦
+          </div>
+
           <p className="ft-bottom-right">
             Artisanat · Précision · Excellence
           </p>
