@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+// ToastContainer géré globalement dans App.js
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
 const PHONE   = "514-778-8318";
 const API_URL = "https://api.mrrenaudinbarbershop.com";
 
-// ─── Styles injectés une seule fois (responsive via media queries CSS) ────────
+// ─── Styles ───────────────────────────────────────────────────────────────────
 const useLoginStyles = () => {
   useEffect(() => {
     const id = "mrr-login-styles";
@@ -111,9 +111,7 @@ const useLoginStyles = () => {
       }
 
       /* Form side */
-      .lp-form-wrap {
-        width: 100%; max-width: 440px; margin: 0 auto;
-      }
+      .lp-form-wrap { width: 100%; max-width: 440px; margin: 0 auto; }
       .lp-form-card {
         background: #1e2535;
         border: 1px solid #2a3348;
@@ -185,9 +183,7 @@ const useLoginStyles = () => {
       .lp-input-eye {
         position: relative; display: flex; align-items: stretch;
       }
-      .lp-input-pw {
-        flex: 1; padding-right: 3rem !important;
-      }
+      .lp-input-pw { flex: 1; padding-right: 3rem !important; }
       .lp-eye-btn {
         position: absolute; right: 1px; top: 1px; bottom: 1px;
         width: 2.6rem;
@@ -197,9 +193,7 @@ const useLoginStyles = () => {
         display: flex; align-items: center; justify-content: center;
         color: #7888a0;
         transition: color 0.2s, background 0.2s;
-        z-index: 2;
-        flex-shrink: 0;
-        padding: 0;
+        z-index: 2; flex-shrink: 0; padding: 0;
       }
       .lp-eye-btn:hover { color: #d4a843; background: #161b24; }
       .lp-eye-btn svg { width: 18px; height: 18px; pointer-events: none; }
@@ -226,11 +220,9 @@ const useLoginStyles = () => {
 const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
   <div className="lp-welcome">
     <span className="lp-badge">Mr. Renaudin Barbershop</span>
-
     <h2 className="lp-welcome-title">
       Réservation en ligne<br />réservée aux membres
     </h2>
-
     <div className="lp-lock-box">
       <span className="lp-lock-icon">🔒</span>
       <p className="lp-lock-text">
@@ -238,214 +230,201 @@ const WelcomeMessage = ({ scrollToForm, setIsLogin }) => (
         Création gratuite en 30 secondes
       </p>
     </div>
-
     <p className="lp-welcome-body">
       Créez votre compte pour choisir votre créneau, modifier vos rendez-vous et recevoir des rappels.
     </p>
-
-    <button
-      className="lp-welcome-btn"
-      onClick={() => { setIsLogin(false); scrollToForm(); }}
-    >
+    <button className="lp-welcome-btn" onClick={() => { setIsLogin(false); scrollToForm(); }}>
       Créer mon compte maintenant
     </button>
-
     <p className="lp-small">
       Déjà membre ?{" "}
-      <button
-        className="lp-inline-link"
-        onClick={() => { setIsLogin(true); scrollToForm(); }}
-      >
+      <button className="lp-inline-link" onClick={() => { setIsLogin(true); scrollToForm(); }}>
         Connectez-vous
       </button>
       <br />
-      {ADDRESS} •{" "}
-      <a href={`tel:${PHONE}`}>{PHONE}</a>
+      {ADDRESS} • <a href={`tel:${PHONE}`}>{PHONE}</a>
     </p>
   </div>
 );
 
 // ─── LoginForm ────────────────────────────────────────────────────────────────
 const LoginForm = ({ isLogin, formData, errorMessage, handleSubmit, handleChange, setIsLogin, loading, formRef, scrollToForm }) => {
-  const [showPassword, setShowPassword]       = React.useState(false);
+  const [showPassword,        setShowPassword]        = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
   return (
-  <div ref={formRef} id="login-form" className="lp-form-wrap">
-    <div className="lp-form-card">
-      <h1 className="lp-form-title">
-        {isLogin ? "Connexion" : "Créer un compte"}
-      </h1>
+    <div ref={formRef} id="login-form" className="lp-form-wrap">
+      <div className="lp-form-card">
+        <h1 className="lp-form-title">
+          {isLogin ? "Connexion" : "Créer un compte"}
+        </h1>
 
-      {!isLogin && (
-        <div className="lp-info-alert">
-          <strong>Compte requis</strong> pour réserver votre rendez-vous en ligne
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="lp-form-body" noValidate>
-        {/* ── Inscription uniquement ── */}
         {!isLogin && (
-          <>
-            <div className="lp-grid2">
-              <div className="lp-field">
-                <label className="lp-label">Prénom *</label>
-                <input className="lp-input" type="text" name="firstName" placeholder="Jean"
-                  value={formData.firstName} onChange={handleChange} disabled={loading} required />
-              </div>
-              <div className="lp-field">
-                <label className="lp-label">Nom *</label>
-                <input className="lp-input" type="text" name="lastName" placeholder="Tremblay"
-                  value={formData.lastName} onChange={handleChange} disabled={loading} required />
-              </div>
-            </div>
-
-            <div className="lp-field">
-              <label className="lp-label">Email *</label>
-              <input className="lp-input" type="email" name="email" placeholder="jean@email.com"
-                value={formData.email} onChange={handleChange} disabled={loading} required autoComplete="email" />
-              <span className="lp-hint">Requis pour confirmation de réservation</span>
-            </div>
-
-            <div className="lp-field">
-              <label className="lp-label">Téléphone</label>
-              <input className="lp-input" type="tel" name="phone" placeholder="514-555-1234"
-                value={formData.phone} onChange={handleChange} disabled={loading} />
-              <span className="lp-hint">Optionnel — pour rappels SMS</span>
-            </div>
-          </>
+          <div className="lp-info-alert">
+            <strong>Compte requis</strong> pour réserver votre rendez-vous en ligne
+          </div>
         )}
 
-        {/* ── Commun ── */}
-        <div className="lp-field">
-          <label className="lp-label">
-            {isLogin ? "Nom d'utilisateur ou Email" : "Nom d'utilisateur *"}
-          </label>
-          <input
-            className="lp-input"
-            type="text"
-            name={isLogin ? "login" : "username"}
-            placeholder={isLogin ? "jean.shawinigan ou email" : "jean.shawinigan"}
-            value={isLogin ? formData.login : formData.username}
-            onChange={handleChange}
-            disabled={loading}
-            autoComplete="username"
-            required
-          />
-        </div>
+        <form onSubmit={handleSubmit} className="lp-form-body" noValidate>
 
-        <div className="lp-field">
-          <label className="lp-label">Mot de passe *</label>
-          <div className="lp-input-eye">
+          {/* ── Inscription uniquement ── */}
+          {!isLogin && (
+            <>
+              <div className="lp-grid2">
+                <div className="lp-field">
+                  <label className="lp-label">Prénom *</label>
+                  <input className="lp-input" type="text" name="firstName" placeholder="Jean"
+                    value={formData.firstName} onChange={handleChange} disabled={loading} required />
+                </div>
+                <div className="lp-field">
+                  <label className="lp-label">Nom *</label>
+                  <input className="lp-input" type="text" name="lastName" placeholder="Tremblay"
+                    value={formData.lastName} onChange={handleChange} disabled={loading} required />
+                </div>
+              </div>
+
+              <div className="lp-field">
+                <label className="lp-label">Email *</label>
+                <input className="lp-input" type="email" name="email" placeholder="jean@email.com"
+                  value={formData.email} onChange={handleChange} disabled={loading} required autoComplete="email" />
+                <span className="lp-hint">Requis pour confirmation de réservation</span>
+              </div>
+
+              <div className="lp-field">
+                <label className="lp-label">Téléphone</label>
+                <input className="lp-input" type="tel" name="phone" placeholder="514-555-1234"
+                  value={formData.phone} onChange={handleChange} disabled={loading} />
+                <span className="lp-hint">Optionnel — pour rappels SMS</span>
+              </div>
+            </>
+          )}
+
+          {/* ── Commun ── */}
+          <div className="lp-field">
+            <label className="lp-label">
+              {isLogin ? "Nom d'utilisateur ou Email" : "Nom d'utilisateur *"}
+            </label>
             <input
-              className="lp-input lp-input-pw"
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="••••••••"
-              value={formData.password}
+              className="lp-input"
+              type="text"
+              name={isLogin ? "login" : "username"}
+              placeholder={isLogin ? "jean.shawinigan ou email" : "jean.shawinigan"}
+              value={isLogin ? formData.login : formData.username}
               onChange={handleChange}
               disabled={loading}
-              autoComplete={isLogin ? "current-password" : "new-password"}
+              autoComplete="username"
               required
             />
-            <button
-              type="button"
-              className="lp-eye-btn"
-              onClick={() => setShowPassword(p => !p)}
-              aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+          </div>
+
+          <div className="lp-field">
+            <label className="lp-label">Mot de passe *</label>
+            <div className="lp-input-eye">
+              <input
+                className="lp-input lp-input-pw"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                disabled={loading}
+                autoComplete={isLogin ? "current-password" : "new-password"}
+                required
+              />
+              <button type="button" className="lp-eye-btn"
+                onClick={() => setShowPassword(p => !p)}
+                aria-label={showPassword ? "Masquer" : "Afficher"}
+              >
+                {showPassword ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                )}
+              </button>
+            </div>
+            {!isLogin && <span className="lp-hint">6 caractères minimum</span>}
+          </div>
+
+          {/* ── Inscription uniquement ── */}
+          {!isLogin && (
+            <>
+              <div className="lp-field">
+                <label className="lp-label">Confirmer mot de passe *</label>
+                <div className="lp-input-eye">
+                  <input
+                    className="lp-input lp-input-pw"
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    disabled={loading}
+                    required
+                  />
+                  <button type="button" className="lp-eye-btn"
+                    onClick={() => setShowConfirmPassword(p => !p)}
+                    aria-label={showConfirmPassword ? "Masquer" : "Afficher"}
+                  >
+                    {showConfirmPassword ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <label className="lp-checkbox-row">
+                <input type="checkbox" name="smsOptIn" checked={formData.smsOptIn} onChange={handleChange} />
+                <span>Recevoir rappels SMS 24h avant mon RDV</span>
+              </label>
+            </>
+          )}
+
+          <button type="submit" className="lp-submit" disabled={loading}>
+            {loading ? "Chargement…" : isLogin ? "Me connecter" : "Créer mon compte"}
+          </button>
+
+          <div className="lp-switch">
+            <p>{isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}</p>
+            <button type="button" className="lp-switch-btn"
+              onClick={() => { setIsLogin(p => !p); scrollToForm(); }}
             >
-              {showPassword ? (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                  <line x1="1" y1="1" x2="23" y2="23"/>
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              )}
+              {isLogin ? "Créer un compte" : "Se connecter"}
             </button>
           </div>
-          {!isLogin && <span className="lp-hint">6 caractères minimum</span>}
-        </div>
 
-        {/* ── Inscription uniquement ── */}
-        {!isLogin && (
-          <>
-            <div className="lp-field">
-              <label className="lp-label">Confirmer mot de passe *</label>
-              <div className="lp-input-eye">
-                <input
-                  className="lp-input lp-input-pw"
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  placeholder="••••••••"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  disabled={loading}
-                  required
-                />
-                <button
-                  type="button"
-                  className="lp-eye-btn"
-                  onClick={() => setShowConfirmPassword(p => !p)}
-                  aria-label={showConfirmPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                >
-                  {showConfirmPassword ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-                      <line x1="1" y1="1" x2="23" y2="23"/>
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <label className="lp-checkbox-row">
-              <input type="checkbox" name="smsOptIn" checked={formData.smsOptIn}
-                onChange={handleChange} />
-              <span>Recevoir rappels SMS 24h avant mon RDV</span>
-            </label>
-          </>
-        )}
-
-        <button type="submit" className="lp-submit" disabled={loading}>
-          {loading ? "Chargement…" : isLogin ? "Me connecter" : "Créer mon compte"}
-        </button>
-
-        <div className="lp-switch">
-          <p>{isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}</p>
-          <button type="button" className="lp-switch-btn" onClick={() => { setIsLogin(p => !p); scrollToForm(); }}>
-            {isLogin ? "Créer un compte" : "Se connecter"}
-          </button>
-        </div>
-
-        {errorMessage && <div className="lp-error">{errorMessage}</div>}
-      </form>
+          {errorMessage && <div className="lp-error">{errorMessage}</div>}
+        </form>
+      </div>
     </div>
-  </div>
   );
 };
 
 // ─── Login (main) ─────────────────────────────────────────────────────────────
 const Login = ({ onLogin }) => {
-  // FIX: démarrer sur Connexion (true) et non Inscription
-  const [isLogin, setIsLogin]   = useState(true);
-  const [formData, setFormData] = useState({
+  const [isLogin,       setIsLogin]       = useState(true);
+  const [formData,      setFormData]      = useState({
     firstName: "", lastName: "", username: "",
     email: "", phone: "", password: "",
     confirmPassword: "", smsOptIn: true, login: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading]           = useState(false);
+  const [loading,      setLoading]      = useState(false);
   const formRef  = useRef(null);
   const navigate = useNavigate();
   useLoginStyles();
@@ -466,7 +445,7 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (loading) return; // FIX: bloque double-submit
+    if (loading) return;
     setErrorMessage("");
 
     // Validation front
@@ -493,9 +472,9 @@ const Login = ({ onLogin }) => {
       ? { login: formData.login, password: formData.password }
       : {
           firstName: formData.firstName, lastName: formData.lastName,
-          username: formData.username, email: formData.email,
-          phone: formData.phone, password: formData.password,
-          smsOptIn: formData.smsOptIn,
+          username:  formData.username,  email:    formData.email,
+          phone:     formData.phone,     password: formData.password,
+          smsOptIn:  formData.smsOptIn,
         };
 
     try {
@@ -546,7 +525,7 @@ const Login = ({ onLogin }) => {
           />
         </div>
       </div>
-      <ToastContainer theme="dark" position="top-center" />
+      {/* ToastContainer retiré — géré globalement dans App.js */}
     </div>
   );
 };
