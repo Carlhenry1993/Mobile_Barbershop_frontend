@@ -219,6 +219,305 @@ const ClientDetailModal = ({ booking, onClose }) => (
   </motion.div>
 );
 
+// ─── Helpers clients ──────────────────────────────────────────────────────────
+const fmtClientDate = (d) => {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+};
+
+// ─── Client Drawer ────────────────────────────────────────────────────────────
+const ClientDrawer = ({ client, onClose }) => {
+  const [history, setHistory] = useState([]);
+  const [loadingH, setLoadingH] = useState(true);
+
+  useEffect(() => {
+    if (!client) return;
+    setLoadingH(true);
+    axios.get("/api/booking/admin/all")
+      .then(r => {
+        const mine = r.data
+          .filter(b => b.client_id?.toString() === client.id?.toString())
+          .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+        setHistory(mine);
+      })
+      .catch(() => {})
+      .finally(() => setLoadingH(false));
+  }, [client]);
+
+  if (!client) return null;
+
+  const fullName = [client.first_name, client.last_name].filter(Boolean).join(" ") || client.username;
+
+  return (
+    <motion.div
+      className="ab-modal-overlay"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="ab-modal"
+        style={{ maxWidth: 620 }}
+        initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.94, opacity: 0 }}
+        transition={{ duration: 0.22 }}
+        onClick={e => e.stopPropagation()}
+      >
+        <button className="ab-modal-close" onClick={onClose}>✕</button>
+
+        {/* Client header */}
+        <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", marginBottom: "1.5rem" }}>
+          <div style={{
+            width: 56, height: 56, borderRadius: "50%", flexShrink: 0,
+            background: `hsl(${Math.abs(fullName.split("").reduce((h,c) => c.charCodeAt(0)+((h<<5)-h),0)) % 360}, 55%, 45%)`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontFamily: "'Playfair Display', serif", fontSize: "1.3rem", fontWeight: 700, color: "#fff",
+          }}>
+            {fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0,2)}
+          </div>
+          <div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.3rem", color: "var(--ab-cream)", fontWeight: 700 }}>
+              {fullName}
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--ab-muted)", marginTop: "0.2rem" }}>
+              @{client.username} · Membre depuis {fmtClientDate(client.member_since)}
+            </div>
+          </div>
+        </div>
+
+        {/* Stats rapides */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.75rem", marginBottom: "1.5rem" }}>
+          {[
+            { label: "Services\ncomplétés", val: client.total_completed },
+            { label: "Dépenses\ntotales",   val: `${parseFloat(client.total_spent || 0).toFixed(0)}$` },
+            { label: "À venir",             val: client.upcoming },
+            { label: "Annulés",             val: client.total_cancelled },
+          ].map(({ label, val }) => (
+            <div key={label} style={{ background: "var(--ab-black)", border: "1px solid var(--ab-border)", padding: "0.85rem", textAlign: "center" }}>
+              <div style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--ab-cream)", fontFamily: "'Playfair Display', serif" }}>{val ?? 0}</div>
+              <div style={{ fontSize: "0.65rem", color: "var(--ab-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: "0.25rem", whiteSpace: "pre-line" }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Infos contact */}
+        <div style={{ background: "var(--ab-charcoal)", border: "1px solid var(--ab-border)", padding: "1rem 1.25rem", marginBottom: "1.5rem" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem 2rem", fontSize: "0.85rem", color: "var(--ab-light)" }}>
+            {client.email && <span>✉ <a href={`mailto:${client.email}`} style={{ color: "var(--ab-gold)", textDecoration: "none" }}>{client.email}</a></span>}
+            {client.phone && <span>📞 <a href={`tel:${client.phone}`} style={{ color: "var(--ab-gold)", textDecoration: "none" }}>{client.phone}</a></span>}
+            {client.favourite_service && <span>✂️ Service favori : <strong style={{ color: "var(--ab-cream)" }}>{client.favourite_service}</strong></span>}
+            {client.last_visit && <span>🗓 Dernière visite : <strong style={{ color: "var(--ab-cream)" }}>{fmtClientDate(client.last_visit)}</strong></span>}
+            {client.first_visit && <span>🌟 Première visite : <strong style={{ color: "var(--ab-cream)" }}>{fmtClientDate(client.first_visit)}</strong></span>}
+          </div>
+        </div>
+
+        {/* Historique des visites */}
+        <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "1rem", color: "var(--ab-cream)", marginBottom: "0.75rem" }}>
+          Historique des visites
+        </div>
+
+        {loadingH ? (
+          <p style={{ color: "var(--ab-muted)", fontSize: "0.85rem", padding: "1rem 0" }}>Chargement…</p>
+        ) : history.length === 0 ? (
+          <p style={{ color: "var(--ab-muted)", fontSize: "0.85rem" }}>Aucun historique trouvé.</p>
+        ) : (
+          <div style={{ maxHeight: 280, overflowY: "auto" }}>
+            {history.map(b => (
+              <div key={b.id} style={{
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+                padding: "0.65rem 0", borderBottom: "1px solid var(--ab-border)",
+                gap: "1rem", flexWrap: "wrap",
+              }}>
+                <div>
+                  <div style={{ fontSize: "0.88rem", color: "var(--ab-cream)", fontWeight: 500 }}>{b.service_name}</div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--ab-muted)", marginTop: "0.15rem" }}>
+                    {fmtClientDate(b.start_time)} · {fmtTime(b.start_time)} · {b.barber_name}
+                  </div>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexShrink: 0 }}>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--ab-gold)" }}>{b.price}$</span>
+                  <span className={`ab-status ${b.status}`} style={{ fontSize: "0.65rem" }}>
+                    {b.status === "confirmed" ? "Confirmé" : b.status === "cancelled" ? "Annulé" : "Terminé"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", gap: "0.75rem", marginTop: "1.5rem" }}>
+          {client.email && (
+            <a href={`mailto:${client.email}`} className="ab-btn-outline" style={{ flex: 1, textAlign: "center", textDecoration: "none" }}>
+              ✉ Contacter
+            </a>
+          )}
+          <button className="ab-btn-gold" style={{ flex: 1 }} onClick={onClose}>Fermer</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// ─── ClientsTab ───────────────────────────────────────────────────────────────
+const ClientsTab = () => {
+  const [clients,        setClients]        = useState([]);
+  const [loading,        setLoading]        = useState(true);
+  const [search,         setSearch]         = useState("");
+  const [selectedClient, setSelectedClient] = useState(null);
+
+  useEffect(() => {
+    axios.get("/api/booking/admin/clients")
+      .then(r => setClients(r.data || []))
+      .catch(() => toast.error("Erreur chargement clients"))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filtered = clients.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return [c.username, c.first_name, c.last_name, c.email, c.phone]
+      .some(f => f?.toLowerCase().includes(q));
+  });
+
+  return (
+    <>
+      <div className="ad-header">
+        <p className="ad-eyebrow">Gestion</p>
+        <h1 className="ad-display">Clients</h1>
+        <span className="ab-gold-rule" />
+      </div>
+
+      {/* Notice */}
+      <div className="ab-policy-notice">
+        👥 Seuls les clients ayant au moins <strong style={{ color: "var(--ab-gold)" }}>un service complété</strong> apparaissent ici.
+        Les inscrits sans visite terminée ne sont pas encore considérés comme clients.
+      </div>
+
+      {/* Stat rapide */}
+      <div className="ab-stats" style={{ marginBottom: "1.5rem" }}>
+        <div className="ab-stat-card">
+          <div className="ab-stat-label">Clients actifs</div>
+          <div className="ab-stat-value">{clients.length}</div>
+          <div className="ab-stat-sub">≥ 1 visite terminée</div>
+        </div>
+        <div className="ab-stat-card">
+          <div className="ab-stat-label">Total visites</div>
+          <div className="ab-stat-value">{clients.reduce((s, c) => s + Number(c.total_completed || 0), 0)}</div>
+          <div className="ab-stat-sub">services complétés</div>
+        </div>
+        <div className="ab-stat-card">
+          <div className="ab-stat-label">Revenus totaux</div>
+          <div className="ab-stat-value">{clients.reduce((s, c) => s + parseFloat(c.total_spent || 0), 0).toFixed(0)}$</div>
+          <div className="ab-stat-sub">tous clients</div>
+        </div>
+      </div>
+
+      {/* Recherche */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <div className="ab-search-wrap">
+          <span className="ab-search-icon">🔍</span>
+          <input
+            className="ab-input"
+            placeholder="Rechercher par nom, email, téléphone…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <p style={{ fontSize: "0.8rem", color: "var(--ab-muted)", marginBottom: "1rem" }}>
+        {filtered.length} client{filtered.length !== 1 ? "s" : ""} trouvé{filtered.length !== 1 ? "s" : ""}
+      </p>
+
+      {loading ? (
+        <p style={{ textAlign: "center", padding: "4rem", color: "var(--ab-muted)" }}>Chargement…</p>
+      ) : filtered.length === 0 ? (
+        <div className="ab-empty">
+          {search ? "Aucun client correspond à cette recherche." : "Aucun client avec une visite terminée pour le moment."}
+        </div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className="ab-table">
+            <thead>
+              <tr>
+                <th>Client</th>
+                <th>Contact</th>
+                <th>Visites</th>
+                <th>Service favori</th>
+                <th>Dépenses</th>
+                <th>Dernière visite</th>
+                <th>Membre depuis</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(c => {
+                const fullName = [c.first_name, c.last_name].filter(Boolean).join(" ") || c.username;
+                const initials = fullName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+                const avatarColor = `hsl(${Math.abs(fullName.split("").reduce((h, ch) => ch.charCodeAt(0) + ((h << 5) - h), 0)) % 360}, 55%, 42%)`;
+
+                return (
+                  <tr key={c.id} style={{ cursor: "pointer" }} onClick={() => setSelectedClient(c)}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                          background: avatarColor,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "0.72rem", fontWeight: 700, color: "#fff",
+                        }}>
+                          {initials}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, color: "var(--ab-cream)", fontSize: "0.9rem" }}>{fullName}</div>
+                          <div style={{ fontSize: "0.72rem", color: "var(--ab-muted)" }}>@{c.username}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ fontSize: "0.82rem" }}>
+                        {c.email && <div style={{ color: "var(--ab-light)" }}>{c.email}</div>}
+                        {c.phone && <div style={{ color: "var(--ab-muted)", marginTop: "0.15rem" }}>{c.phone}</div>}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ fontWeight: 700, color: "var(--ab-gold)", fontSize: "1rem", fontFamily: "'Playfair Display', serif" }}>
+                        {c.total_completed}
+                      </span>
+                      {Number(c.upcoming) > 0 && (
+                        <span style={{ fontSize: "0.72rem", color: "var(--ab-success)", marginLeft: "0.4rem" }}>+{c.upcoming} prévu</span>
+                      )}
+                    </td>
+                    <td style={{ fontSize: "0.85rem", color: "var(--ab-light)" }}>{c.favourite_service ?? "—"}</td>
+                    <td style={{ fontWeight: 600, color: "var(--ab-gold)" }}>
+                      {parseFloat(c.total_spent || 0).toFixed(0)}$
+                    </td>
+                    <td style={{ fontSize: "0.85rem", color: "var(--ab-light)", whiteSpace: "nowrap" }}>
+                      {fmtClientDate(c.last_visit)}
+                    </td>
+                    <td style={{ fontSize: "0.82rem", color: "var(--ab-muted)", whiteSpace: "nowrap" }}>
+                      {fmtClientDate(c.member_since)}
+                    </td>
+                    <td>
+                      <button className="ab-icon-btn" title="Voir profil" onClick={e => { e.stopPropagation(); setSelectedClient(c); }}>
+                        👁
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <AnimatePresence>
+        {selectedClient && (
+          <ClientDrawer client={selectedClient} onClose={() => setSelectedClient(null)} />
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
 // ─── AdminDashboard ───────────────────────────────────────────────────────────
 const AdminDashboard = () => {
   useAdminStyles();
@@ -461,7 +760,8 @@ const AdminDashboard = () => {
       );
 
       case "clients":
-        return (<><div className="ad-header"><p className="ad-eyebrow">Gestion</p><h1 className="ad-display">Clients</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Clients en développement…</p></>);
+        return <ClientsTab />;
+
       case "barbers":
         return (<><div className="ad-header"><p className="ad-eyebrow">Équipe</p><h1 className="ad-display">Barbiers</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Barbiers en développement…</p></>);
       case "services":
