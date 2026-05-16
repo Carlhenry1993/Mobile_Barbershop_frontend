@@ -6,8 +6,8 @@ import { motion, useInView, useReducedMotion } from "framer-motion";
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
 const MAP_QUERY = "462 4e Rue de la Pointe Shawinigan QC G9N 1G7";
-// <-- AJOUT WHATSAPP : mets ton vrai numéro ici
-const WHATSAPP_NUMBER = "15147788318"; 
+// <-- WHATSAPP : Remplace par le vrai numéro de Mr Renaudin
+const WHATSAPP_NUMBER = "15147788318";
 const WHATSAPP_MSG = encodeURIComponent("Bonjour Mr. Renaudin Barbershop, j'aimerais prendre rendez-vous.");
 const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_MSG}`;
 
@@ -39,7 +39,6 @@ const useInjectStyles = () => {
         --light:    #b8c8da;
         --white:    #eef2f7;
         --steel:    #8ba8c8;
-        --whatsapp: #25D366;
       }
 
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,7 +56,7 @@ const useInjectStyles = () => {
         inset: 0;
         pointer-events: none;
         z-index: 9999;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
         opacity: 0.035;
       }
 
@@ -101,7 +100,7 @@ const useInjectStyles = () => {
         .serif-body { font-size: 1.15rem; }
       }
 
-      /* <-- MOBILE BOUTONS : meilleur système de grille */
+      /* <-- MOBILE BOUTONS : grille responsive */
       .btn-group {
         display: flex;
         flex-wrap: wrap;
@@ -148,15 +147,6 @@ const useInjectStyles = () => {
         transform: translateY(-2px);
         outline: 2px solid var(--gold);
         outline-offset: 2px;
-      }
-      .btn-whatsapp {
-        border-color: var(--whatsapp) !important;
-        color: var(--whatsapp) !important;
-      }
-      .btn-whatsapp:hover, .btn-whatsapp:focus-visible {
-        background: var(--whatsapp) !important;
-        color: var(--white) !important;
-        border-color: var(--whatsapp) !important;
       }
 
       .feature-card {
@@ -274,7 +264,7 @@ const useInjectStyles = () => {
       }
       @media (min-width: 900px) {
         .why-us-grid {
-          grid-template-columns: 1fr;
+          grid-template-columns: 1fr 1fr;
           gap: 5rem;
         }
       }
@@ -307,7 +297,7 @@ const useInjectStyles = () => {
         .mobile-sticky-cta { display: block; }
       }
 
-      /* <-- MOBILE BOUTONS : responsive */
+      /* <-- MOBILE BOUTONS : stack vertical */
       @media (max-width: 768px) {
         .display { font-size: clamp(2.5rem, 10vw, 5rem); }
         .btn-group {
@@ -507,7 +497,7 @@ const HomePage = () => {
             Là où la précision rencontre la tradition. Une expérience de toilettage premium, pensée pour l'homme moderne.
           </motion.p>
 
-          {/* <-- MOBILE BOUTONS : nouvelle grille responsive */}
+          {/* <-- MOBILE BOUTONS : utilise .btn-group */}
           <motion.div
             className="btn-group"
             initial={shouldReduceMotion ? {} : { opacity: 0, y: 20 }}
@@ -533,7 +523,7 @@ const HomePage = () => {
               href={WHATSAPP_LINK}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn-outline btn-whatsapp"
+              className="btn-outline"
               aria-label="Contacter sur WhatsApp"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
@@ -765,6 +755,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
+
 
       {/* LOCATION + HOURS */}
       <section className="section-pad" style={{ background: "var(--black)" }}>
