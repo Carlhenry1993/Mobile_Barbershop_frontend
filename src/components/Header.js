@@ -326,6 +326,7 @@ const Header = ({ role, onLogout }) => {
     () => [
       { path: "/",         label: "Accueil" },
       { path: "/services", label: "Nos Services" },
+      { path: "/galerie",  label: "Galerie" },
       { path: "/a-propos", label: "À Propos" },
       { path: "/annonces", label: "Annonces" },
       { path: "/contact",  label: "Contact" },

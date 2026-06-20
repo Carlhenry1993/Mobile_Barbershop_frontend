@@ -547,6 +547,8 @@ const AdminDashboard = () => {
   const [bookings,       setBookings]       = useState([]);
   const [services,       setServices]       = useState([]);
   const [barbers,        setBarbers]        = useState([]);
+  const [galleryPhotos,  setGalleryPhotos]  = useState([]);
+  const [reviews,        setReviews]        = useState([]);
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState("");
   const [search,         setSearch]         = useState("");
@@ -555,18 +557,24 @@ const AdminDashboard = () => {
   const [filterStatus,   setFilterStatus]   = useState("");
   const [stats,          setStats]          = useState({ today: 0, week: 0, month: 0, revenue: 0, cancelled: 0 });
   const [detailTarget,   setDetailTarget]   = useState(null);
+  const [photoForm,      setPhotoForm]      = useState({ title: "", description: "", category: "coupe", imageData: "", isFeatured: false });
+  const [photoSaving,    setPhotoSaving]    = useState(false);
 
   const fetchInitialData = useCallback(async () => {
     setLoading(true);
     try {
-      const [bookingsRes, servicesRes, barbersRes] = await Promise.all([
+      const [bookingsRes, servicesRes, barbersRes, galleryRes, reviewsRes] = await Promise.all([
         axios.get("/api/booking/admin/all"),
         axios.get("/api/booking/services"),
         axios.get("/api/booking/barbers"),
+        axios.get("/api/gallery?includeHidden=true"),
+        axios.get("/api/reviews?includeHidden=true"),
       ]);
       setBookings(bookingsRes.data);
       setServices(servicesRes.data);
       setBarbers(barbersRes.data);
+      setGalleryPhotos(galleryRes.data || []);
+      setReviews(reviewsRes.data || []);
       calcStats(bookingsRes.data);
     } catch (err) {
       setError("Erreur de chargement");
@@ -715,11 +723,105 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const readImageFile = (file) => new Promise((resolve, reject) => {
+    if (!file) return resolve("");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      return reject(new Error("Format accepte: JPG, PNG ou WebP."));
+    }
+    if (file.size > 6 * 1024 * 1024) {
+      return reject(new Error("Image trop lourde. Maximum 6 MB."));
+    }
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Lecture du fichier impossible."));
+    reader.readAsDataURL(file);
+  });
+
+  const handlePhotoFile = async (event) => {
+    try {
+      const imageData = await readImageFile(event.target.files?.[0]);
+      setPhotoForm(prev => ({ ...prev, imageData }));
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const handleCreatePhoto = async (event) => {
+    event.preventDefault();
+    if (!photoForm.title.trim() || !photoForm.imageData) {
+      toast.error("Ajoutez un titre et une image.");
+      return;
+    }
+    setPhotoSaving(true);
+    try {
+      const res = await axios.post("/api/gallery", {
+        title: photoForm.title,
+        description: photoForm.description,
+        category: photoForm.category,
+        imageData: photoForm.imageData,
+        isFeatured: photoForm.isFeatured,
+        isPublished: true,
+      });
+      setGalleryPhotos(prev => [res.data, ...prev.map(p => photoForm.isFeatured ? { ...p, is_featured: false } : p)]);
+      setPhotoForm({ title: "", description: "", category: "coupe", imageData: "", isFeatured: false });
+      toast.success("Photo publiee dans la galerie");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Upload impossible");
+    } finally {
+      setPhotoSaving(false);
+    }
+  };
+
+  const updateGalleryPhoto = async (id, payload) => {
+    try {
+      const res = await axios.patch(`/api/gallery/${id}`, payload);
+      setGalleryPhotos(prev => prev.map(photo => {
+        if (payload.isFeatured === true && photo.id !== id) return { ...photo, is_featured: false };
+        return photo.id === id ? res.data : photo;
+      }));
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Modification impossible");
+    }
+  };
+
+  const deleteGalleryPhoto = async (id) => {
+    if (!window.confirm("Supprimer cette photo de la galerie ?")) return;
+    try {
+      await axios.delete(`/api/gallery/${id}`);
+      setGalleryPhotos(prev => prev.filter(photo => photo.id !== id));
+      toast.success("Photo supprimee");
+    } catch {
+      toast.error("Suppression impossible");
+    }
+  };
+
+  const updateReview = async (id, isApproved) => {
+    try {
+      const res = await axios.patch(`/api/reviews/${id}`, { isApproved });
+      setReviews(prev => prev.map(review => review.id === id ? { ...review, is_approved: res.data.is_approved } : review));
+    } catch {
+      toast.error("Modification de l'avis impossible");
+    }
+  };
+
+  const deleteReview = async (id) => {
+    if (!window.confirm("Supprimer definitivement cet avis ?")) return;
+    try {
+      await axios.delete(`/api/reviews/${id}`);
+      setReviews(prev => prev.filter(review => review.id !== id));
+      toast.success("Avis supprime");
+    } catch {
+      toast.error("Suppression de l'avis impossible");
+    }
+  };
+
   const menuItems = [
     { id: "bookings",  label: "Réservations", icon: "📅" },
     { id: "clients",   label: "Clients",      icon: "👥" },
     { id: "barbers",   label: "Barbiers",     icon: "✂️" },
     { id: "services",  label: "Services",     icon: "💈" },
+    { id: "gallery",   label: "Galerie",      icon: "🖼️" },
+    { id: "reviews",   label: "Avis",         icon: "⭐" },
     { id: "stats",     label: "Statistiques", icon: "📊" },
     { id: "chat",      label: "Chat Live",    icon: "💬" },
     { id: "settings",  label: "Paramètres",   icon: "⚙️" },
@@ -956,6 +1058,110 @@ const AdminDashboard = () => {
                     </div>
                   ))}
                 </div>
+              </div>
+            </div>
+          </>
+        );
+
+      case "gallery":
+        return (
+          <>
+            <div className="ad-header"><p className="ad-eyebrow">Media</p><h1 className="ad-display">Galerie dynamique</h1><span className="ab-gold-rule" /></div>
+            <div className="ab-dashboard-grid">
+              <form className="ab-panel" onSubmit={handleCreatePhoto}>
+                <div className="ab-panel-title">Publier une photo</div>
+                <div style={{ display: "grid", gap: "0.9rem" }}>
+                  <div>
+                    <label className="ab-label">Titre</label>
+                    <input className="ab-input" value={photoForm.title} onChange={e => setPhotoForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Ex: Fade propre avant weekend" />
+                  </div>
+                  <div>
+                    <label className="ab-label">Categorie</label>
+                    <select className="ab-select" value={photoForm.category} onChange={e => setPhotoForm(prev => ({ ...prev, category: e.target.value }))}>
+                      <option value="coupe">Coupe</option>
+                      <option value="barbe">Barbe</option>
+                      <option value="salon">Salon</option>
+                      <option value="avant-apres">Avant / Apres</option>
+                      <option value="texture">Texture</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="ab-label">Description</label>
+                    <textarea className="ab-input" rows="3" value={photoForm.description} onChange={e => setPhotoForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Courte note visible sur la page galerie" />
+                  </div>
+                  <div>
+                    <label className="ab-label">Image JPG, PNG ou WebP - max 6 MB</label>
+                    <input className="ab-input" type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoFile} />
+                  </div>
+                  {photoForm.imageData && (
+                    <img src={photoForm.imageData} alt="Apercu upload" style={{ width: "100%", maxHeight: 260, objectFit: "cover", border: "1px solid var(--ab-border)" }} />
+                  )}
+                  <label style={{ display: "flex", gap: "0.6rem", alignItems: "center", color: "var(--ab-light)", fontSize: "0.85rem" }}>
+                    <input type="checkbox" checked={photoForm.isFeatured} onChange={e => setPhotoForm(prev => ({ ...prev, isFeatured: e.target.checked }))} />
+                    Utiliser comme photo principale de la page d'accueil
+                  </label>
+                  <button className="ab-btn-gold" type="submit" disabled={photoSaving}>
+                    {photoSaving ? "Publication..." : "Publier la photo"}
+                  </button>
+                </div>
+              </form>
+
+              <div className="ab-panel">
+                <div className="ab-panel-title">Photos publiees</div>
+                <div className="ab-list">
+                  {galleryPhotos.length === 0 ? (
+                    <div className="ab-list-meta">Aucune photo encore. Ajoutez les vraies coupes du salon pour alimenter l'accueil et la page galerie.</div>
+                  ) : galleryPhotos.map(photo => (
+                    <div className="ab-list-item" key={photo.id}>
+                      <img src={photo.image_data} alt={photo.title} style={{ width: "100%", height: 180, objectFit: "cover", border: "1px solid var(--ab-border)" }} />
+                      <div className="ab-list-main"><span>{photo.title}</span><span>{photo.category}</span></div>
+                      <div className="ab-chip-row">
+                        {photo.is_featured && <span className="ab-chip">Accueil</span>}
+                        <span className="ab-chip">{photo.is_published ? "Publiee" : "Masquee"}</span>
+                      </div>
+                      <div className="ab-actions">
+                        <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { isFeatured: true })}>Accueil</button>
+                        <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { isPublished: !photo.is_published })}>
+                          {photo.is_published ? "Masquer" : "Publier"}
+                        </button>
+                        <button className="ab-icon-btn danger" onClick={() => deleteGalleryPhoto(photo.id)}>Supprimer</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+
+      case "reviews":
+        return (
+          <>
+            <div className="ad-header"><p className="ad-eyebrow">Reputation</p><h1 className="ad-display">Avis clients</h1><span className="ab-gold-rule" /></div>
+            <div className="ab-panel">
+              <div className="ab-panel-title">Avis recus apres coupe terminee</div>
+              <div className="ab-list">
+                {reviews.length === 0 ? (
+                  <div className="ab-list-meta">Aucun avis client pour le moment.</div>
+                ) : reviews.map(review => (
+                  <div className="ab-list-item" key={review.id}>
+                    <div className="ab-list-main">
+                      <span>{review.client_name || "Client"}</span>
+                      <span>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
+                    </div>
+                    <div className="ab-list-meta">
+                      {review.service_name || "Service"} avec {review.barber_name || "barbier"} - reservation #{review.booking_id}
+                    </div>
+                    {review.title && <strong style={{ color: "var(--ab-cream)" }}>{review.title}</strong>}
+                    <p style={{ color: "var(--ab-light)", lineHeight: 1.65, margin: 0 }}>{review.comment}</p>
+                    <div className="ab-actions">
+                      <button className="ab-icon-btn" onClick={() => updateReview(review.id, !review.is_approved)}>
+                        {review.is_approved ? "Masquer" : "Approuver"}
+                      </button>
+                      <button className="ab-icon-btn danger" onClick={() => deleteReview(review.id)}>Supprimer</button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </>

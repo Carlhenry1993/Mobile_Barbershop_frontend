@@ -487,7 +487,7 @@ const CancelModal = ({ booking, onClose, onSuccess }) => {
 };
 
 // ─── BookingCard ──────────────────────────────────────────────────────────────
-const BookingCard = ({ booking, onReschedule, onCancel }) => {
+const BookingCard = ({ booking, onReschedule, onCancel, onReview }) => {
   const modifiable = canModify(booking);
   const countdown  = getCountdown(booking.start_time);
   const isPast     = new Date(booking.start_time) < new Date();
@@ -551,6 +551,98 @@ const BookingCard = ({ booking, onReschedule, onCancel }) => {
           )}
         </div>
       )}
+
+      {booking.status === "completed" && (
+        <div className="mb-actions">
+          <button className="mb-btn mb-btn-gold" onClick={() => onReview(booking)}>
+            Donner mon avis
+          </button>
+        </div>
+      )}
+    </motion.div>
+  );
+};
+
+const ReviewModal = ({ booking, onClose, onSuccess }) => {
+  const [rating, setRating] = useState(5);
+  const [title, setTitle] = useState("");
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    if (comment.trim().length < 8) {
+      toast.error("Ajoutez un commentaire un peu plus complet.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await axios.post("/api/reviews", {
+        bookingId: booking.id,
+        rating,
+        title,
+        comment,
+      });
+      toast.success("Merci pour votre avis !");
+      onSuccess?.();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Impossible d'envoyer votre avis");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.div className="mb-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.form
+        className="mb-modal"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        onClick={(e) => e.stopPropagation()}
+        onSubmit={submit}
+      >
+        <button type="button" className="mb-modal-close" onClick={onClose}>×</button>
+        <h3>Votre avis apres la coupe</h3>
+        <p style={{ color: "var(--mb-fog)", lineHeight: 1.6, marginBottom: "1rem" }}>
+          {booking.service_name} avec {booking.barber_name}
+        </p>
+
+        <label className="mb-label">Note</label>
+        <div style={{ display: "flex", gap: "0.35rem", marginBottom: "1rem" }}>
+          {[1, 2, 3, 4, 5].map(value => (
+            <button
+              type="button"
+              key={value}
+              onClick={() => setRating(value)}
+              style={{
+                background: "transparent",
+                border: "1px solid var(--mb-border)",
+                color: value <= rating ? "var(--mb-gold)" : "var(--mb-fog)",
+                padding: "0.55rem 0.7rem",
+                cursor: "pointer",
+                fontSize: "1.05rem",
+              }}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+
+        <label className="mb-label">Titre optionnel</label>
+        <input className="mb-input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Ex: Coupe impeccable" />
+
+        <label className="mb-label" style={{ marginTop: "1rem" }}>Commentaire</label>
+        <textarea className="mb-input" rows="5" value={comment} onChange={e => setComment(e.target.value)} placeholder="Dites ce que vous avez apprecie..." />
+
+        <div className="mb-modal-btns">
+          <button type="button" className="mb-btn mb-btn-ghost" onClick={onClose}>Annuler</button>
+          <button type="submit" className="mb-btn mb-btn-gold" disabled={loading}>
+            {loading ? "Envoi..." : "Publier mon avis"}
+          </button>
+        </div>
+      </motion.form>
     </motion.div>
   );
 };
@@ -565,6 +657,7 @@ const MyBookingsPage = () => {
   const [tab,        setTab]        = useState("upcoming");
   const [reschedule, setReschedule] = useState(null);
   const [cancel,     setCancel]     = useState(null);
+  const [review,     setReview]     = useState(null);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchBookings = useCallback(async () => {
@@ -671,6 +764,7 @@ const MyBookingsPage = () => {
                   booking={b}
                   onReschedule={setReschedule}
                   onCancel={setCancel}
+                  onReview={setReview}
                 />
               ))}
             </AnimatePresence>
@@ -706,6 +800,13 @@ const MyBookingsPage = () => {
           <CancelModal
             booking={cancel}
             onClose={() => setCancel(null)}
+            onSuccess={fetchBookings}
+          />
+        )}
+        {review && (
+          <ReviewModal
+            booking={review}
+            onClose={() => setReview(null)}
             onSuccess={fetchBookings}
           />
         )}

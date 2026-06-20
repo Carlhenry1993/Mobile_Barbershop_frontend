@@ -17,6 +17,7 @@ import BookingPage       from "./pages/BookingPage";
 import MyBookingsPage    from "./pages/MyBookingsPage";   // ← NEW
 import ContactPage       from "./pages/ContactPage";
 import ServicesPage      from "./pages/ServicesPage";
+import GalleryPage       from "./pages/GalleryPage";
 import AboutPage         from "./pages/AboutPage";
 import AnnoncePage       from "./pages/AnnoncePage";
 import AdminBookingsPage from "./pages/AdminBookingsPage";
@@ -154,6 +155,7 @@ const App = () => {
         {/* ── Public ── */}
         <Route path="/"          element={<HomePage />} />
         <Route path="/services"  element={<ServicesPage />} />
+        <Route path="/galerie"   element={<GalleryPage />} />
         <Route path="/contact"   element={<ContactPage />} />
         <Route path="/a-propos"  element={<AboutPage />} />
         <Route path="/annonces"  element={<AnnoncePage readOnly={!role || role === "client"} />} />

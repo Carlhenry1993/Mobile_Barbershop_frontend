@@ -5,6 +5,7 @@ const siteUrl = "https://www.mrrenaudinbarbershop.com";
 const routes = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
   { path: "/services", changefreq: "monthly", priority: "0.8" },
+  { path: "/galerie", changefreq: "weekly", priority: "0.8" },
   { path: "/reserver", changefreq: "weekly", priority: "0.9" },
   { path: "/a-propos", changefreq: "monthly", priority: "0.6" },
   { path: "/annonces", changefreq: "weekly", priority: "0.6" },

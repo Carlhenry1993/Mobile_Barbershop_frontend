@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { motion, useInView, useReducedMotion } from "framer-motion";
+import axios from "axios";
 import {
   FaCalendarCheck,
   FaCut,
@@ -9,6 +10,8 @@ import {
   FaPhoneAlt,
   FaWhatsapp,
 } from "react-icons/fa";
+
+axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
@@ -40,15 +43,6 @@ const SERVICES = [
     desc: "Travail de texture, volume controle et conseils pour garder le style plus longtemps.",
     img: "/Photos/rasage3.jpg",
   },
-];
-
-const GALLERY = [
-  { src: "/Photos/rasage12.jpeg", label: "Precision" },
-  { src: "/Photos/rasage10.jpeg", label: "Finition" },
-  { src: "/Photos/rasage5.jpeg", label: "Style" },
-  { src: "/Photos/CoupeClassique2.jpg", label: "Classique" },
-  { src: "/Photos/RasageComplet.jpg", label: "Rasage" },
-  { src: "/Photos/DegradeModerne.jpg", label: "Degrade" },
 ];
 
 const HOURS = [
@@ -119,15 +113,21 @@ const useInjectStyles = () => {
         padding: 7rem 0 3.25rem;
         isolation: isolate;
       }
-      .home-hero::before {
+      .home-hero-media {
         content: "";
+        position: absolute;
+        inset: 0;
+        z-index: -2;
+      }
+      .home-hero-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .home-hero-media.empty { background: linear-gradient(135deg, #151a20, #25251f 45%, #19242a); }
+      .home-hero-shade {
         position: absolute;
         inset: 0;
         background:
           linear-gradient(90deg, rgba(12,15,19,0.94) 0%, rgba(12,15,19,0.68) 42%, rgba(12,15,19,0.26) 100%),
-          linear-gradient(0deg, rgba(12,15,19,0.98) 0%, rgba(12,15,19,0.22) 42%, rgba(12,15,19,0.48) 100%),
-          url('/Photos/rasage12.jpeg') center 30% / cover;
-        z-index: -2;
+          linear-gradient(0deg, rgba(12,15,19,0.98) 0%, rgba(12,15,19,0.22) 42%, rgba(12,15,19,0.48) 100%);
+        z-index: -1;
       }
       .home-hero::after {
         content: "";
@@ -293,6 +293,18 @@ const useInjectStyles = () => {
         letter-spacing: 0.12em;
         text-transform: uppercase;
       }
+      .home-empty-note {
+        grid-column: 1 / -1;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        color: var(--muted);
+        padding: 2rem;
+        line-height: 1.7;
+      }
+      .home-reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; }
+      .home-review { background: var(--panel); border: 1px solid var(--line); padding: 1.25rem; }
+      .home-review-stars { color: var(--gold); letter-spacing: 0.08em; margin-bottom: 0.8rem; }
+      .home-review p { color: var(--muted); line-height: 1.65; margin: 0.6rem 0 0; }
       .home-proof {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -345,7 +357,7 @@ const useInjectStyles = () => {
         .home-section-head,
         .home-proof,
         .home-location { grid-template-columns: 1fr; }
-        .home-services { grid-template-columns: repeat(2, 1fr); }
+        .home-services, .home-reviews { grid-template-columns: repeat(2, 1fr); }
         .home-gallery { grid-template-columns: 1fr 1fr; }
         .home-shot:nth-child(1), .home-shot:nth-child(5) { grid-row: span 1; }
       }
@@ -353,7 +365,7 @@ const useInjectStyles = () => {
         .home-hero { min-height: auto; padding: 5.5rem 0 2.5rem; }
         .home-actions { flex-direction: column; }
         .home-btn { width: 100%; }
-        .home-stats, .home-services, .home-flow, .home-gallery { grid-template-columns: 1fr; }
+        .home-stats, .home-services, .home-flow, .home-gallery, .home-reviews { grid-template-columns: 1fr; }
         .home-flow-step { border-right: 0; border-bottom: 1px solid var(--line); min-height: 118px; }
         .home-flow-step:last-child { border-bottom: 0; }
       }
@@ -402,17 +414,32 @@ const FadeIn = ({ children, delay = 0, className = "" }) => {
 const HomePage = () => {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [reviews, setReviews] = useState([]);
   useInjectStyles();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  useEffect(() => {
+    axios.get("/api/gallery")
+      .then(res => setGalleryPhotos(res.data || []))
+      .catch(() => setGalleryPhotos([]));
+    axios.get("/api/reviews")
+      .then(res => setReviews((res.data || []).slice(0, 3)))
+      .catch(() => setReviews([]));
+  }, []);
+
+  const featuredPhoto = galleryPhotos.find(photo => photo.is_featured) || galleryPhotos[0];
+  const visibleGallery = galleryPhotos.slice(0, 6);
+  const serviceVisuals = galleryPhotos.length ? galleryPhotos : [];
+
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "BarberShop",
     name: "Mr. Renaudin Barbershop",
-    image: "/Photos/rasage12.jpeg",
+    image: featuredPhoto?.image_data || "",
     address: {
       "@type": "PostalAddress",
       streetAddress: "462 4e Rue de la Pointe",
@@ -444,6 +471,10 @@ const HomePage = () => {
       </Helmet>
 
       <section className="home-hero">
+        <div className={`home-hero-media ${featuredPhoto ? "" : "empty"}`}>
+          {featuredPhoto && <img src={featuredPhoto.image_data} alt={featuredPhoto.title || "Mr. Renaudin Barbershop"} />}
+        </div>
+        <div className="home-hero-shade" />
         <div className="home-shell home-hero-grid">
           <div>
             <motion.p
@@ -546,7 +577,13 @@ const HomePage = () => {
           <div className="home-services">
             {SERVICES.map((service, index) => (
               <FadeIn className="home-service" delay={index} key={service.title}>
-                <img src={service.img} alt={service.title} loading="lazy" />
+                {serviceVisuals[index % Math.max(serviceVisuals.length, 1)] ? (
+                  <img
+                    src={serviceVisuals[index % serviceVisuals.length].image_data}
+                    alt={serviceVisuals[index % serviceVisuals.length].title || service.title}
+                    loading="lazy"
+                  />
+                ) : null}
                 <div className="home-service-body">
                   <h3>{service.title}</h3>
                   <p>{service.desc}</p>
@@ -588,18 +625,27 @@ const HomePage = () => {
               <h2 className="home-title">Une vitrine plus visuelle pour le salon.</h2>
             </div>
             <p className="home-copy">
-              La galerie utilise les images deja presentes dans le projet pour donner
-              plus de presence a la marque Mr. Renaudin Barbershop.
+              La galerie est alimentee par les photos publiees par le proprietaire.
+              Les nouvelles coupes peuvent apparaitre ici sans modifier le code.
             </p>
           </FadeIn>
           <div className="home-gallery">
-            {GALLERY.map((item, index) => (
-              <FadeIn className="home-shot" delay={index} key={item.src}>
-                <img src={item.src} alt={`Mr. Renaudin Barbershop - ${item.label}`} loading="lazy" />
-                <span>{item.label}</span>
+            {visibleGallery.length === 0 ? (
+              <div className="home-empty-note">
+                Aucune photo publiee pour le moment. Le proprietaire peut ajouter les vraies photos du salon depuis le dashboard admin.
+              </div>
+            ) : visibleGallery.map((item, index) => (
+              <FadeIn className="home-shot" delay={index} key={item.id}>
+                <img src={item.image_data} alt={item.title} loading="lazy" />
+                <span>{item.category || item.title}</span>
               </FadeIn>
             ))}
           </div>
+          {visibleGallery.length > 0 && (
+            <div className="home-actions" style={{ justifyContent: "center", marginTop: "2rem" }}>
+              <button className="home-btn dark" onClick={() => navigate("/galerie")}>Voir toute la galerie</button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -607,13 +653,10 @@ const HomePage = () => {
         <div className="home-shell home-proof">
           <FadeIn className="home-quote">
             <p className="home-eyebrow">Experience client</p>
-            <blockquote>
-              "Un barber de quartier, mais avec une presentation et une organisation
-              dignes d'un vrai service professionnel."
-            </blockquote>
+            <blockquote>Les avis viennent des clients apres une coupe terminee.</blockquote>
             <p>
-              L'objectif est de rendre le salon facile a comprendre, facile a reserver
-              et credible pour les nouveaux clients qui decouvrent la marque en ligne.
+              Les clients connectes peuvent laisser une note et un commentaire depuis
+              leur espace personnel apres leur rendez-vous.
             </p>
           </FadeIn>
           <FadeIn className="home-hours" delay={1}>
@@ -630,6 +673,22 @@ const HomePage = () => {
               </button>
             </div>
           </FadeIn>
+        </div>
+        <div className="home-shell">
+          <div className="home-reviews">
+            {reviews.length === 0 ? (
+              <div className="home-empty-note">
+                Les premiers avis clients apparaitront ici apres les coupes terminees.
+              </div>
+            ) : reviews.map(review => (
+              <article className="home-review" key={review.id}>
+                <div className="home-review-stars">{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</div>
+                <strong>{review.title || review.service_name || "Avis client"}</strong>
+                <p>{review.comment}</p>
+                <p style={{ color: "var(--gold)", fontWeight: 800 }}>{review.client_name || "Client Mr. Renaudin"}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
