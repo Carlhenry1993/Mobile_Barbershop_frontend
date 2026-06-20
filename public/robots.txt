@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /admin/bookings
+Disallow: /login
 
 Sitemap: https://www.mrrenaudinbarbershop.com/sitemap.xml

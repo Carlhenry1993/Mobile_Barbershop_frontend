@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
@@ -140,12 +140,31 @@ const useAdminStyles = () => {
   padding: 0.85rem 1.25rem; font-size: 0.8rem; color: var(--ab-muted);
   line-height: 1.6; margin-bottom: 1.5rem;
 }
+.ab-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr); gap: 1rem; align-items: start; }
+.ab-panel { background: var(--ab-card); border: 1px solid var(--ab-border); padding: 1.5rem; }
+.ab-panel-title { color: var(--ab-cream); font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+.ab-kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.ab-kpi { background: var(--ab-charcoal); border: 1px solid var(--ab-border); padding: 1rem; }
+.ab-kpi strong { color: var(--ab-cream); display: block; font-size: 1.5rem; font-family: 'Playfair Display', serif; }
+.ab-kpi span { color: var(--ab-muted); display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.09em; margin-top: 0.25rem; }
+.ab-list { display: grid; gap: 0.7rem; }
+.ab-list-item { border: 1px solid var(--ab-border); background: var(--ab-black); padding: 0.9rem; display: grid; gap: 0.35rem; }
+.ab-list-main { display: flex; justify-content: space-between; gap: 1rem; color: var(--ab-cream); font-weight: 700; }
+.ab-list-meta { color: var(--ab-muted); font-size: 0.82rem; line-height: 1.55; }
+.ab-chip-row { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ab-chip { border: 1px solid var(--ab-border); background: var(--ab-black); color: var(--ab-light); padding: 0.42rem 0.65rem; font-size: 0.75rem; }
+.ab-progress { height: 8px; background: var(--ab-black); border: 1px solid var(--ab-border); overflow: hidden; margin-top: 0.45rem; }
+.ab-progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--ab-gold), var(--ab-steel)); }
+.ab-two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.ab-settings-row { display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; padding: 0.9rem 0; border-bottom: 1px solid var(--ab-border); }
+.ab-settings-row:last-child { border-bottom: 0; }
 @media (max-width: 968px) {
   .ad-sidebar { transform: translateX(-100%); }
   .ad-sidebar.open { transform: translateX(0); }
   .ad-content { margin-left: 0; padding: 1rem; padding-top: 5rem; }
   .ad-mobile-toggle { display: flex; align-items: center; justify-content: center; }
   .ad-overlay.show { display: block; }
+  .ab-dashboard-grid, .ab-two-col { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
   .ab-table { font-size: 0.8rem; }
@@ -526,8 +545,8 @@ const AdminDashboard = () => {
   const [activeTab,      setActiveTab]      = useState("bookings");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bookings,       setBookings]       = useState([]);
-  const [services,       setServices]       = useState([]);  // eslint-disable-line no-unused-vars
-  const [barbers,        setBarbers]        = useState([]);  // eslint-disable-line no-unused-vars
+  const [services,       setServices]       = useState([]);
+  const [barbers,        setBarbers]        = useState([]);
   const [loading,        setLoading]        = useState(false);
   const [error,          setError]          = useState("");
   const [search,         setSearch]         = useState("");
@@ -608,6 +627,94 @@ const AdminDashboard = () => {
     return matchDate && matchBarber && matchStatus && matchSearch;
   });
 
+  const todayKey = new Date().toISOString().split("T")[0];
+  const nowTime = Date.now();
+  const todayBookings = useMemo(
+    () => bookings
+      .filter(b => b.start_time?.startsWith(todayKey))
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time)),
+    [bookings, todayKey]
+  );
+  const upcomingBookings = useMemo(
+    () => bookings
+      .filter(b => b.status === "confirmed" && new Date(b.start_time).getTime() >= nowTime)
+      .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))
+      .slice(0, 6),
+    [bookings, nowTime]
+  );
+  const completedRevenueToday = todayBookings
+    .filter(b => b.status === "completed")
+    .reduce((sum, b) => sum + parseFloat(b.price || 0), 0);
+  const confirmedToday = todayBookings.filter(b => b.status === "confirmed").length;
+  const completedToday = todayBookings.filter(b => b.status === "completed").length;
+  const cancelledToday = todayBookings.filter(b => b.status === "cancelled").length;
+
+  const serviceDemand = useMemo(() => {
+    const demand = bookings.reduce((acc, booking) => {
+      const name = booking.service_name || "Service";
+      acc[name] = (acc[name] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(demand)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [bookings]);
+
+  const barberPerformance = useMemo(() => {
+    return barbers.map(barber => {
+      const barberBookings = bookings.filter(b => b.barber_id?.toString() === barber.id?.toString());
+      const completed = barberBookings.filter(b => b.status === "completed");
+      const revenue = completed.reduce((sum, b) => sum + parseFloat(b.price || 0), 0);
+      return {
+        ...barber,
+        totalBookings: barberBookings.length,
+        confirmed: barberBookings.filter(b => b.status === "confirmed").length,
+        completed: completed.length,
+        revenue,
+      };
+    });
+  }, [barbers, bookings]);
+
+  const maxServiceDemand = Math.max(1, ...serviceDemand.map(([, count]) => count));
+  const formatMoney = (value) => `${Number(value || 0).toFixed(0)}$ CAD`;
+
+  const renderOperationSnapshot = () => (
+    <div className="ab-dashboard-grid" style={{ marginBottom: "2rem" }}>
+      <div className="ab-panel">
+        <div className="ab-panel-title">Operations du jour</div>
+        <div className="ab-kpi-grid">
+          <div className="ab-kpi"><strong>{todayBookings.length}</strong><span>rendez-vous</span></div>
+          <div className="ab-kpi"><strong>{confirmedToday}</strong><span>a venir</span></div>
+          <div className="ab-kpi"><strong>{completedToday}</strong><span>termines</span></div>
+          <div className="ab-kpi"><strong>{formatMoney(completedRevenueToday)}</strong><span>revenu encaisse</span></div>
+        </div>
+        <div className="ab-chip-row">
+          <span className="ab-chip">{cancelledToday} annule aujourd'hui</span>
+          <span className="ab-chip">{stats.cancelled} annulations sur 30 jours</span>
+          <span className="ab-chip">{bookings.length} reservations total</span>
+        </div>
+      </div>
+      <div className="ab-panel">
+        <div className="ab-panel-title">Prochains rendez-vous</div>
+        <div className="ab-list">
+          {upcomingBookings.length === 0 ? (
+            <div className="ab-list-meta">Aucun rendez-vous confirme a venir.</div>
+          ) : upcomingBookings.slice(0, 4).map(booking => (
+            <div className="ab-list-item" key={booking.id}>
+              <div className="ab-list-main">
+                <span>{booking.client_name}</span>
+                <span>{fmtTime(booking.start_time)}</span>
+              </div>
+              <div className="ab-list-meta">
+                {fmtDate(booking.start_time)} · {booking.service_name} · {booking.barber_name}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
   const menuItems = [
     { id: "bookings",  label: "Réservations", icon: "📅" },
     { id: "clients",   label: "Clients",      icon: "👥" },
@@ -635,6 +742,8 @@ const AdminDashboard = () => {
             Seul le client peut reporter son rendez-vous, via son espace personnel <em>/compte</em>.
             L'admin peut uniquement <strong>terminer</strong> ou <strong>annuler</strong> un rendez-vous — le client est notifié par email automatiquement.
           </div>
+
+          {renderOperationSnapshot()}
 
           {/* Stats */}
           <div className="ab-stats">
@@ -673,6 +782,17 @@ const AdminDashboard = () => {
                 <option value="confirmed">Confirmé</option>
                 <option value="cancelled">Annulé</option>
                 <option value="completed">Terminé</option>
+              </select>
+            </div>
+            <div>
+              <label className="ab-label">Barbier</label>
+              <select value={filterBarber} onChange={e => setFilterBarber(e.target.value)} className="ab-select">
+                <option value="">Tous</option>
+                {barbers.map(barber => (
+                  <option key={barber.id} value={barber.id}>
+                    {barber.name || barber.full_name || `Barbier #${barber.id}`}
+                  </option>
+                ))}
               </select>
             </div>
             <div style={{ display: "flex", alignItems: "flex-end" }}>
@@ -763,6 +883,160 @@ const AdminDashboard = () => {
         return <ClientsTab />;
 
       case "barbers":
+        return (
+          <>
+            <div className="ad-header"><p className="ad-eyebrow">Equipe</p><h1 className="ad-display">Barbiers</h1><span className="ab-gold-rule" /></div>
+            <div className="ab-dashboard-grid">
+              <div className="ab-panel">
+                <div className="ab-panel-title">Performance de l'equipe</div>
+                <div className="ab-list">
+                  {barberPerformance.length === 0 ? (
+                    <div className="ab-list-meta">Aucun barbier charge depuis l'API.</div>
+                  ) : barberPerformance.map(barber => (
+                    <div className="ab-list-item" key={barber.id}>
+                      <div className="ab-list-main">
+                        <span>{barber.name || barber.full_name || `Barbier #${barber.id}`}</span>
+                        <span>{formatMoney(barber.revenue)}</span>
+                      </div>
+                      <div className="ab-list-meta">
+                        {barber.totalBookings} reservation(s) - {barber.confirmed} a venir - {barber.completed} terminee(s)
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="ab-panel">
+                <div className="ab-panel-title">Organisation</div>
+                <div className="ab-chip-row">
+                  <span className="ab-chip">{barbers.length} barbier(s) actif(s)</span>
+                  <span className="ab-chip">{confirmedToday} rendez-vous aujourd'hui</span>
+                  <span className="ab-chip">{upcomingBookings.length} prochains confirmes</span>
+                </div>
+                <p className="ab-list-meta" style={{ marginTop: "1rem" }}>
+                  Utilisez le filtre barbier dans l'onglet reservations pour isoler rapidement l'agenda d'un membre de l'equipe.
+                </p>
+              </div>
+            </div>
+          </>
+        );
+
+      case "services":
+        return (
+          <>
+            <div className="ad-header"><p className="ad-eyebrow">Catalogue</p><h1 className="ad-display">Services</h1><span className="ab-gold-rule" /></div>
+            <div className="ab-dashboard-grid">
+              <div className="ab-panel">
+                <div className="ab-panel-title">Catalogue charge</div>
+                <div className="ab-list">
+                  {services.length === 0 ? (
+                    <div className="ab-list-meta">Aucun service charge depuis l'API.</div>
+                  ) : services.map(service => (
+                    <div className="ab-list-item" key={service.id || service.name}>
+                      <div className="ab-list-main">
+                        <span>{service.name || service.title || `Service #${service.id}`}</span>
+                        <span>{service.price ? formatMoney(service.price) : "Prix a verifier"}</span>
+                      </div>
+                      <div className="ab-list-meta">
+                        {service.duration ? `${service.duration} min` : "Duree non renseignee"}
+                        {service.description ? ` - ${service.description}` : ""}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="ab-panel">
+                <div className="ab-panel-title">Demande par service</div>
+                <div className="ab-list">
+                  {serviceDemand.length === 0 ? (
+                    <div className="ab-list-meta">Les demandes apparaitront apres les premieres reservations.</div>
+                  ) : serviceDemand.map(([name, count]) => (
+                    <div className="ab-list-item" key={name}>
+                      <div className="ab-list-main"><span>{name}</span><span>{count}</span></div>
+                      <div className="ab-progress"><span style={{ width: `${Math.max(8, (count / maxServiceDemand) * 100)}%` }} /></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        );
+
+      case "stats":
+        return (
+          <>
+            <div className="ad-header"><p className="ad-eyebrow">Analytics</p><h1 className="ad-display">Statistiques</h1><span className="ab-gold-rule" /></div>
+            <div className="ab-kpi-grid">
+              <div className="ab-kpi"><strong>{stats.today}</strong><span>confirmes aujourd'hui</span></div>
+              <div className="ab-kpi"><strong>{stats.week}</strong><span>confirmes 7 jours</span></div>
+              <div className="ab-kpi"><strong>{stats.month}</strong><span>confirmes 30 jours</span></div>
+              <div className="ab-kpi"><strong>{formatMoney(stats.revenue)}</strong><span>revenu termine</span></div>
+            </div>
+            <div className="ab-two-col">
+              <div className="ab-panel">
+                <div className="ab-panel-title">Services les plus demandes</div>
+                <div className="ab-list">
+                  {serviceDemand.length === 0 ? (
+                    <div className="ab-list-meta">Aucune reservation analysee pour le moment.</div>
+                  ) : serviceDemand.map(([name, count]) => (
+                    <div className="ab-list-item" key={name}>
+                      <div className="ab-list-main"><span>{name}</span><span>{count}</span></div>
+                      <div className="ab-progress"><span style={{ width: `${Math.max(8, (count / maxServiceDemand) * 100)}%` }} /></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="ab-panel">
+                <div className="ab-panel-title">Sante operationnelle</div>
+                <div className="ab-list">
+                  <div className="ab-list-item"><div className="ab-list-main"><span>Taux d'annulation 30 jours</span><span>{stats.month + stats.cancelled ? Math.round((stats.cancelled / (stats.month + stats.cancelled)) * 100) : 0}%</span></div></div>
+                  <div className="ab-list-item"><div className="ab-list-main"><span>Reservations en base</span><span>{bookings.length}</span></div></div>
+                  <div className="ab-list-item"><div className="ab-list-main"><span>Clients planifies aujourd'hui</span><span>{todayBookings.length}</span></div></div>
+                </div>
+              </div>
+            </div>
+          </>
+        );
+
+      case "settings":
+        return (
+          <>
+            <div className="ad-header"><p className="ad-eyebrow">Configuration</p><h1 className="ad-display">Parametres</h1><span className="ab-gold-rule" /></div>
+            <div className="ab-dashboard-grid">
+              <div className="ab-panel">
+                <div className="ab-panel-title">Profil du salon</div>
+                {[
+                  ["Nom", "Mr. Renaudin Barbershop"],
+                  ["Pays", "Canada"],
+                  ["Telephone", "514-778-8318"],
+                  ["Adresse", "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7"],
+                  ["Devise", "CAD"],
+                ].map(([label, value]) => (
+                  <div className="ab-settings-row" key={label}>
+                    <span className="ab-list-meta">{label}</span>
+                    <strong style={{ color: "var(--ab-cream)", textAlign: "right" }}>{value}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="ab-panel">
+                <div className="ab-panel-title">Systeme</div>
+                <div className="ab-chip-row">
+                  <span className="ab-chip">Frontend Vercel</span>
+                  <span className="ab-chip">Backend Render</span>
+                  <span className="ab-chip">Database Supabase</span>
+                  <span className="ab-chip">Chat live actif</span>
+                  <span className="ab-chip">Emails client</span>
+                </div>
+                <p className="ab-list-meta" style={{ marginTop: "1rem" }}>
+                  Ces parametres documentent l'exploitation actuelle. Les modifications deployables passent par GitHub puis les plateformes connectees.
+                </p>
+              </div>
+            </div>
+          </>
+        );
+
+      /*
+
+      case "barbers":
         return (<><div className="ad-header"><p className="ad-eyebrow">Équipe</p><h1 className="ad-display">Barbiers</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Barbiers en développement…</p></>);
       case "services":
         return (<><div className="ad-header"><p className="ad-eyebrow">Catalogue</p><h1 className="ad-display">Services</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Services en développement…</p></>);
@@ -770,6 +1044,7 @@ const AdminDashboard = () => {
         return (<><div className="ad-header"><p className="ad-eyebrow">Analytics</p><h1 className="ad-display">Statistiques</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Statistiques en développement…</p></>);
       case "settings":
         return (<><div className="ad-header"><p className="ad-eyebrow">Configuration</p><h1 className="ad-display">Paramètres</h1><span className="ab-gold-rule" /></div><p style={{ color: "var(--ab-muted)", padding: "2rem 0" }}>Module Paramètres en développement…</p></>);
+      */
       default: return null;
     }
   };
