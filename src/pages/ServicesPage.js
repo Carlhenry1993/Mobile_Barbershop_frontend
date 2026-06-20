@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, useInView, useReducedMotion } from "framer-motion";
+import apiClient from "../lib/apiClient";
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
@@ -449,10 +450,44 @@ const ServicesPage = () => {
   useServicesStyles();
   const navigate = useNavigate();
   const shouldReduceMotion = useReducedMotion();
+  const [apiServices, setApiServices] = useState([]);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
+
+  useEffect(() => {
+    apiClient.get("/api/booking/services").then(res => setApiServices(res.data || [])).catch(() => setApiServices([]));
+    apiClient.get("/api/gallery").then(res => setGalleryPhotos(res.data || [])).catch(() => setGalleryPhotos([]));
+    apiClient.get("/api/reviews").then(res => setReviews((res.data || []).slice(0, 3))).catch(() => setReviews([]));
+  }, []);
+
+  const dynamicServices = apiServices.length
+    ? apiServices.map((service, index) => {
+        const fallback = SERVICES[index % SERVICES.length];
+        const visual = galleryPhotos[index % Math.max(galleryPhotos.length, 1)];
+        return {
+          id: service.id,
+          title: service.name,
+          desc: service.description || fallback.desc,
+          img: visual?.image_data || fallback.img,
+          icon: fallback.icon,
+          price: service.price,
+          duration: service.duration,
+        };
+      })
+    : SERVICES;
+  const serviceGallery = galleryPhotos.length
+    ? galleryPhotos.slice(0, 6).map(photo => ({ src: photo.image_data, alt: photo.title }))
+    : GALLERY;
+  const testimonials = reviews.length
+    ? reviews.map(review => ({
+        quote: review.comment,
+        author: review.client_name || "Client Mr. Renaudin",
+      }))
+    : TESTIMONIALS;
 
   return (
     <div className="sv-root">
@@ -541,7 +576,7 @@ const ServicesPage = () => {
               gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
               gap: "2rem",
             }}>
-              {SERVICES.map((service, i) => (
+              {dynamicServices.map((service, i) => (
                 <FadeIn key={service.id} delay={i * 0.06}>
                   <div className="sv-service-card">
                     <div className="sv-service-img-wrap">
@@ -556,6 +591,11 @@ const ServicesPage = () => {
                     <div className="sv-service-body">
                       <h3 className="sv-service-title">{service.title}</h3>
                       <p className="sv-service-desc">{service.desc}</p>
+                      {service.price && (
+                        <p className="sv-service-desc" style={{ color: "var(--sv-gold)", fontWeight: 700 }}>
+                          {service.duration} min · {service.price}$ CAD
+                        </p>
+                      )}
                       <button
                         className="sv-btn-gold"
                         onClick={() => navigate("/reserver")}
@@ -589,7 +629,7 @@ const ServicesPage = () => {
 
             <FadeIn delay={0.2}>
               <div className="sv-gallery-grid">
-                {GALLERY.map((img, i) => (
+                {serviceGallery.map((img, i) => (
                   <div key={i} className="sv-gallery-item">
                     <img src={img.src} alt={img.alt} className="sv-gallery-img" loading="lazy" />
                   </div>
@@ -617,7 +657,7 @@ const ServicesPage = () => {
               gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", 
               gap: "2rem" 
             }}>
-              {TESTIMONIALS.map((t, i) => (
+              {testimonials.map((t, i) => (
                 <FadeIn key={i} delay={i * 0.1}>
                   <div className="sv-testimonial-card">
                     <p className="sv-testimonial-quote">"{t.quote}"</p>

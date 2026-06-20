@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "react-toastify";
+import apiClient from "../lib/apiClient";
 // ToastContainer géré globalement dans App.js
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -375,7 +374,6 @@ const BookingPage = () => {
     const token = localStorage.getItem("token");
     if (token) {
       setIsLoggedIn(true);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     } else {
       sessionStorage.setItem("redirectAfterLogin", "/reserver");
     }
@@ -386,7 +384,7 @@ const BookingPage = () => {
   const fetchServices = async () => {
     setLoadingServices(true);
     try {
-      const res = await axios.get("/api/booking/services");
+      const res = await apiClient.get("/api/booking/services");
       setServices(res.data || []);
     } catch {
       setError("Impossible de charger les services. Veuillez rafraîchir la page.");
@@ -399,7 +397,7 @@ const BookingPage = () => {
     setLoadingBarbers(true);
     setError("");
     try {
-      const res = await axios.get("/api/booking/barbers");
+      const res = await apiClient.get("/api/booking/barbers");
       setBarbers(res.data || []);
     } catch {
       setError("Impossible de charger les barbiers.");
@@ -414,7 +412,7 @@ const BookingPage = () => {
     setError("");
     setAvailableSlots([]);
     try {
-      const res = await axios.get("/api/booking/availability", {
+      const res = await apiClient.get("/api/booking/availability", {
         params: {
           date:      selectedDate,
           barberId:  selectedBarber.id,
@@ -516,7 +514,7 @@ const handleSlotSelect = (slot) => {
     setLoadingConfirm(true);
     setError("");
     try {
-      await axios.post("/api/booking/create", {
+      await apiClient.post("/api/booking/create", {
         serviceId: selectedService.id,
         barberId:  selectedBarber.id,
         startTime: selectedSlot,
@@ -596,7 +594,7 @@ const handleSlotSelect = (slot) => {
                   Un email de confirmation a été envoyé. Annulation gratuite jusqu'à 24h avant.
                 </p>
                 <div className="bk-btn-row" style={{ justifyContent: "center" }}>
-                  <button className="bk-btn bk-btn-gold" onClick={() => navigate("/compte")}>
+                  <button className="bk-btn bk-btn-gold" onClick={() => navigate("/mon-espace")}>
                     Voir mes rendez-vous
                   </button>
                   <button className="bk-btn bk-btn-ghost" onClick={() => navigate("/")}>

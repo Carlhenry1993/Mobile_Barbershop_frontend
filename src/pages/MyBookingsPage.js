@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "react-toastify";
+import apiClient from "../lib/apiClient";
+import { APP_CONFIG } from "../config/appConfig";
 // ToastContainer géré globalement dans App.js
 
 // ─── Config ───────────────────────────────────────────────────────────────────
-axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const useMyBookingsStyles = () => {
@@ -40,8 +40,10 @@ const useMyBookingsStyles = () => {
 
       /* ── Layout ── */
       .mb-wrap { max-width: 900px; margin: 0 auto; padding: 0 1.5rem; }
+      .mb-portal { max-width: 1180px; margin: 0 auto; padding: 0 1.5rem; display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 1rem; align-items: start; }
       .mb-sect { padding: 5rem 1.5rem 3rem; }
       @media (max-width: 640px) { .mb-sect { padding: 3.5rem 1.25rem 2rem; } }
+      @media (max-width: 980px) { .mb-portal { grid-template-columns: 1fr; } }
 
       /* ── Page header ── */
       .mb-eyebrow {
@@ -61,6 +63,17 @@ const useMyBookingsStyles = () => {
         background: var(--mb-gold-dim); border-left: 2px solid var(--mb-gold);
         font-size: 0.82rem; color: var(--mb-mist); margin-bottom: 2rem; line-height: 1.65;
       }
+      .mb-profile-card, .mb-dashboard-card {
+        background: var(--mb-card); border: 1px solid var(--mb-border); padding: 1.4rem;
+      }
+      .mb-profile-name { font-family: 'Playfair Display', serif; font-size: 1.45rem; font-weight: 900; color: var(--mb-cream); }
+      .mb-profile-meta { color: var(--mb-fog); font-size: 0.85rem; line-height: 1.65; margin-top: 0.5rem; }
+      .mb-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
+      .mb-kpi { background: var(--mb-black); border: 1px solid var(--mb-border); padding: 1rem; }
+      .mb-kpi strong { display: block; font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--mb-gold); }
+      .mb-kpi span { color: var(--mb-fog); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; }
+      .mb-profile-form { display: grid; gap: 0.8rem; margin-top: 1rem; }
+      @media (max-width: 620px) { .mb-kpis { grid-template-columns: 1fr; } }
 
       /* ── Tabs ── */
       .mb-tabs {
@@ -299,7 +312,7 @@ const RescheduleModal = ({ booking, onClose, onSuccess }) => {
     setFetching(true);
     setSlots([]);
     setSelected("");
-    axios
+    apiClient
       .get("/api/booking/availability", {
         params: {
           date,
@@ -316,7 +329,7 @@ const RescheduleModal = ({ booking, onClose, onSuccess }) => {
     if (!selected) return;
     setLoading(true);
     try {
-      await axios.patch(`/api/booking/${booking.id}`, { startTime: selected });
+      await apiClient.patch(`/api/booking/${booking.id}`, { startTime: selected });
       toast.success("Rendez-vous reporté avec succès !");
       onSuccess();
       onClose();
@@ -413,7 +426,7 @@ const CancelModal = ({ booking, onClose, onSuccess }) => {
   const handleCancel = async () => {
     setLoading(true);
     try {
-      await axios.delete(`/api/booking/${booking.id}`);
+      await apiClient.delete(`/api/booking/${booking.id}`);
       toast.success("Rendez-vous annulé.");
       onSuccess();
       onClose();
@@ -577,7 +590,7 @@ const ReviewModal = ({ booking, onClose, onSuccess }) => {
     }
     setLoading(true);
     try {
-      await axios.post("/api/reviews", {
+      await apiClient.post("/api/reviews", {
         bookingId: booking.id,
         rating,
         title,
@@ -594,7 +607,7 @@ const ReviewModal = ({ booking, onClose, onSuccess }) => {
   };
 
   return (
-    <motion.div className="mb-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+    <motion.div className="mb-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
       <motion.form
         className="mb-modal"
         initial={{ scale: 0.95, opacity: 0 }}
@@ -658,6 +671,9 @@ const MyBookingsPage = () => {
   const [reschedule, setReschedule] = useState(null);
   const [cancel,     setCancel]     = useState(null);
   const [review,     setReview]     = useState(null);
+  const [profile,    setProfile]    = useState(null);
+  const [profileForm, setProfileForm] = useState({ firstName: "", lastName: "", phone: "", smsOptIn: true });
+  const [savingProfile, setSavingProfile] = useState(false);
 
   // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchBookings = useCallback(async () => {
@@ -665,8 +681,7 @@ const MyBookingsPage = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) { navigate("/login"); return; }
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      const res = await axios.get("/api/booking/my-bookings");
+      const res = await apiClient.get("/api/booking/my-bookings");
       setBookings(res.data || []);
     } catch (err) {
       if (err.response?.status === 401) navigate("/login");
@@ -676,13 +691,47 @@ const MyBookingsPage = () => {
     }
   }, [navigate]);
 
-  useEffect(() => { fetchBookings(); }, [fetchBookings]);
+  const fetchProfile = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await apiClient.get("/api/auth/me");
+      setProfile(res.data);
+      setProfileForm({
+        firstName: res.data.firstName || "",
+        lastName: res.data.lastName || "",
+        phone: res.data.phone || "",
+        smsOptIn: res.data.smsOptIn !== false,
+      });
+    } catch (err) {
+      if (err.response?.status === 401) navigate("/login");
+    }
+  }, [navigate]);
+
+  const saveProfile = async (event) => {
+    event.preventDefault();
+    setSavingProfile(true);
+    try {
+      const res = await apiClient.patch("/api/auth/me", profileForm);
+      setProfile(res.data);
+      toast.success("Profil mis a jour");
+    } catch (err) {
+      toast.error(err.response?.data?.error || "Impossible de mettre a jour le profil");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  useEffect(() => { fetchBookings(); fetchProfile(); }, [fetchBookings, fetchProfile]);
 
   // ── Filter by tab ──────────────────────────────────────────────────────────
   const now = new Date();
   const upcoming  = bookings.filter((b) => b.status === "confirmed" && new Date(b.start_time) > now);
   const past      = bookings.filter((b) => b.status === "completed" || (b.status === "confirmed" && new Date(b.start_time) <= now));
   const cancelled = bookings.filter((b) => b.status === "cancelled");
+  const completed = bookings.filter((b) => b.status === "completed");
+  const totalSpent = completed.reduce((sum, b) => sum + Number(b.price || 0), 0);
+  const reviewable = completed.filter((b) => !b.review_id).length;
 
   const displayed = tab === "upcoming" ? upcoming : tab === "past" ? past : cancelled;
 
@@ -695,7 +744,42 @@ const MyBookingsPage = () => {
   return (
     <div className="mb-root">
       <section className="mb-sect">
-        <div className="mb-wrap">
+        <div className="mb-portal">
+          <aside className="mb-profile-card">
+            <div className="mb-eyebrow">Profil client</div>
+            <div className="mb-profile-name">
+              {[profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || profile?.username || "Client"}
+            </div>
+            <div className="mb-profile-meta">
+              <div>{profile?.email || "Email non disponible"}</div>
+              <div>{profile?.phone || "Telephone a completer"}</div>
+              <div>Membre depuis {profile?.createdAt ? fmtShort(profile.createdAt) : "recemment"}</div>
+            </div>
+
+            <form className="mb-profile-form" onSubmit={saveProfile}>
+              <div>
+                <label className="mb-label">Prenom</label>
+                <input className="mb-input" value={profileForm.firstName} onChange={(e) => setProfileForm(prev => ({ ...prev, firstName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="mb-label">Nom</label>
+                <input className="mb-input" value={profileForm.lastName} onChange={(e) => setProfileForm(prev => ({ ...prev, lastName: e.target.value }))} />
+              </div>
+              <div>
+                <label className="mb-label">Telephone</label>
+                <input className="mb-input" value={profileForm.phone} onChange={(e) => setProfileForm(prev => ({ ...prev, phone: e.target.value }))} placeholder={APP_CONFIG.phone} />
+              </div>
+              <label style={{ display: "flex", gap: "0.55rem", alignItems: "center", color: "var(--mb-mist)", fontSize: "0.82rem" }}>
+                <input type="checkbox" checked={profileForm.smsOptIn} onChange={(e) => setProfileForm(prev => ({ ...prev, smsOptIn: e.target.checked }))} />
+                Recevoir les rappels et nouvelles importantes
+              </label>
+              <button className="mb-btn mb-btn-gold" type="submit" disabled={savingProfile}>
+                {savingProfile ? "Enregistrement..." : "Mettre a jour"}
+              </button>
+            </form>
+          </aside>
+
+          <main className="mb-dashboard-card">
 
           {/* Header */}
           <motion.div
@@ -708,12 +792,21 @@ const MyBookingsPage = () => {
             <span className="mb-rule" />
           </motion.div>
 
+          <div className="mb-kpis">
+            <div className="mb-kpi"><strong>{upcoming.length}</strong><span>A venir</span></div>
+            <div className="mb-kpi"><strong>{completed.length}</strong><span>Coupes recues</span></div>
+            <div className="mb-kpi"><strong>{totalSpent.toFixed(0)}$</strong><span>Total visite</span></div>
+          </div>
+
           {/* Notice */}
           <div className="mb-notice">
             Modification et annulation gratuites jusqu'à{" "}
             <strong style={{ color: "var(--mb-gold)" }}>24h avant</strong> votre rendez-vous.
             Pour toute urgence :{" "}
-            <a href="tel:514-778-8318" style={{ color: "var(--mb-gold)", textDecoration: "none" }}>514-778-8318</a>.
+            <a href={`tel:${APP_CONFIG.phone}`} style={{ color: "var(--mb-gold)", textDecoration: "none" }}>{APP_CONFIG.phone}</a>.
+            {reviewable > 0 && (
+              <span> Vous avez <strong style={{ color: "var(--mb-gold)" }}>{reviewable}</strong> coupe{reviewable > 1 ? "s" : ""} a evaluer.</span>
+            )}
           </div>
 
           {/* Tabs */}
@@ -784,6 +877,7 @@ const MyBookingsPage = () => {
             </motion.div>
           )}
 
+          </main>
         </div>
       </section>
 

@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "react-toastify";
+import apiClient from "../lib/apiClient";
 // ToastContainer géré globalement dans App.js
 import ChatApp from "../components/ChatApp";
-
-axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
 
 const useAdminStyles = () => {
   useEffect(() => {
@@ -252,7 +250,7 @@ const ClientDrawer = ({ client, onClose }) => {
   useEffect(() => {
     if (!client) return;
     setLoadingH(true);
-    axios.get("/api/booking/admin/all")
+    apiClient.get("/api/booking/admin/all")
       .then(r => {
         const mine = r.data
           .filter(b => b.client_id?.toString() === client.id?.toString())
@@ -383,7 +381,7 @@ const ClientsTab = () => {
   const [selectedClient, setSelectedClient] = useState(null);
 
   useEffect(() => {
-    axios.get("/api/booking/admin/clients")
+    apiClient.get("/api/booking/admin/clients")
       .then(r => setClients(r.data || []))
       .catch(() => toast.error("Erreur chargement clients"))
       .finally(() => setLoading(false));
@@ -542,7 +540,7 @@ const AdminDashboard = () => {
   useAdminStyles();
   const navigate = useNavigate();
 
-  const [activeTab,      setActiveTab]      = useState("bookings");
+  const [activeTab,      setActiveTab]      = useState("overview");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bookings,       setBookings]       = useState([]);
   const [services,       setServices]       = useState([]);
@@ -564,11 +562,11 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const [bookingsRes, servicesRes, barbersRes, galleryRes, reviewsRes] = await Promise.all([
-        axios.get("/api/booking/admin/all"),
-        axios.get("/api/booking/services"),
-        axios.get("/api/booking/barbers"),
-        axios.get("/api/gallery?includeHidden=true"),
-        axios.get("/api/reviews?includeHidden=true"),
+        apiClient.get("/api/booking/admin/all"),
+        apiClient.get("/api/booking/services"),
+        apiClient.get("/api/booking/barbers"),
+        apiClient.get("/api/gallery?includeHidden=true"),
+        apiClient.get("/api/reviews?includeHidden=true"),
       ]);
       setBookings(bookingsRes.data);
       setServices(servicesRes.data);
@@ -588,7 +586,6 @@ const AdminDashboard = () => {
     const token = localStorage.getItem("token");
     const role  = localStorage.getItem("role");
     if (!token || role !== "admin") { navigate("/login"); return; }
-    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     fetchInitialData();
   }, [navigate, fetchInitialData]);
 
@@ -610,7 +607,7 @@ const AdminDashboard = () => {
   const handleCancel = async (id) => {
     if (!window.confirm("Annuler cette réservation ? Un email sera envoyé au client.")) return;
     try {
-      await axios.patch(`/api/booking/admin/${id}/cancel`);
+      await apiClient.patch(`/api/booking/admin/${id}/cancel`);
       toast.success("Réservation annulée — client notifié par email");
       fetchInitialData();
     } catch { toast.error("Erreur lors de l'annulation"); }
@@ -619,7 +616,7 @@ const AdminDashboard = () => {
   const handleComplete = async (id) => {
     if (!window.confirm("Marquer ce rendez-vous comme terminé ?")) return;
     try {
-      await axios.patch(`/api/booking/admin/${id}/complete`);
+      await apiClient.patch(`/api/booking/admin/${id}/complete`);
       toast.success("Rendez-vous marqué comme terminé");
       fetchInitialData();
     } catch { toast.error("Erreur"); }
@@ -754,7 +751,7 @@ const AdminDashboard = () => {
     }
     setPhotoSaving(true);
     try {
-      const res = await axios.post("/api/gallery", {
+      const res = await apiClient.post("/api/gallery", {
         title: photoForm.title,
         description: photoForm.description,
         category: photoForm.category,
@@ -774,7 +771,7 @@ const AdminDashboard = () => {
 
   const updateGalleryPhoto = async (id, payload) => {
     try {
-      const res = await axios.patch(`/api/gallery/${id}`, payload);
+      const res = await apiClient.patch(`/api/gallery/${id}`, payload);
       setGalleryPhotos(prev => prev.map(photo => {
         if (payload.isFeatured === true && photo.id !== id) return { ...photo, is_featured: false };
         return photo.id === id ? res.data : photo;
@@ -787,7 +784,7 @@ const AdminDashboard = () => {
   const deleteGalleryPhoto = async (id) => {
     if (!window.confirm("Supprimer cette photo de la galerie ?")) return;
     try {
-      await axios.delete(`/api/gallery/${id}`);
+      await apiClient.delete(`/api/gallery/${id}`);
       setGalleryPhotos(prev => prev.filter(photo => photo.id !== id));
       toast.success("Photo supprimee");
     } catch {
@@ -797,7 +794,7 @@ const AdminDashboard = () => {
 
   const updateReview = async (id, isApproved) => {
     try {
-      const res = await axios.patch(`/api/reviews/${id}`, { isApproved });
+      const res = await apiClient.patch(`/api/reviews/${id}`, { isApproved });
       setReviews(prev => prev.map(review => review.id === id ? { ...review, is_approved: res.data.is_approved } : review));
     } catch {
       toast.error("Modification de l'avis impossible");
@@ -807,7 +804,7 @@ const AdminDashboard = () => {
   const deleteReview = async (id) => {
     if (!window.confirm("Supprimer definitivement cet avis ?")) return;
     try {
-      await axios.delete(`/api/reviews/${id}`);
+      await apiClient.delete(`/api/reviews/${id}`);
       setReviews(prev => prev.filter(review => review.id !== id));
       toast.success("Avis supprime");
     } catch {
@@ -816,6 +813,7 @@ const AdminDashboard = () => {
   };
 
   const menuItems = [
+    { id: "overview",  label: "Vue SaaS",     icon: "⌘" },
     { id: "bookings",  label: "Réservations", icon: "📅" },
     { id: "clients",   label: "Clients",      icon: "👥" },
     { id: "barbers",   label: "Barbiers",     icon: "✂️" },
@@ -829,6 +827,44 @@ const AdminDashboard = () => {
 
   const renderContent = () => {
     switch (activeTab) {
+
+      case "overview": return (
+        <>
+          <div className="ad-header">
+            <p className="ad-eyebrow">Pilotage 2026</p>
+            <h1 className="ad-display">Centre d'operations</h1>
+            <span className="ab-gold-rule" />
+          </div>
+          {renderOperationSnapshot()}
+          <div className="ab-two-col">
+            <div className="ab-panel">
+              <div className="ab-panel-title">Actions prioritaires</div>
+              <div className="ab-list">
+                <div className="ab-list-item">
+                  <div className="ab-list-main"><span>Photos publiees</span><span>{galleryPhotos.filter(p => p.is_published).length}</span></div>
+                  <div className="ab-list-meta">La page d'accueil et la galerie publique se nourrissent de ces photos.</div>
+                </div>
+                <div className="ab-list-item">
+                  <div className="ab-list-main"><span>Avis visibles</span><span>{reviews.filter(r => r.is_approved).length}</span></div>
+                  <div className="ab-list-meta">Les avis clients renforcent la confiance avant reservation.</div>
+                </div>
+                <div className="ab-list-item">
+                  <div className="ab-list-main"><span>Services actifs</span><span>{services.length}</span></div>
+                  <div className="ab-list-meta">Gardez les prix, durees et descriptions clairs pour eviter les frictions.</div>
+                </div>
+              </div>
+            </div>
+            <div className="ab-panel">
+              <div className="ab-panel-title">Qualite operationnelle</div>
+              <div className="ab-list">
+                <div className="ab-list-item"><div className="ab-list-main"><span>Reservations total</span><span>{bookings.length}</span></div></div>
+                <div className="ab-list-item"><div className="ab-list-main"><span>Revenu complete 30 jours</span><span>{formatMoney(stats.revenue)}</span></div></div>
+                <div className="ab-list-item"><div className="ab-list-main"><span>Annulations 30 jours</span><span>{stats.cancelled}</span></div></div>
+              </div>
+            </div>
+          </div>
+        </>
+      );
 
       case "bookings": return (
         <>

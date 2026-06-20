@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet";
-import axios from "axios";
-
-axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
+import apiClient from "../lib/apiClient";
 
 const useGalleryStyles = () => {
   useEffect(() => {
@@ -49,7 +47,7 @@ const GalleryPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get("/api/gallery")
+    apiClient.get("/api/gallery")
       .then(res => setPhotos(res.data || []))
       .catch(() => setPhotos([]))
       .finally(() => setLoading(false));

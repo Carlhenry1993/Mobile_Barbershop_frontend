@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { motion, useInView, useReducedMotion } from "framer-motion";
-import axios from "axios";
+import apiClient from "../lib/apiClient";
 import {
   FaCalendarCheck,
   FaCut,
@@ -10,8 +10,6 @@ import {
   FaPhoneAlt,
   FaWhatsapp,
 } from "react-icons/fa";
-
-axios.defaults.baseURL = "https://mobile-barbershop-backend.onrender.com";
 
 const ADDRESS = "462 4e Rue de la Pointe, Shawinigan, QC G9N 1G7, Canada";
 const PHONE = "514-778-8318";
@@ -423,10 +421,10 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    axios.get("/api/gallery")
+    apiClient.get("/api/gallery")
       .then(res => setGalleryPhotos(res.data || []))
       .catch(() => setGalleryPhotos([]));
-    axios.get("/api/reviews")
+    apiClient.get("/api/reviews")
       .then(res => setReviews((res.data || []).slice(0, 3)))
       .catch(() => setReviews([]));
   }, []);

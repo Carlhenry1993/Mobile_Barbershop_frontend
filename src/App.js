@@ -180,6 +180,14 @@ const App = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/mon-espace"
+          element={
+            <ProtectedRoute token={token} role={role} allowedRoles={["client", "admin"]}>
+              <MyBookingsPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* ── Admin: dashboard ── */}
         <Route

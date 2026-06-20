@@ -384,11 +384,11 @@ const Header = ({ role, onLogout }) => {
             {role === "client" && (
               <li>
                 <Link
-                  to="/compte"
-                  className={`hd-link hd-link-account ${location.pathname === "/compte" ? "active" : ""}`}
-                  aria-current={location.pathname === "/compte" ? "page" : undefined}
+                  to="/mon-espace"
+                  className={`hd-link hd-link-account ${["/compte", "/mon-espace"].includes(location.pathname) ? "active" : ""}`}
+                  aria-current={["/compte", "/mon-espace"].includes(location.pathname) ? "page" : undefined}
                 >
-                  Mes Réservations
+                  Mon Espace
                 </Link>
               </li>
             )}
@@ -446,11 +446,11 @@ const Header = ({ role, onLogout }) => {
           {role === "client" && (
             <li>
               <Link
-                to="/compte"
-                className={`hd-link hd-link-account ${location.pathname === "/compte" ? "active" : ""}`}
+                to="/mon-espace"
+                className={`hd-link hd-link-account ${["/compte", "/mon-espace"].includes(location.pathname) ? "active" : ""}`}
                 onClick={toggleMenu}
               >
-                📋 Mes Réservations
+                📋 Mon Espace
               </Link>
             </li>
           )}
