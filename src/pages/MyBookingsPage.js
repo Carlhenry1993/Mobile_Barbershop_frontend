@@ -788,7 +788,7 @@ const MyBookingsPage = () => {
             transition={{ duration: 0.5 }}
           >
             <p className="mb-eyebrow">Espace client</p>
-            <h1 className="mb-display">Mes Rendez-vous</h1>
+            <h1 className="mb-display">Votre espace style</h1>
             <span className="mb-rule" />
           </motion.div>
 
@@ -800,9 +800,10 @@ const MyBookingsPage = () => {
 
           {/* Notice */}
           <div className="mb-notice">
-            Modification et annulation gratuites jusqu'à{" "}
-            <strong style={{ color: "var(--mb-gold)" }}>24h avant</strong> votre rendez-vous.
-            Pour toute urgence :{" "}
+            Gardez vos prochains rendez-vous, vos coupes terminees et vos avis au meme endroit.
+            Ajustements gratuits jusqu'a{" "}
+            <strong style={{ color: "var(--mb-gold)" }}>24h avant</strong> votre visite.
+            Pour une demande urgente :{" "}
             <a href={`tel:${APP_CONFIG.phone}`} style={{ color: "var(--mb-gold)", textDecoration: "none" }}>{APP_CONFIG.phone}</a>.
             {reviewable > 0 && (
               <span> Vous avez <strong style={{ color: "var(--mb-gold)" }}>{reviewable}</strong> coupe{reviewable > 1 ? "s" : ""} a evaluer.</span>

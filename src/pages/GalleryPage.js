@@ -66,16 +66,17 @@ const GalleryPage = () => {
     <main className="ga-root">
       <Helmet>
         <title>Galerie | Mr. Renaudin Barbershop</title>
-        <meta name="description" content="Galerie dynamique des coupes et photos publiees par Mr. Renaudin Barbershop." />
+        <meta name="description" content="Decouvrez les coupes, finitions et inspirations publiees par Mr. Renaudin Barbershop a Shawinigan." />
       </Helmet>
 
       <section className="ga-hero">
         <div className="ga-shell">
-          <p className="ga-eyebrow">Galerie officielle</p>
-          <h1 className="ga-title">Les photos publiees par le salon.</h1>
+          <p className="ga-eyebrow">Lookbook Mr. Renaudin</p>
+          <h1 className="ga-title">Inspirez votre prochain style.</h1>
           <p className="ga-copy">
-            Les images de cette page sont gerees par le proprietaire du barbershop.
-            Elles peuvent etre ajoutees, mises en avant ou retirees depuis le dashboard admin.
+            Explorez les coupes, details de barbe, textures et finitions qui donnent au
+            salon sa signature. Chaque photo met en valeur le niveau de soin, de proprete
+            et de precision que les clients viennent chercher chez Mr. Renaudin.
           </p>
         </div>
       </section>
@@ -97,7 +98,8 @@ const GalleryPage = () => {
           <div className="ga-empty">Chargement de la galerie...</div>
         ) : displayed.length === 0 ? (
           <div className="ga-empty">
-            Aucune photo publiee pour le moment. Le proprietaire peut en ajouter depuis le dashboard.
+            La collection sera bientot enrichie avec les derniers styles du salon.
+            Revenez choisir l'inspiration qui accompagnera votre prochain rendez-vous.
           </div>
         ) : (
           <div className="ga-grid">

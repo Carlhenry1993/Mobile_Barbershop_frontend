@@ -52,6 +52,10 @@ const useBookingStyles = () => {
         font-weight: 900; line-height: 1.05;
         font-size: clamp(2rem, 5vw, 3rem); color: var(--bk-cream);
       }
+      .bk-lead {
+        color: var(--bk-mist); line-height: 1.75;
+        max-width: 620px; margin: 1rem 0 0;
+      }
       .bk-rule {
         display: block; width: 50px; height: 2px;
         background: var(--bk-gold); margin: 1.25rem 0 3rem;
@@ -623,6 +627,10 @@ const handleSlotSelect = (slot) => {
           >
             <p className="bk-eyebrow">Réservation en ligne</p>
             <h1 className="bk-display">Prenez rendez-vous</h1>
+            <p className="bk-lead">
+              Choisissez votre service en quelques instants et laissez le salon preparer
+              une experience nette, ponctuelle et personnalisee pour votre prochain style.
+            </p>
             <span className="bk-rule" />
           </motion.div>
 

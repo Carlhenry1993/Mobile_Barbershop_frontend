@@ -87,12 +87,6 @@ const SERVICES = [
   },
 ];
 
-const GALLERY = [
-  { src: "/Photos/salon1.jpg", alt: "Intérieur du barbershop Mr. Renaudin - fauteuils" },
-  { src: "/Photos/salon2.jpg", alt: "Poste de barbier professionnel" },
-  { src: "/Photos/salon3.jpg", alt: "Espace d'attente du salon" },
-];
-
 const TESTIMONIALS = [
   {
     quote: "Le meilleur fade que j'aie jamais eu. L'ambiance du salon est exceptionnelle — on se sent vraiment dans un vrai barbershop haut de gamme.",
@@ -479,9 +473,7 @@ const ServicesPage = () => {
         };
       })
     : SERVICES;
-  const serviceGallery = galleryPhotos.length
-    ? galleryPhotos.slice(0, 6).map(photo => ({ src: photo.image_data, alt: photo.title }))
-    : GALLERY;
+  const serviceGallery = galleryPhotos.slice(0, 6).map(photo => ({ src: photo.image_data, alt: photo.title }));
   const testimonials = reviews.length
     ? reviews.map(review => ({
         quote: review.comment,
@@ -566,7 +558,7 @@ const ServicesPage = () => {
                   Nos Prestations au Salon
                 </h2>
                 <p className="sv-serif-body" style={{ maxWidth: "680px", margin: "0 auto" }}>
-                  Chaque service est réalisé dans notre espace dédié à Shawinigan. Réservation en ligne ou par téléphone.
+                  Chaque prestation est pensée pour affiner la silhouette, respecter le style du client et livrer une finition propre qui se remarque dès la sortie du fauteuil.
                 </p>
               </div>
             </FadeIn>
@@ -616,25 +608,31 @@ const ServicesPage = () => {
           <div style={{ maxWidth: "1100px", margin: "0 auto" }}>
             <FadeIn>
               <div style={{ textAlign: "center", marginBottom: "3rem" }}>
-                <p className="sv-eyebrow">Notre espace</p>
+                <p className="sv-eyebrow">Galerie signature</p>
                 <span className="sv-gold-rule" />
                 <h2 className="sv-display" style={{ fontSize: "clamp(2rem, 4vw, 3rem)", marginBottom: "1rem" }}>
-                  Bienvenue au Salon
+                  L'adresse où le style prend forme
                 </h2>
                 <p className="sv-serif-body" style={{ maxWidth: "600px", margin: "0 auto" }}>
-                  Un lieu propre, moderne et accueillant. 3 fauteuils, produits Redken & American Crew, café offert.
+                  Les photos publiées par le salon mettent en avant les coupes, barbes et détails qui inspirent les prochains rendez-vous.
                 </p>
               </div>
             </FadeIn>
 
             <FadeIn delay={0.2}>
-              <div className="sv-gallery-grid">
-                {serviceGallery.map((img, i) => (
-                  <div key={i} className="sv-gallery-item">
-                    <img src={img.src} alt={img.alt} className="sv-gallery-img" loading="lazy" />
-                  </div>
-                ))}
-              </div>
+              {serviceGallery.length === 0 ? (
+                <p className="sv-serif-body" style={{ maxWidth: "620px", margin: "0 auto", textAlign: "center" }}>
+                  La galerie du salon sera enrichie avec les prochaines réalisations Mr. Renaudin. Chaque nouvelle photo aidera les clients à choisir leur inspiration avant de réserver.
+                </p>
+              ) : (
+                <div className="sv-gallery-grid">
+                  {serviceGallery.map((img, i) => (
+                    <div key={i} className="sv-gallery-item">
+                      <img src={img.src} alt={img.alt} className="sv-gallery-img" loading="lazy" />
+                    </div>
+                  ))}
+                </div>
+              )}
             </FadeIn>
           </div>
         </section>

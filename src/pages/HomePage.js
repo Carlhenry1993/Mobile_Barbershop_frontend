@@ -497,9 +497,9 @@ const HomePage = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, delay: 0.22 }}
             >
-              Un systeme de reservation simple, un service precis et une experience
-              de salon propre pour les clients qui veulent sortir bien coiffes, sans
-              perdre de temps.
+              Entrez dans une adresse ou la coupe devient une signature. Mr. Renaudin
+              Barbershop marie precision, accueil chaleureux et standards premium pour
+              donner a chaque client une allure nette, confiante et durable.
             </motion.p>
             <motion.div
               className="home-actions"
@@ -552,7 +552,7 @@ const HomePage = () => {
               <FaCalendarCheck />
               <div>
                 <strong>Reservation</strong>
-                <span>Choisissez le service, le barbier et l'heure disponible en ligne.</span>
+                <span>Choisissez votre moment, le salon prepare l'experience.</span>
               </div>
             </div>
           </motion.aside>
@@ -564,12 +564,12 @@ const HomePage = () => {
           <FadeIn className="home-section-head">
             <div>
               <p className="home-eyebrow">Services populaires</p>
-              <h2 className="home-title">Des coupes nettes, un parcours simple.</h2>
+              <h2 className="home-title">Des services penses pour votre meilleur profil.</h2>
             </div>
             <p className="home-copy">
-              Le site met en avant les services essentiels du salon et conduit le client
-              rapidement vers la reservation. L'experience reste claire sur mobile comme
-              sur desktop.
+              Du fade propre a la barbe structuree, chaque prestation est guidee par la
+              forme du visage, le rythme de vie et le style que le client veut porter
+              avec assurance.
             </p>
           </FadeIn>
           <div className="home-services">
@@ -596,12 +596,13 @@ const HomePage = () => {
         <div className="home-shell">
           <FadeIn className="home-section-head">
             <div>
-              <p className="home-eyebrow">Systeme dynamique</p>
-              <h2 className="home-title">De la reservation au suivi admin.</h2>
+              <p className="home-eyebrow">Experience fluide</p>
+              <h2 className="home-title">Du choix au fauteuil, tout reste simple.</h2>
             </div>
             <p className="home-copy">
-              Le client reserve, l'admin suit les rendez-vous, le chat reste disponible
-              et les donnees du salon restent organisees autour du travail quotidien.
+              Choisissez votre prestation, reservez le moment qui vous convient et
+              arrivez sereinement. Le salon s'occupe du reste: ponctualite, preparation
+              et finition impeccable.
             </p>
           </FadeIn>
           <div className="home-flow">
@@ -620,17 +621,18 @@ const HomePage = () => {
           <FadeIn className="home-section-head">
             <div>
               <p className="home-eyebrow">Galerie</p>
-              <h2 className="home-title">Une vitrine plus visuelle pour le salon.</h2>
+              <h2 className="home-title">Des resultats qui parlent avant le rendez-vous.</h2>
             </div>
             <p className="home-copy">
-              La galerie est alimentee par les photos publiees par le proprietaire.
-              Les nouvelles coupes peuvent apparaitre ici sans modifier le code.
+              Decouvrez l'allure, les textures et les finitions qui font la reputation
+              du salon. Chaque image est une invitation a imaginer votre prochain style.
             </p>
           </FadeIn>
           <div className="home-gallery">
             {visibleGallery.length === 0 ? (
               <div className="home-empty-note">
-                Aucune photo publiee pour le moment. Le proprietaire peut ajouter les vraies photos du salon depuis le dashboard admin.
+                La galerie sera bientot enrichie avec les coupes recentes du salon.
+                Revenez decouvrir les prochains styles signes Mr. Renaudin.
               </div>
             ) : visibleGallery.map((item, index) => (
               <FadeIn className="home-shot" delay={index} key={item.id}>
@@ -651,10 +653,11 @@ const HomePage = () => {
         <div className="home-shell home-proof">
           <FadeIn className="home-quote">
             <p className="home-eyebrow">Experience client</p>
-            <blockquote>Les avis viennent des clients apres une coupe terminee.</blockquote>
+            <blockquote>La confiance se construit au fauteuil.</blockquote>
             <p>
-              Les clients connectes peuvent laisser une note et un commentaire depuis
-              leur espace personnel apres leur rendez-vous.
+              Apres chaque coupe, les clients peuvent partager leur experience. Ces
+              retours donnent aux nouveaux visiteurs une idee claire du soin, de la
+              precision et de l'accueil du salon.
             </p>
           </FadeIn>
           <FadeIn className="home-hours" delay={1}>
@@ -676,7 +679,8 @@ const HomePage = () => {
           <div className="home-reviews">
             {reviews.length === 0 ? (
               <div className="home-empty-note">
-                Les premiers avis clients apparaitront ici apres les coupes terminees.
+                Les avis des prochains clients apparaitront ici pour raconter
+                l'experience du salon avec leurs propres mots.
               </div>
             ) : reviews.map(review => (
               <article className="home-review" key={review.id}>

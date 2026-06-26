@@ -371,8 +371,8 @@ const ContactPage = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.8, delay: 0.6 }}
             >
-              Une question ? Besoin de conseils ? Réservez votre consultation gratuite. 
-              Notre équipe de barbiers experts est là pour vous accompagner dans votre transformation.
+              Une question, une demande speciale ou besoin de choisir le bon service ?
+              Ecrivez-nous ou appelez le salon; on vous guide vers le rendez-vous qui correspond a votre style.
             </motion.p>
           </div>
         </section>
@@ -392,7 +392,7 @@ const ContactPage = () => {
                   <p className="ct-eyebrow">Nos coordonnées</p>
                   <span className="ct-gold-rule" style={{ margin: "0 0 2rem 0" }} />
                   <h2 className="ct-display" style={{ fontSize: "2rem", marginBottom: "2rem" }}>
-                    Parlons de votre transformation
+                    Votre prochain style commence ici
                   </h2>
                   
                   <div className="ct-contact-item">
@@ -461,7 +461,7 @@ const ContactPage = () => {
                   <p className="ct-eyebrow">Écrivez-nous</p>
                   <span className="ct-gold-rule" style={{ margin: "0 0 2rem 0" }} />
                   <h2 className="ct-display" style={{ fontSize: "2rem", marginBottom: "2rem" }}>
-                    Envoyez-nous un message
+                    Envoyez votre demande
                   </h2>
 
                   <AnimatePresence mode="wait">
@@ -476,7 +476,7 @@ const ContactPage = () => {
                       >
                         <h3 className="ct-success-title">Message envoyé !</h3>
                         <p style={{ color: "var(--ct-light)", fontSize: "0.95rem" }}>
-                          Merci de nous avoir contactés. Nous vous répondrons dans les 24h pour planifier votre transformation.
+                          Merci de nous avoir contactes. Le salon vous repondra rapidement avec une attention claire et personnalisee.
                         </p>
                       </motion.div>
                     ) : (
