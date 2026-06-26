@@ -729,7 +729,7 @@ const HomePage = () => {
             ) : visibleGallery.map((item, index) => (
               <FadeIn className="home-shot" delay={index} key={item.id}>
                 <img src={item.image_data} alt={item.title} loading="lazy" />
-                <span>{item.category || item.title}</span>
+                <span>{item.title || item.category}</span>
               </FadeIn>
             ))}
           </div>

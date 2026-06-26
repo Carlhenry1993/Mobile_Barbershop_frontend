@@ -353,6 +353,31 @@ const useServicesStyles = () => {
     .sv-gallery-item:hover .sv-gallery-img {
         transform: scale(1.05);
       }
+    .sv-gallery-caption {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 1rem;
+        background: linear-gradient(0deg, rgba(14,16,21,0.94), rgba(14,16,21,0));
+        color: var(--sv-cream);
+        text-align: left;
+      }
+    .sv-gallery-caption strong {
+        display: block;
+        font-family: 'Playfair Display', serif;
+        font-size: 1rem;
+        line-height: 1.2;
+      }
+    .sv-gallery-caption span {
+        display: block;
+        margin-top: 0.25rem;
+        color: var(--sv-gold);
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
 
     .sv-testimonial-card {
         background: var(--sv-card);
@@ -473,7 +498,12 @@ const ServicesPage = () => {
         };
       })
     : SERVICES;
-  const serviceGallery = galleryPhotos.slice(0, 6).map(photo => ({ src: photo.image_data, alt: photo.title }));
+  const serviceGallery = galleryPhotos.slice(0, 6).map(photo => ({
+    src: photo.image_data,
+    alt: photo.title,
+    title: photo.title,
+    category: photo.category,
+  }));
   const testimonials = reviews.length
     ? reviews.map(review => ({
         quote: review.comment,
@@ -629,6 +659,10 @@ const ServicesPage = () => {
                   {serviceGallery.map((img, i) => (
                     <div key={i} className="sv-gallery-item">
                       <img src={img.src} alt={img.alt} className="sv-gallery-img" loading="lazy" />
+                      <div className="sv-gallery-caption">
+                        <strong>{img.title}</strong>
+                        {img.category && <span>{img.category}</span>}
+                      </div>
                     </div>
                   ))}
                 </div>

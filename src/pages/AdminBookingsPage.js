@@ -1129,11 +1129,11 @@ const AdminDashboard = () => {
                 <div className="ab-panel-title">Publier une photo</div>
                 <div style={{ display: "grid", gap: "0.9rem" }}>
                   <div>
-                    <label className="ab-label">Titre</label>
-                    <input className="ab-input" value={photoForm.title} onChange={e => setPhotoForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Ex: Fade propre avant weekend" />
+                    <label className="ab-label">Nom affiche de la coupe / photo</label>
+                    <input className="ab-input" value={photoForm.title} onChange={e => setPhotoForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Ex: Fade bas propre, barbe sculptee, waves 360" />
                   </div>
                   <div>
-                    <label className="ab-label">Categorie</label>
+                    <label className="ab-label">Categorie de style</label>
                     <select className="ab-select" value={photoForm.category} onChange={e => setPhotoForm(prev => ({ ...prev, category: e.target.value }))}>
                       <option value="coupe">Coupe</option>
                       <option value="barbe">Barbe</option>
@@ -1143,8 +1143,8 @@ const AdminDashboard = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="ab-label">Description</label>
-                    <textarea className="ab-input" rows="3" value={photoForm.description} onChange={e => setPhotoForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Courte note visible sur la page galerie" />
+                    <label className="ab-label">Description marketing</label>
+                    <textarea className="ab-input" rows="3" value={photoForm.description} onChange={e => setPhotoForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Ex: Finition nette, contours propres et barbe travaillee pour un rendu premium." />
                   </div>
                   <div>
                     <label className="ab-label">Image JPG, PNG ou WebP - max 6 MB</label>
@@ -1161,15 +1161,15 @@ const AdminDashboard = () => {
                     <div className="ab-label">Emplacements de publication</div>
                     <label style={{ display: "flex", gap: "0.6rem", alignItems: "center", color: "var(--ab-light)", fontSize: "0.85rem" }}>
                       <input type="checkbox" checked={photoForm.showInGallery} onChange={e => setPhotoForm(prev => ({ ...prev, showInGallery: e.target.checked }))} />
-                      Page galerie publique
+                      Page galerie publique avec le nom de la coupe
                     </label>
                     <label style={{ display: "flex", gap: "0.6rem", alignItems: "center", color: "var(--ab-light)", fontSize: "0.85rem" }}>
                       <input type="checkbox" checked={photoForm.showOnHome || photoForm.isFeatured} disabled={photoForm.isFeatured} onChange={e => setPhotoForm(prev => ({ ...prev, showOnHome: e.target.checked }))} />
-                      Page d'accueil / lookbook
+                      Page d'accueil / lookbook avec le nom de la coupe
                     </label>
                     <label style={{ display: "flex", gap: "0.6rem", alignItems: "center", color: "var(--ab-light)", fontSize: "0.85rem" }}>
                       <input type="checkbox" checked={photoForm.showOnServices} onChange={e => setPhotoForm(prev => ({ ...prev, showOnServices: e.target.checked }))} />
-                      Page services
+                      Page services avec le nom de la coupe
                     </label>
                   </div>
                   <button className="ab-btn-gold" type="submit" disabled={photoSaving}>
@@ -1182,7 +1182,7 @@ const AdminDashboard = () => {
                 <div className="ab-panel-title">Photos publiees</div>
                 <div className="ab-list">
                   {galleryPhotos.length === 0 ? (
-                    <div className="ab-list-meta">Aucune photo encore. Ajoutez les vraies coupes du salon pour alimenter l'accueil et la page galerie.</div>
+                    <div className="ab-list-meta">Aucune photo encore. Ajoutez les vraies coupes du salon; le nom saisi ici sera affiche sur l'accueil, la galerie et les services selon les emplacements choisis.</div>
                   ) : galleryPhotos.map(photo => (
                     <div className="ab-list-item" key={photo.id}>
                       <img src={photo.image_data} alt={photo.title} style={{ width: "100%", height: 180, objectFit: "cover", border: "1px solid var(--ab-border)" }} />
