@@ -495,7 +495,7 @@ const HomePage = () => {
   }, []);
 
   useEffect(() => {
-    apiClient.get("/api/gallery")
+    apiClient.get("/api/gallery?placement=home")
       .then(res => setGalleryPhotos(res.data || []))
       .catch(() => setGalleryPhotos([]));
     apiClient.get("/api/reviews")

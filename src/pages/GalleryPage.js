@@ -47,7 +47,7 @@ const GalleryPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    apiClient.get("/api/gallery")
+    apiClient.get("/api/gallery?placement=gallery")
       .then(res => setPhotos(res.data || []))
       .catch(() => setPhotos([]))
       .finally(() => setLoading(false));

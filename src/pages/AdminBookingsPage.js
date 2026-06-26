@@ -555,7 +555,16 @@ const AdminDashboard = () => {
   const [filterStatus,   setFilterStatus]   = useState("");
   const [stats,          setStats]          = useState({ today: 0, week: 0, month: 0, revenue: 0, cancelled: 0 });
   const [detailTarget,   setDetailTarget]   = useState(null);
-  const [photoForm,      setPhotoForm]      = useState({ title: "", description: "", category: "coupe", imageData: "", isFeatured: false });
+  const [photoForm,      setPhotoForm]      = useState({
+    title: "",
+    description: "",
+    category: "coupe",
+    imageData: "",
+    isFeatured: false,
+    showInGallery: true,
+    showOnHome: true,
+    showOnServices: false,
+  });
   const [photoSaving,    setPhotoSaving]    = useState(false);
 
   const fetchInitialData = useCallback(async () => {
@@ -758,10 +767,22 @@ const AdminDashboard = () => {
         imageData: photoForm.imageData,
         isFeatured: photoForm.isFeatured,
         isPublished: true,
+        showInGallery: photoForm.showInGallery,
+        showOnHome: photoForm.showOnHome || photoForm.isFeatured,
+        showOnServices: photoForm.showOnServices,
       });
       setGalleryPhotos(prev => [res.data, ...prev.map(p => photoForm.isFeatured ? { ...p, is_featured: false } : p)]);
-      setPhotoForm({ title: "", description: "", category: "coupe", imageData: "", isFeatured: false });
-      toast.success("Photo publiee dans la galerie");
+      setPhotoForm({
+        title: "",
+        description: "",
+        category: "coupe",
+        imageData: "",
+        isFeatured: false,
+        showInGallery: true,
+        showOnHome: true,
+        showOnServices: false,
+      });
+      toast.success("Photo publiee aux emplacements choisis");
     } catch (err) {
       toast.error(err.response?.data?.error || "Upload impossible");
     } finally {
@@ -1136,6 +1157,21 @@ const AdminDashboard = () => {
                     <input type="checkbox" checked={photoForm.isFeatured} onChange={e => setPhotoForm(prev => ({ ...prev, isFeatured: e.target.checked }))} />
                     Utiliser comme photo principale de la page d'accueil
                   </label>
+                  <div style={{ display: "grid", gap: "0.6rem", border: "1px solid var(--ab-border)", padding: "0.9rem" }}>
+                    <div className="ab-label">Emplacements de publication</div>
+                    <label style={{ display: "flex", gap: "0.6rem", alignItems: "center", color: "var(--ab-light)", fontSize: "0.85rem" }}>
+                      <input type="checkbox" checked={photoForm.showInGallery} onChange={e => setPhotoForm(prev => ({ ...prev, showInGallery: e.target.checked }))} />
+                      Page galerie publique
+                    </label>
+                    <label style={{ display: "flex", gap: "0.6rem", alignItems: "center", color: "var(--ab-light)", fontSize: "0.85rem" }}>
+                      <input type="checkbox" checked={photoForm.showOnHome || photoForm.isFeatured} disabled={photoForm.isFeatured} onChange={e => setPhotoForm(prev => ({ ...prev, showOnHome: e.target.checked }))} />
+                      Page d'accueil / lookbook
+                    </label>
+                    <label style={{ display: "flex", gap: "0.6rem", alignItems: "center", color: "var(--ab-light)", fontSize: "0.85rem" }}>
+                      <input type="checkbox" checked={photoForm.showOnServices} onChange={e => setPhotoForm(prev => ({ ...prev, showOnServices: e.target.checked }))} />
+                      Page services
+                    </label>
+                  </div>
                   <button className="ab-btn-gold" type="submit" disabled={photoSaving}>
                     {photoSaving ? "Publication..." : "Publier la photo"}
                   </button>
@@ -1154,9 +1190,21 @@ const AdminDashboard = () => {
                       <div className="ab-chip-row">
                         {photo.is_featured && <span className="ab-chip">Accueil</span>}
                         <span className="ab-chip">{photo.is_published ? "Publiee" : "Masquee"}</span>
+                        {photo.show_in_gallery && <span className="ab-chip">Galerie</span>}
+                        {photo.show_on_home && <span className="ab-chip">Accueil/Lookbook</span>}
+                        {photo.show_on_services && <span className="ab-chip">Services</span>}
                       </div>
                       <div className="ab-actions">
-                        <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { isFeatured: true })}>Accueil</button>
+                        <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { isFeatured: true, showOnHome: true, isPublished: true })}>Hero accueil</button>
+                        <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { showInGallery: !photo.show_in_gallery })}>
+                          {photo.show_in_gallery ? "Retirer galerie" : "Mettre galerie"}
+                        </button>
+                        <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { showOnHome: !photo.show_on_home })}>
+                          {photo.show_on_home ? "Retirer accueil" : "Mettre accueil"}
+                        </button>
+                        <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { showOnServices: !photo.show_on_services })}>
+                          {photo.show_on_services ? "Retirer services" : "Mettre services"}
+                        </button>
                         <button className="ab-icon-btn" onClick={() => updateGalleryPhoto(photo.id, { isPublished: !photo.is_published })}>
                           {photo.is_published ? "Masquer" : "Publier"}
                         </button>

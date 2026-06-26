@@ -454,7 +454,7 @@ const ServicesPage = () => {
 
   useEffect(() => {
     apiClient.get("/api/booking/services").then(res => setApiServices(res.data || [])).catch(() => setApiServices([]));
-    apiClient.get("/api/gallery").then(res => setGalleryPhotos(res.data || [])).catch(() => setGalleryPhotos([]));
+    apiClient.get("/api/gallery?placement=services").then(res => setGalleryPhotos(res.data || [])).catch(() => setGalleryPhotos([]));
     apiClient.get("/api/reviews").then(res => setReviews((res.data || []).slice(0, 3))).catch(() => setReviews([]));
   }, []);
 
