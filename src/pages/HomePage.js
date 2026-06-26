@@ -652,8 +652,8 @@ const HomePage = () => {
       <section className="home-section">
         <div className="home-shell home-proof">
           <FadeIn className="home-quote">
-            <p className="home-eyebrow">Experience client</p>
-            <blockquote>La confiance se construit au fauteuil.</blockquote>
+            <p className="home-eyebrow">Avis clients</p>
+            <blockquote>Ce que les clients disent de nous</blockquote>
             <p>
               Une bonne coupe se remarque dans la posture, le regard et la confiance
               qu'elle laisse en sortant du salon. C'est cette impression que Mr.
