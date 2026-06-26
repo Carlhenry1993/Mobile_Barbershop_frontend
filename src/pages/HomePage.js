@@ -655,9 +655,9 @@ const HomePage = () => {
             <p className="home-eyebrow">Experience client</p>
             <blockquote>La confiance se construit au fauteuil.</blockquote>
             <p>
-              Apres chaque coupe, les clients peuvent partager leur experience. Ces
-              retours donnent aux nouveaux visiteurs une idee claire du soin, de la
-              precision et de l'accueil du salon.
+              Une bonne coupe se remarque dans la posture, le regard et la confiance
+              qu'elle laisse en sortant du salon. C'est cette impression que Mr.
+              Renaudin cherche a livrer a chaque rendez-vous.
             </p>
           </FadeIn>
           <FadeIn className="home-hours" delay={1}>
